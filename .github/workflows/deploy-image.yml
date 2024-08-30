@@ -9,7 +9,7 @@ on:
 env:
     IMAGE_NAME: ${{ github.repository }}
     IMAGE_TAGS: latest ${{ github.sha }}
-    IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+    IMAGE_REGISTRY: ghcr.io #/${{ github.repository_owner }}
     REGISTRY_USER: ${{ github.actor }}
     REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
@@ -25,15 +25,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build Image
-        id: build-image
+        id: build_image
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
             ./Containerfile
+          oci: true
       - name: Push To ghcr.io
-        id: push-to-ghcr
+        id: push
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ steps.build_image.outputs.image }}
