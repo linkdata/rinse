@@ -1,7 +1,7 @@
 #
 name: Create and publish a container image
 
-# Configures this workflow to run every time a change is pushed to the branch called `release`.
+# Configures this workflow to run every time a change is pushed to the branch called `main`.
 on:
   push:
     branches: ['main']
@@ -9,7 +9,7 @@ on:
 env:
     IMAGE_NAME: ${{ github.repository }}
     IMAGE_TAGS: latest ${{ github.sha }}
-    IMAGE_REGISTRY: ghcr.io #/${{ github.repository_owner }}
+    IMAGE_REGISTRY: ghcr.io
     REGISTRY_USER: ${{ github.actor }}
     REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
