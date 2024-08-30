@@ -2,6 +2,8 @@
 
 FROM alpine:latest
 
+LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
+
 RUN apk --no-cache -U upgrade && \
     apk --no-cache add poppler-utils tesseract-ocr
 
