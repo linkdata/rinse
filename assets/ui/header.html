@@ -1,0 +1,14 @@
+{{with .Dot}}
+<div class="row fixed-top m-2 border rounded-pill border-secondary bg-light text-nowrap">
+	<div class="col">
+		<a href="/" class="hiddenlink">
+			<img src="{{.FaviconURI}}" height="16px" class="align-text-top">
+			{{.PkgName}}&nbsp;<span class="text-secondary">{{.PkgVersion}}</span>
+		</a>
+	</div>
+	<div class="col text-end">
+		{{$.Span .UiClock}}
+	</div>
+</div>
+<div id="jaws-alerts"></div>
+{{end}}
