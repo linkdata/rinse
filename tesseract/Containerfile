@@ -1,6 +1,7 @@
 FROM alpine:latest AS rinse-tesseract
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
+ENV TESS_LANG=eng
 RUN apk --no-cache -U upgrade && \
     apk --no-cache add tesseract-ocr \
     tesseract-ocr-data-afr \
