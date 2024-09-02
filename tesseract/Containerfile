@@ -68,8 +68,8 @@ RUN apk --no-cache -U upgrade && \
     tesseract-ocr-data-ukr \
     tesseract-ocr-data-vie
 
-COPY tesseract.sh /
-COPY tesseract_opencl_profile_devices.dat /
+COPY tesseract/tesseract.sh /
+COPY tesseract/tesseract_opencl_profile_devices.dat /
 RUN chown root:root /tesseract.sh && chmod 555 /tesseract.sh
 RUN mkdir -p /var/rinse && chmod 777 /var/rinse
 
