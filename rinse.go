@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/jaws/staticserve"
 	"github.com/linkdata/webserv"
@@ -26,6 +27,8 @@ type Rinse struct {
 	PodmanBin  string
 	RunscBin   string
 	FaviconURI string
+	mu         deadlock.Mutex // protects following
+	jobs       []*Job
 }
 
 func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, err error) {

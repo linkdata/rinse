@@ -1,14 +1,13 @@
 package main
 
-// podman --runtime=/usr/bin/runsc run --rm -v $DIR_WITH_INPUT_PDF:/var/rinse -it ghcr.io/linkdata/rinse-pdftoppm:latest
-// podman run --rm -v $DIR_WITH_OUTPUT_PPM:/var/rinse -it ghcr.io/linkdata/rinse-tesseract:latest
-
 import (
 	"context"
 	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"path"
 
 	"git.cparta.dev/jli/rinse"
 	"github.com/linkdata/deadlock"
@@ -54,6 +53,20 @@ func main() {
 		var rns *rinse.Rinse
 		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw); err == nil {
 			defer rns.Close()
+			var job *rinse.Job
+			if job, err = rinse.NewJob("test.pdf", rns.PodmanBin, rns.RunscBin); err == nil {
+				var data []byte
+				if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
+					if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {
+						if err = job.Start(); err == nil {
+							err = <-job.ResultCh()
+							fmt.Println(err, job.State(), job.Workdir)
+							os.Exit(0)
+							job.Close()
+						}
+					}
+				}
+			}
 			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
 				return
 			}
