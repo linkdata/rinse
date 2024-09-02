@@ -2,13 +2,18 @@ package rinse
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/linkdata/deadlock"
@@ -36,6 +41,7 @@ type Job struct {
 	started   time.Time
 	stopped   time.Time
 	closed    bool
+	ppmfiles  []string
 }
 
 func NewJob(name, podmanbin, runscbin string) (job *Job, err error) {
@@ -125,20 +131,41 @@ func (job *Job) runPdfToPpm() {
 		// we expect no output from pdftoppm
 		var output []byte
 		output, err = cmd.CombinedOutput()
+		output = bytes.TrimSpace(output)
 		if len(output) > 0 {
-			slog.Info("pdftoppm", "msg", string(output))
+			slog.Warn("rinse-pdftoppm", "msg", string(output))
 		}
 		if err == nil {
-			if err = job.runTesseract(); err == nil {
-				if err = job.transition(JobTesseract, JobFinished); err == nil {
-					job.mu.Lock()
-					job.stopped = time.Now()
-					ch := job.resultCh
-					job.mu.Unlock()
-					select {
-					case ch <- nil:
-					default:
+			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
+				var outputFiles []string
+				filepath.Walk(job.Workdir, func(fpath string, info fs.FileInfo, err error) error {
+					if filepath.Ext(fpath) == ".ppm" {
+						outputFiles = append(outputFiles, path.Join("/var/rinse", info.Name()))
 					}
+					return nil
+				})
+				if len(outputFiles) > 0 {
+					sort.Strings(outputFiles)
+					outputTxt := strings.Join(outputFiles, "\n")
+					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), []byte(outputTxt), 0666); err == nil {
+						job.mu.Lock()
+						job.ppmfiles = outputFiles
+						job.mu.Unlock()
+						if err = job.runTesseract(); err == nil {
+							if err = job.transition(JobTesseract, JobFinished); err == nil {
+								job.mu.Lock()
+								job.stopped = time.Now()
+								ch := job.resultCh
+								job.mu.Unlock()
+								select {
+								case ch <- nil:
+								default:
+								}
+							}
+						}
+					}
+				} else {
+					err = fmt.Errorf("pdftoppm created no .ppm files")
 				}
 			}
 		}
@@ -152,20 +179,21 @@ func (job *Job) runPdfToPpm() {
 
 func (job *Job) runTesseract() (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
-		if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
-			var args []string
-			args = append(args, "--log-level=error", "run", "--rm", "--tty", "-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse-tesseract:latest")
-			cmd := exec.Command(job.PodmanBin, args...)
-			var stdout io.ReadCloser
-			if stdout, err = cmd.StdoutPipe(); err == nil {
-				if err = cmd.Start(); err == nil {
-					fileScanner := bufio.NewScanner(stdout)
-					fileScanner.Split(bufio.ScanLines)
-					for fileScanner.Scan() {
-						fmt.Println(fileScanner.Text())
-					}
-					err = cmd.Wait()
+		var args []string
+		args = append(args, "--log-level=error", "run", "--rm", "--tty", "-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse-tesseract:latest")
+		cmd := exec.Command(job.PodmanBin, args...)
+		var stdout io.ReadCloser
+		if stdout, err = cmd.StdoutPipe(); err == nil {
+			if err = cmd.Start(); err == nil {
+				lineScanner := bufio.NewScanner(stdout)
+				lineScanner.Split(bufio.ScanLines)
+				for lineScanner.Scan() {
+					s := lineScanner.Text()
+					job.mu.Lock()
+					job.ppmfiles = slices.DeleteFunc(job.ppmfiles, func(fn string) bool { return strings.Contains(s, fn) })
+					job.mu.Unlock()
 				}
+				err = cmd.Wait()
 			}
 		}
 	}
