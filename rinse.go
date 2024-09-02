@@ -86,6 +86,13 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 func (rns *Rinse) Close() {
 }
 
+func (rns *Rinse) Pull() (err error) {
+	if err = exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse-pdftoppm:latest").Run(); err == nil {
+		err = exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse-tesseract:latest").Run()
+	}
+	return
+}
+
 func (rns *Rinse) PkgName() string {
 	return PkgName
 }

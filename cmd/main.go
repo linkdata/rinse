@@ -20,6 +20,7 @@ var (
 	flagCertDir = flag.String("certdir", "", "where to find fullchain.pem and privkey.pem")
 	flagUser    = flag.String("user", "", "switch to this user after startup (*nix only)")
 	flagDataDir = flag.String("datadir", "", "where to store data files after startup")
+	flagPull    = flag.Bool("pull", false, "pull latest versions of images")
 	flagVersion = flag.Bool("v", false, "display version")
 )
 
@@ -53,6 +54,12 @@ func main() {
 		var rns *rinse.Rinse
 		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw); err == nil {
 			defer rns.Close()
+			if *flagPull {
+				if err = rns.Pull(); err != nil {
+					slog.Error("pull", "err", err)
+					os.Exit(1)
+				}
+			}
 			var job *rinse.Job
 			if job, err = rinse.NewJob("test.pdf", rns.PodmanBin, rns.RunscBin); err == nil {
 				var data []byte

@@ -140,14 +140,19 @@ func (job *Job) runPdfToPpm() {
 				var outputFiles []string
 				filepath.Walk(job.Workdir, func(fpath string, info fs.FileInfo, err error) error {
 					if filepath.Ext(fpath) == ".ppm" {
-						outputFiles = append(outputFiles, path.Join("/var/rinse", info.Name()))
+						outputFiles = append(outputFiles, info.Name())
 					}
 					return nil
 				})
 				if len(outputFiles) > 0 {
 					sort.Strings(outputFiles)
-					outputTxt := strings.Join(outputFiles, "\n")
-					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), []byte(outputTxt), 0666); err == nil {
+					var outputTxt bytes.Buffer
+					for _, fn := range outputFiles {
+						outputTxt.WriteString("/var/rinse/")
+						outputTxt.WriteString(fn)
+						outputTxt.WriteByte('\n')
+					}
+					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
 						job.mu.Lock()
 						job.ppmfiles = outputFiles
 						job.mu.Unlock()
