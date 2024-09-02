@@ -216,6 +216,9 @@ func (job *Job) Close() (err error) {
 	defer job.mu.Unlock()
 	if !job.closed {
 		job.closed = true
+		if job.state != JobFinished {
+			job.state = JobFailed
+		}
 		close(job.resultCh)
 		err = os.RemoveAll(job.Workdir)
 	}
