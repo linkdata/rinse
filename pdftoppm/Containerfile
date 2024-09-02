@@ -1,0 +1,11 @@
+FROM alpine:latest AS rinse-pdftoppm
+LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
+
+RUN apk --no-cache -U upgrade && \
+    apk --no-cache add poppler-utils
+
+COPY pdftoppm.sh /
+RUN chown root:root /pdftoppm.sh && chmod 555 /pdftoppm.sh
+RUN mkdir -p /var/rinse && chmod 777 /var/rinse
+
+ENTRYPOINT ["/pdftoppm.sh"]
