@@ -2,6 +2,7 @@ package rinse
 
 import (
 	"html/template"
+	"sync"
 	"time"
 
 	"github.com/linkdata/jaws"
@@ -9,7 +10,18 @@ import (
 
 type uiClock struct{}
 
-func (ui uiClock) JawsGetHtml(e *jaws.Element) (val template.HTML) {
+var uiClockStart sync.Once
+
+func (ui uiClock) JawsGetHtml(e *jaws.Element) template.HTML {
+	uiClockStart.Do(func() {
+		go func(jw *jaws.Jaws) {
+			for {
+				now := time.Now()
+				time.Sleep(time.Second - now.Sub(now.Truncate(time.Second)))
+				jw.Dirty(ui)
+			}
+		}(e.Jaws)
+	})
 	now := time.Now().Round(time.Second)
 	fmt := "15:04"
 	if (now.Second() % 2) == 0 {

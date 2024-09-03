@@ -108,3 +108,22 @@ func (rns *Rinse) PkgName() string {
 func (rns *Rinse) PkgVersion() string {
 	return PkgVersion
 }
+
+func (rns *Rinse) NewJob(name string) (job *Job, err error) {
+	if job, err = NewJob(name, rns.PodmanBin, rns.RunscBin); err == nil {
+		rns.mu.Lock()
+		rns.jobs = append(rns.jobs, job)
+		rns.mu.Unlock()
+	}
+	return
+}
+
+// JawsContains implements jaws.Container.
+func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
+	rns.mu.Lock()
+	for _, job := range rns.jobs {
+		contents = append(contents, jaws.NewTemplate("job.html", job))
+	}
+	rns.mu.Unlock()
+	return
+}

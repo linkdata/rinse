@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/linkdata/deadlock"
+	"github.com/linkdata/jaws"
 )
 
 type JobState int
@@ -31,6 +32,7 @@ const (
 )
 
 type Job struct {
+	Jaws      *jaws.Jaws
 	Name      string
 	PodmanBin string
 	RunscBin  string
@@ -41,7 +43,8 @@ type Job struct {
 	started   time.Time
 	stopped   time.Time
 	closed    bool
-	ppmfiles  []string
+	ppmtodo   []string
+	ppmdone   []string
 }
 
 func NewJob(name, podmanbin, runscbin string) (job *Job, err error) {
@@ -111,6 +114,7 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	} else {
 		err = fmt.Errorf("wrong job state (%d)", job.state)
 	}
+	job.dirtyProgressLocked()
 	job.mu.Unlock()
 	return
 }
@@ -154,13 +158,15 @@ func (job *Job) runPdfToPpm() {
 					}
 					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
 						job.mu.Lock()
-						job.ppmfiles = outputFiles
+						job.ppmtodo = outputFiles
+						job.dirtyProgressLocked()
 						job.mu.Unlock()
 						if err = job.runTesseract(); err == nil {
 							if err = job.transition(JobTesseract, JobFinished); err == nil {
 								job.mu.Lock()
 								job.stopped = time.Now()
 								ch := job.resultCh
+								job.dirtyProgressLocked()
 								job.mu.Unlock()
 								select {
 								case ch <- nil:
@@ -193,21 +199,27 @@ func (job *Job) runTesseract() (err error) {
 		var stdout io.ReadCloser
 		if stdout, err = cmd.StdoutPipe(); err == nil {
 			if err = cmd.Start(); err == nil {
-				var toremove []string
 				lineScanner := bufio.NewScanner(stdout)
 				for lineScanner.Scan() {
 					s := lineScanner.Text()
 					job.mu.Lock()
-					job.ppmfiles = slices.DeleteFunc(job.ppmfiles, func(fn string) bool {
+					job.ppmtodo = slices.DeleteFunc(job.ppmtodo, func(fn string) bool {
 						if strings.Contains(s, fn) {
-							toremove = append(toremove, path.Join(job.Workdir, fn))
+							job.ppmdone = append(job.ppmdone, fn)
 							return true
 						}
 						return false
 					})
+					job.dirtyProgressLocked()
 					job.mu.Unlock()
 				}
 				if err = cmd.Wait(); err == nil {
+					var toremove []string
+					job.mu.Lock()
+					for _, fn := range job.ppmdone {
+						toremove = append(toremove, path.Join(job.Workdir, fn))
+					}
+					job.mu.Unlock()
 					for _, fn := range toremove {
 						_ = os.Remove(fn)
 					}
@@ -235,6 +247,36 @@ func (job *Job) Close() (err error) {
 		}
 		close(job.resultCh)
 		err = os.RemoveAll(job.Workdir)
+	}
+	return
+}
+
+func (job *Job) dirtyProgressLocked() {
+	if job.Jaws != nil {
+		job.Jaws.Dirty(uiJobProgress{job}, uiJobPagecount{job})
+	}
+}
+
+func (job *Job) progress(e *jaws.Element) (pct int) {
+	job.mu.Lock()
+	if e != nil {
+		job.Jaws = e.Jaws
+	}
+	state := job.state
+	left := len(job.ppmtodo)
+	job.mu.Unlock()
+
+	switch state {
+	case JobNew:
+		pct = 0
+	case JobStarting:
+		pct = 5
+	case JobPdfToPPm:
+		pct = 10
+	case JobTesseract:
+		pct = 10 + (80 / (left + 1))
+	case JobFinished, JobFailed:
+		pct = 100
 	}
 	return
 }

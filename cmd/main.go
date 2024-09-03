@@ -60,20 +60,20 @@ func main() {
 					os.Exit(1)
 				}
 			}
+
 			var job *rinse.Job
-			if job, err = rinse.NewJob("test.pdf", rns.PodmanBin, rns.RunscBin); err == nil {
+			if job, err = rns.NewJob("test.pdf"); err == nil {
 				var data []byte
 				if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
 					if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {
-						if err = job.Start(); err == nil {
-							err = <-job.ResultCh()
-							fmt.Println(err, job.State(), job.Workdir)
-							os.Exit(0)
-							job.Close()
+						if err = job.Start(); err != nil {
+							fmt.Println(err)
+							os.Exit(1)
 						}
 					}
 				}
 			}
+
 			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
 				return
 			}
