@@ -3,10 +3,9 @@ package rinse
 //go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name rinse -out version.gen.go
 
 import (
-	"bufio"
+	"bytes"
 	"embed"
 	"html/template"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -22,6 +21,8 @@ import (
 
 //go:embed assets
 var assetsFS embed.FS
+
+const PodmanImage = "ghcr.io/linkdata/rinse:latest"
 
 type Rinse struct {
 	Config     *webserv.Config
@@ -89,17 +90,12 @@ func (rns *Rinse) Close() {
 }
 
 func (rns *Rinse) Pull() (err error) {
-	cmd := exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse:latest")
-	var stderr io.ReadCloser
-	if stderr, err = cmd.StderrPipe(); err == nil {
-		if err = cmd.Start(); err == nil {
-			lineScanner := bufio.NewScanner(stderr)
-			lineScanner.Split(bufio.ScanLines)
-			for lineScanner.Scan() {
-				slog.Info("podman", "msg", lineScanner.Text())
-			}
-			_, _ = io.Copy(os.Stderr, stderr)
-			err = cmd.Wait()
+	slog.Info("podman pull", "image", PodmanImage)
+	var out []byte
+	cmd := exec.Command(rns.PodmanBin, "pull", PodmanImage)
+	if out, err = cmd.CombinedOutput(); err != nil {
+		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
+			slog.Error("podman", "msg", string(bytes.TrimSpace(line)))
 		}
 	}
 	return

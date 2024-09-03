@@ -59,9 +59,6 @@ func NewJob(name, podmanbin, runscbin string) (job *Job, err error) {
 	return
 }
 
-// podman --runtime=/usr/bin/runsc run --rm -v $DIR_WITH_INPUT_PDF:/var/rinse -it ghcr.io/linkdata/rinse-pdftoppm:latest
-// podman run --rm -v $DIR_WITH_OUTPUT_PPM:/var/rinse -it ghcr.io/linkdata/rinse-tesseract:latest
-
 func (job *Job) Start() (err error) {
 	if err = job.transition(JobNew, JobStarting); err == nil {
 		if job.Name != "input.pdf" {
@@ -128,7 +125,7 @@ func (job *Job) runPdfToPpm() {
 		}
 		args = append(args, "--log-level=error", "run", "--rm",
 			"--userns=keep-id:uid=1000,gid=1000",
-			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse:latest",
+			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 		cmd := exec.Command(job.PodmanBin, args...)
 		// we expect no output from pdftoppm
@@ -190,7 +187,7 @@ func (job *Job) runTesseract() (err error) {
 		var args []string
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
 			"--userns=keep-id:uid=1000,gid=1000",
-			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse:latest",
+			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"tesseract", "/var/rinse/output.txt", "/var/rinse/output", "pdf")
 		cmd := exec.Command(job.PodmanBin, args...)
 		var stdout io.ReadCloser
