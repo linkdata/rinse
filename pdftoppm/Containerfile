@@ -4,8 +4,7 @@ LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 RUN apk --no-cache -U upgrade && \
     apk --no-cache add poppler-utils
 
-COPY pdftoppm/pdftoppm.sh /
-RUN chown root:root /pdftoppm.sh && chmod 555 /pdftoppm.sh
+RUN addgroup -g 1000 rinse && adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse
 RUN mkdir -p /var/rinse && chmod 777 /var/rinse
-
-ENTRYPOINT ["/pdftoppm.sh"]
+WORKDIR /
+USER rinse
