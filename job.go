@@ -207,11 +207,12 @@ func (job *Job) runTesseract() (err error) {
 					})
 					job.mu.Unlock()
 				}
-				err = cmd.Wait()
-				for _, fn := range toremove {
-					_ = os.Remove(fn)
+				if err = cmd.Wait(); err == nil {
+					for _, fn := range toremove {
+						_ = os.Remove(fn)
+					}
+					_ = os.Remove(path.Join(job.Workdir, "output.txt"))
 				}
-				_ = os.Remove(path.Join(job.Workdir, "output.txt"))
 			}
 		}
 	}
