@@ -139,7 +139,7 @@ func (job *Job) runPdfToPpm() {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
 				var outputFiles []string
 				filepath.Walk(job.Workdir, func(fpath string, info fs.FileInfo, err error) error {
-					if filepath.Ext(fpath) == ".ppm" {
+					if info.Mode().IsRegular() && filepath.Ext(fpath) == ".ppm" {
 						outputFiles = append(outputFiles, info.Name())
 					}
 					return nil
@@ -193,15 +193,25 @@ func (job *Job) runTesseract() (err error) {
 		var stdout io.ReadCloser
 		if stdout, err = cmd.StdoutPipe(); err == nil {
 			if err = cmd.Start(); err == nil {
+				var toremove []string
 				lineScanner := bufio.NewScanner(stdout)
-				lineScanner.Split(bufio.ScanLines)
 				for lineScanner.Scan() {
 					s := lineScanner.Text()
 					job.mu.Lock()
-					job.ppmfiles = slices.DeleteFunc(job.ppmfiles, func(fn string) bool { return strings.Contains(s, fn) })
+					job.ppmfiles = slices.DeleteFunc(job.ppmfiles, func(fn string) bool {
+						if strings.Contains(s, fn) {
+							toremove = append(toremove, path.Join(job.Workdir, fn))
+							return true
+						}
+						return false
+					})
 					job.mu.Unlock()
 				}
 				err = cmd.Wait()
+				for _, fn := range toremove {
+					_ = os.Remove(fn)
+				}
+				_ = os.Remove(path.Join(job.Workdir, "output.txt"))
 			}
 		}
 	}
