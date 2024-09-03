@@ -128,7 +128,7 @@ func (job *Job) runPdfToPpm() {
 		}
 		args = append(args, "--log-level=error", "run", "--rm",
 			"--userns=keep-id:uid=1000,gid=1000",
-			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse-pdftoppm:latest",
+			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse:latest",
 			"pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 		cmd := exec.Command(job.PodmanBin, args...)
 		// we expect no output from pdftoppm
@@ -190,7 +190,7 @@ func (job *Job) runTesseract() (err error) {
 		var args []string
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
 			"--userns=keep-id:uid=1000,gid=1000",
-			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse-tesseract:latest",
+			"-v", job.Workdir+":/var/rinse", "ghcr.io/linkdata/rinse:latest",
 			"tesseract", "/var/rinse/output.txt", "/var/rinse/output", "pdf")
 		cmd := exec.Command(job.PodmanBin, args...)
 		var stdout io.ReadCloser

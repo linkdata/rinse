@@ -1,9 +1,10 @@
-FROM alpine:latest AS rinse-tesseract
+FROM alpine:latest AS rinse
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
-ENV TESS_LANG=eng
 RUN apk --no-cache -U upgrade && \
-    apk --no-cache add tesseract-ocr \
+    apk --no-cache add \
+    poppler-utils \
+    tesseract-ocr \
     tesseract-ocr-data-afr \
     tesseract-ocr-data-ara \
     tesseract-ocr-data-aze \
@@ -69,7 +70,8 @@ RUN apk --no-cache -U upgrade && \
     tesseract-ocr-data-ukr \
     tesseract-ocr-data-vie
 
-COPY tesseract/tesseract_opencl_profile_devices.dat /
+COPY tesseract_opencl_profile_devices.dat /
+
 RUN addgroup -g 1000 rinse && adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse
 RUN mkdir -p /var/rinse && chmod 777 /var/rinse
 WORKDIR /

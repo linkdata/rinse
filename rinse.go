@@ -3,8 +3,10 @@ package rinse
 //go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name rinse -out version.gen.go
 
 import (
+	"bufio"
 	"embed"
 	"html/template"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -87,8 +89,18 @@ func (rns *Rinse) Close() {
 }
 
 func (rns *Rinse) Pull() (err error) {
-	if err = exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse-pdftoppm:latest").Run(); err == nil {
-		err = exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse-tesseract:latest").Run()
+	cmd := exec.Command(rns.PodmanBin, "pull", "ghcr.io/linkdata/rinse:latest")
+	var stderr io.ReadCloser
+	if stderr, err = cmd.StderrPipe(); err == nil {
+		if err = cmd.Start(); err == nil {
+			lineScanner := bufio.NewScanner(stderr)
+			lineScanner.Split(bufio.ScanLines)
+			for lineScanner.Scan() {
+				slog.Info("podman", "msg", lineScanner.Text())
+			}
+			_, _ = io.Copy(os.Stderr, stderr)
+			err = cmd.Wait()
+		}
 	}
 	return
 }
