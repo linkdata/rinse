@@ -62,7 +62,7 @@ func main() {
 			}
 
 			var job *rinse.Job
-			if job, err = rns.NewJob("test.pdf"); err == nil {
+			if job, err = rns.NewJob("test.pdf", "eng"); err == nil {
 				var data []byte
 				if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
 					if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {

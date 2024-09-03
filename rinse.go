@@ -84,6 +84,9 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
+	mux.HandleFunc("POST /add", func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.RequestURI)
+	})
 }
 
 func (rns *Rinse) Close() {
@@ -109,8 +112,8 @@ func (rns *Rinse) PkgVersion() string {
 	return PkgVersion
 }
 
-func (rns *Rinse) NewJob(name string) (job *Job, err error) {
-	if job, err = NewJob(name, rns.PodmanBin, rns.RunscBin); err == nil {
+func (rns *Rinse) NewJob(name, lang string) (job *Job, err error) {
+	if job, err = NewJob(name, lang, rns.PodmanBin, rns.RunscBin); err == nil {
 		rns.mu.Lock()
 		rns.jobs = append(rns.jobs, job)
 		rns.mu.Unlock()

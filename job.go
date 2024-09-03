@@ -34,6 +34,7 @@ const (
 type Job struct {
 	Jaws      *jaws.Jaws
 	Name      string
+	Lang      string
 	PodmanBin string
 	RunscBin  string
 	Workdir   string
@@ -47,11 +48,20 @@ type Job struct {
 	ppmdone   []string
 }
 
-func NewJob(name, podmanbin, runscbin string) (job *Job, err error) {
+func NewJob(name, lang, podmanbin, runscbin string) (job *Job, err error) {
+	if !strings.HasSuffix(name, ".pdf") {
+		return nil, fmt.Errorf("input file must be a PDF")
+	}
+	for _, ch := range lang {
+		if !(ch == '+' || (ch >= 'a' && ch <= 'z')) {
+			return nil, fmt.Errorf("illegal language string")
+		}
+	}
 	var workdir string
 	if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
 		job = &Job{
 			Name:      filepath.Base(name),
+			Lang:      lang,
 			PodmanBin: podmanbin,
 			RunscBin:  runscbin,
 			Workdir:   workdir,
@@ -194,7 +204,11 @@ func (job *Job) runTesseract() (err error) {
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
 			"--userns=keep-id:uid=1000,gid=1000",
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
-			"tesseract", "/var/rinse/output.txt", "/var/rinse/output", "pdf")
+			"tesseract")
+		if job.Lang != "" {
+			args = append(args, "-l", job.Lang)
+		}
+		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
 		cmd := exec.Command(job.PodmanBin, args...)
 		var stdout io.ReadCloser
 		if stdout, err = cmd.StdoutPipe(); err == nil {
