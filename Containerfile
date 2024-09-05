@@ -1,7 +1,7 @@
 FROM alpine:latest AS rinse
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
-ENV OMP_THREAD_LIMIT
+ENV OMP_THREAD_LIMIT 1
 
 RUN apk --no-cache -U upgrade && \
     apk --no-cache add \
