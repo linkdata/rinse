@@ -32,6 +32,7 @@ type Rinse struct {
 	RunscBin      string
 	FaviconURI    string
 	MaxUploadSize int64
+	Languages     []string
 	mu            deadlock.Mutex // protects following
 	jobs          []*Job
 }
@@ -67,15 +68,19 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 					} else {
 						slog.Info("gVisor not found", "err", e)
 					}
-					rns = &Rinse{
-						Config:        cfg,
-						Jaws:          jw,
-						PodmanBin:     podmanbin,
-						RunscBin:      runscbin,
-						FaviconURI:    faviconuri,
-						MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
+					var langs []string
+					if langs, err = getLanguages(podmanbin); err == nil {
+						rns = &Rinse{
+							Config:        cfg,
+							Jaws:          jw,
+							PodmanBin:     podmanbin,
+							RunscBin:      runscbin,
+							FaviconURI:    faviconuri,
+							MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
+							Languages:     langs,
+						}
+						rns.addRoutes(mux)
 					}
-					rns.addRoutes(mux)
 				}
 			}
 		}
@@ -115,6 +120,33 @@ func (rns *Rinse) Pull() (err error) {
 		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
 			slog.Error("podman", "msg", string(bytes.TrimSpace(line)))
 		}
+	}
+	return
+}
+
+func getLanguages(podmanBin string) (langs []string, err error) {
+	var out []byte
+	var gotEng, gotSwe bool
+	if out, err = exec.Command(podmanBin, "--log-level=error", "run", "--rm", "--tty", PodmanImage, "tesseract", "--list-langs").CombinedOutput(); err == nil {
+		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
+			if bytes.IndexByte(line, ' ') == -1 {
+				lang := string(bytes.ToLower(bytes.TrimSpace(line)))
+				switch lang {
+				case "eng":
+					gotEng = true
+				case "swe":
+					gotSwe = true
+				default:
+					langs = append(langs, lang)
+				}
+			}
+		}
+	}
+	if gotSwe {
+		langs = append([]string{"swe"}, langs...)
+	}
+	if gotEng {
+		langs = append([]string{"eng"}, langs...)
 	}
 	return
 }

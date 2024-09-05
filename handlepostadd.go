@@ -21,8 +21,8 @@ func (rns *Rinse) FormLangKey() string {
 }
 
 func (rns *Rinse) handlePostAdd(w http.ResponseWriter, r *http.Request) {
-	srcLang := r.URL.Query().Get(FormLangKey)
 	srcFormFile, info, err := r.FormFile(FormFileKey)
+	srcLang := r.FormValue(FormLangKey)
 
 	if err == nil {
 		srcName := filepath.Base(info.Filename)

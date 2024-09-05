@@ -1,9 +1,6 @@
-<div id="{{.Jid}}" class="row border rounded text-nowrap mx-0 mb-1">{{with .Dot}}
-<div class="col-8" data-toggle="tooltip" title="{{.Workdir}}">{{.Name}}</div>
-{{$.Div .Pagecount `class="col-2 text-end"`}}
-<div class="col-2 mt-1">
-	<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-		{{$.Div .Progress `class="progress-bar" style="width: 0%"`}}
-	</div>
-</div>
-{{end}}</div>
+<div id="{{.Jid}}" class="row">{{with .Dot}}
+<div class="input-group mx-0 mb-1 text-nowrap">
+	<input class="form-control" type="text" data-toggle="tooltip" title="{{.Workdir}}" value="{{.Name}}" readonly>
+	{{$.Span .Pagecount `class="input-group-text text-end w-auto"`}}
+	<button class="btn btn-outline-secondary" type="button">Clear</button>
+</div>{{end}}</div>

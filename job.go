@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -244,6 +245,7 @@ func (job *Job) runTesseract() (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
 		var args []string
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
+			"--env", fmt.Sprintf("OMP_THREAD_LIMIT=%d", runtime.NumCPU()),
 			"--userns=keep-id:uid=1000,gid=1000",
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"tesseract")
@@ -280,7 +282,10 @@ func (job *Job) runTesseract() (err error) {
 						_ = os.Remove(fn)
 					}
 					_ = os.Remove(path.Join(job.Workdir, "output.txt"))
-					job.dirtyProgress()
+					job.mu.Lock()
+					defer job.mu.Unlock()
+					job.diskuse, _ = job.getDiskuse()
+					job.dirtyProgressLocked()
 				}
 			}
 		}
@@ -319,6 +324,19 @@ func (job *Job) dirtyProgress() {
 	job.mu.Lock()
 	defer job.mu.Unlock()
 	job.dirtyProgressLocked()
+}
+
+func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
+	filepath.WalkDir(job.Workdir, func(path string, d fs.DirEntry, err error) error {
+		if fi, err := d.Info(); err == nil {
+			diskuse += fi.Size()
+		}
+		if filepath.Ext(d.Name()) == ".ppm" {
+			nfiles++
+		}
+		return nil
+	})
+	return
 }
 
 func (job *Job) progress(e *jaws.Element) (pct int) {

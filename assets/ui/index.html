@@ -6,10 +6,19 @@
 </head>
 {{template "body_start.html" $}}
 
-<form autocomplete="off" action="/add" method="post" enctype="multipart/form-data">
-	<div class="mb-3 input-group">
-	<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}" accept=".pdf">
-	<button type="submit" class="btn btn-primary">Submit</button>
+<form class="row align-items-center mb-3" autocomplete="off" action="/add" method="post" enctype="multipart/form-data">
+	<div class="col">
+		<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}" accept=".pdf">
+	</div>
+	<div class="col-auto">
+		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
+			{{range .Languages}}
+			<option value="{{.}}" href="#">{{.}}</option>
+			{{end}}
+		</select>
+	</div>
+	<div class="col-auto">
+		<button type="submit" class="btn btn-primary">Submit</button>
 	</div>
 </form>
 

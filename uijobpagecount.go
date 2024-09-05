@@ -3,8 +3,6 @@ package rinse
 import (
 	"fmt"
 	"html/template"
-	"io/fs"
-	"path/filepath"
 
 	"github.com/linkdata/jaws"
 )
@@ -20,21 +18,25 @@ func (u uiJobPagecount) JawsGetHtml(e *jaws.Element) template.HTML {
 	done := len(u.ppmdone)
 	u.mu.Unlock()
 	if todo == 0 && state == JobPdfToPPm {
-		diskuse = 0
-		filepath.WalkDir(u.Workdir, func(path string, d fs.DirEntry, err error) error {
-			if fi, err := d.Info(); err == nil {
-				diskuse += fi.Size()
-			}
-			if filepath.Ext(d.Name()) == ".ppm" {
-				todo++
-			}
-			return nil
-		})
+		diskuse, todo = u.getDiskuse()
 		u.mu.Lock()
 		u.diskuse = diskuse
 		u.mu.Unlock()
 	}
-	return template.HTML(fmt.Sprintf(`<span data-toggle="tooltip" title="%dMB">%d/%d</span>`, diskuse/(1024*1024), done, todo+done))
+	diskuseflt := float64(diskuse)
+	diskusesuffix := "B"
+	switch {
+	case diskuse > 1024*1024*1024:
+		diskuseflt /= (1024 * 1024 * 1024)
+		diskusesuffix = "GB"
+	case diskuse > 1024*1024:
+		diskuseflt /= (1024 * 1024)
+		diskusesuffix = "MB"
+	case diskuse > 1024:
+		diskuseflt /= (1024)
+		diskusesuffix = "KB"
+	}
+	return template.HTML(fmt.Sprintf(`<span data-toggle="tooltip" title="%.2f%s">%d/%d</span>`, diskuseflt, diskusesuffix, done, todo+done))
 }
 
 func (job *Job) Pagecount() (ui jaws.HtmlGetter) {
