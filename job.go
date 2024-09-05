@@ -3,6 +3,7 @@ package rinse
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,8 +15,10 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 )
@@ -32,41 +35,67 @@ const (
 )
 
 type Job struct {
-	Jaws      *jaws.Jaws
-	Name      string
-	Lang      string
-	PodmanBin string
-	RunscBin  string
-	Workdir   string
-	mu        deadlock.Mutex
-	state     JobState
-	resultCh  chan error
-	started   time.Time
-	stopped   time.Time
-	closed    bool
-	ppmtodo   []string
-	ppmdone   []string
+	*Rinse
+	Name     string
+	Lang     string
+	Workdir  string
+	Created  time.Time
+	UUID     uuid.UUID
+	mu       deadlock.Mutex
+	state    JobState
+	resultCh chan error
+	started  time.Time
+	stopped  time.Time
+	closed   bool
+	ppmtodo  []string
+	ppmdone  []string
+	diskuse  int64
 }
 
-func NewJob(name, lang, podmanbin, runscbin string) (job *Job, err error) {
-	if !strings.HasSuffix(name, ".pdf") {
-		return nil, fmt.Errorf("input file must be a PDF")
+var ErrNotPDF = errors.New("input file must be a PDF")
+var ErrIllegalLanguage = errors.New("illegal language string")
+
+func checkExt(name string) error {
+	if strings.ToLower(filepath.Ext(name)) != ".pdf" {
+		return ErrNotPDF
 	}
+	return nil
+}
+
+func checkLangString(lang string) error {
 	for _, ch := range lang {
 		if !(ch == '+' || (ch >= 'a' && ch <= 'z')) {
-			return nil, fmt.Errorf("illegal language string")
+			return ErrIllegalLanguage
 		}
 	}
-	var workdir string
-	if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
-		job = &Job{
-			Name:      filepath.Base(name),
-			Lang:      lang,
-			PodmanBin: podmanbin,
-			RunscBin:  runscbin,
-			Workdir:   workdir,
-			state:     JobNew,
-			resultCh:  make(chan error, 1),
+	return nil
+}
+
+func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
+	if err = checkExt(name); err == nil {
+		if err = checkLangString(lang); err == nil {
+			var workdir string
+			if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
+				job = &Job{
+					Rinse:    rns,
+					Name:     filepath.Base(name),
+					Lang:     lang,
+					Workdir:  workdir,
+					Created:  time.Now(),
+					UUID:     uuid.New(),
+					state:    JobNew,
+					resultCh: make(chan error, 1),
+				}
+			}
+		}
+	}
+	return
+}
+
+func (job *Job) renameInput() (err error) {
+	if job.Name != "input.pdf" {
+		if err = os.WriteFile(path.Join(job.Workdir, "input.txt"), []byte(job.Name), 0666); err == nil {
+			err = os.Rename(path.Join(job.Workdir, job.Name), path.Join(job.Workdir, "input.pdf"))
 		}
 	}
 	return
@@ -74,10 +103,7 @@ func NewJob(name, lang, podmanbin, runscbin string) (job *Job, err error) {
 
 func (job *Job) Start() (err error) {
 	if err = job.transition(JobNew, JobStarting); err == nil {
-		if job.Name != "input.pdf" {
-			err = os.Rename(path.Join(job.Workdir, job.Name), path.Join(job.Workdir, "input.pdf"))
-		}
-		if err == nil {
+		if err = job.renameInput(); err == nil {
 			job.mu.Lock()
 			job.started = time.Now()
 			job.mu.Unlock()
@@ -103,9 +129,14 @@ func (job *Job) ResultCh() (ch <-chan error) {
 }
 
 func (job *Job) checkErrLocked(err error) {
-	if err != nil {
+	if err != nil && job.state != JobFailed {
 		job.state = JobFailed
-		job.resultCh <- err
+		select {
+		case job.resultCh <- err:
+		default:
+			slog.Error("failed to signal job failed", "name", job.Name, "err", err)
+		}
+
 	}
 }
 
@@ -122,10 +153,28 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	if job.state == fromState {
 		job.state = toState
 	} else {
-		err = fmt.Errorf("wrong job state (%d)", job.state)
+		err = fmt.Errorf("expected job state %d, have %d", fromState, job.state)
 	}
 	job.dirtyProgressLocked()
 	job.mu.Unlock()
+	return
+}
+
+func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
+	var done int32
+	defer atomic.StoreInt32(&done, 1)
+	go func() {
+		for atomic.LoadInt32(&done) == 0 {
+			time.Sleep(time.Millisecond * 100)
+			job.dirtyProgress()
+		}
+	}()
+	var output []byte
+	output, err = cmd.CombinedOutput()
+	output = bytes.TrimSpace(output)
+	if len(output) > 0 {
+		slog.Warn("rinse-pdftoppm", "msg", string(output))
+	}
 	return
 }
 
@@ -142,19 +191,12 @@ func (job *Job) runPdfToPpm() {
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 		cmd := exec.Command(job.PodmanBin, args...)
-		// we expect no output from pdftoppm
-		var output []byte
-		output, err = cmd.CombinedOutput()
-		output = bytes.TrimSpace(output)
-		if len(output) > 0 {
-			slog.Warn("rinse-pdftoppm", "msg", string(output))
-		}
-		if err == nil {
+		if err = job.waitForPdfToPpm(cmd); err == nil {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
 				var outputFiles []string
-				filepath.Walk(job.Workdir, func(fpath string, info fs.FileInfo, err error) error {
-					if info.Mode().IsRegular() && filepath.Ext(fpath) == ".ppm" {
-						outputFiles = append(outputFiles, info.Name())
+				filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+					if d.Type().IsRegular() && filepath.Ext(fpath) == ".ppm" {
+						outputFiles = append(outputFiles, d.Name())
 					}
 					return nil
 				})
@@ -238,6 +280,7 @@ func (job *Job) runTesseract() (err error) {
 						_ = os.Remove(fn)
 					}
 					_ = os.Remove(path.Join(job.Workdir, "output.txt"))
+					job.dirtyProgress()
 				}
 			}
 		}
@@ -247,6 +290,7 @@ func (job *Job) runTesseract() (err error) {
 
 func (job *Job) Result() (err error) {
 	if err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.Name)); err == nil {
+		_ = os.Remove(path.Join(job.Workdir, "input.txt"))
 	}
 	return
 }
@@ -271,13 +315,22 @@ func (job *Job) dirtyProgressLocked() {
 	}
 }
 
+func (job *Job) dirtyProgress() {
+	job.mu.Lock()
+	defer job.mu.Unlock()
+	job.dirtyProgressLocked()
+}
+
 func (job *Job) progress(e *jaws.Element) (pct int) {
 	job.mu.Lock()
 	if e != nil {
 		job.Jaws = e.Jaws
 	}
 	state := job.state
-	left := len(job.ppmtodo)
+	donepct := float64(1)
+	if len(job.ppmtodo) > 0 {
+		donepct = float64(len(job.ppmdone)) / float64(len(job.ppmtodo)+len(job.ppmdone))
+	}
 	job.mu.Unlock()
 
 	switch state {
@@ -288,7 +341,7 @@ func (job *Job) progress(e *jaws.Element) (pct int) {
 	case JobPdfToPPm:
 		pct = 10
 	case JobTesseract:
-		pct = 10 + (80 / (left + 1))
+		pct = 10 + int(donepct*99)
 	case JobFinished, JobFailed:
 		pct = 100
 	}

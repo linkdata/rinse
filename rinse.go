@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/linkdata/deadlock"
@@ -25,13 +26,14 @@ var assetsFS embed.FS
 const PodmanImage = "ghcr.io/linkdata/rinse:latest"
 
 type Rinse struct {
-	Config     *webserv.Config
-	Jaws       *jaws.Jaws
-	PodmanBin  string
-	RunscBin   string
-	FaviconURI string
-	mu         deadlock.Mutex // protects following
-	jobs       []*Job
+	Config        *webserv.Config
+	Jaws          *jaws.Jaws
+	PodmanBin     string
+	RunscBin      string
+	FaviconURI    string
+	MaxUploadSize int64
+	mu            deadlock.Mutex // protects following
+	jobs          []*Job
 }
 
 func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, err error) {
@@ -66,11 +68,12 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 						slog.Info("gVisor not found", "err", e)
 					}
 					rns = &Rinse{
-						Config:     cfg,
-						Jaws:       jw,
-						PodmanBin:  podmanbin,
-						RunscBin:   runscbin,
-						FaviconURI: faviconuri,
+						Config:        cfg,
+						Jaws:          jw,
+						PodmanBin:     podmanbin,
+						RunscBin:      runscbin,
+						FaviconURI:    faviconuri,
+						MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
 					}
 					rns.addRoutes(mux)
 				}
@@ -84,12 +87,24 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
-	mux.HandleFunc("POST /add", func(w http.ResponseWriter, r *http.Request) {
-		slog.Info(r.RequestURI)
-	})
+	mux.HandleFunc("POST /add", rns.handlePostAdd)
 }
 
 func (rns *Rinse) Close() {
+	rns.mu.Lock()
+	jobs := rns.jobs
+	rns.jobs = nil
+	rns.mu.Unlock()
+	for _, job := range jobs {
+		job.Close()
+	}
+}
+
+func (rns *Rinse) MaybePull(doPull bool) (err error) {
+	if doPull {
+		return rns.Pull()
+	}
+	return nil
 }
 
 func (rns *Rinse) Pull() (err error) {
@@ -113,20 +128,49 @@ func (rns *Rinse) PkgVersion() string {
 }
 
 func (rns *Rinse) NewJob(name, lang string) (job *Job, err error) {
-	if job, err = NewJob(name, lang, rns.PodmanBin, rns.RunscBin); err == nil {
-		rns.mu.Lock()
-		rns.jobs = append(rns.jobs, job)
-		rns.mu.Unlock()
+	return NewJob(rns, name, lang)
+}
+
+func (rns *Rinse) nextJob() (nextJob *Job) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	for _, job := range rns.jobs {
+		switch job.State() {
+		case JobNew:
+			nextJob = job
+		case JobStarting, JobPdfToPPm, JobTesseract:
+			return nil
+		}
 	}
 	return
 }
 
+func (rns *Rinse) MaybeStartJob() (err error) {
+	if job := rns.nextJob(); job != nil {
+		err = job.Start()
+	}
+	return
+}
+
+func (rns *Rinse) AddJob(job *Job) {
+	rns.mu.Lock()
+	rns.jobs = append(rns.jobs, job)
+	rns.mu.Unlock()
+	if err := rns.MaybeStartJob(); err != nil {
+		rns.Jaws.Alert("danger", err.Error())
+	}
+	rns.Jaws.Dirty(rns)
+}
+
 // JawsContains implements jaws.Container.
 func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
+	var sortedJobs []*Job
 	rns.mu.Lock()
-	for _, job := range rns.jobs {
+	sortedJobs = append(sortedJobs, rns.jobs...)
+	rns.mu.Unlock()
+	slices.SortFunc(sortedJobs, func(a, b *Job) int { return b.Created.Compare(a.Created) })
+	for _, job := range sortedJobs {
 		contents = append(contents, jaws.NewTemplate("job.html", job))
 	}
-	rns.mu.Unlock()
 	return
 }

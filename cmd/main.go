@@ -54,28 +54,19 @@ func main() {
 		var rns *rinse.Rinse
 		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw); err == nil {
 			defer rns.Close()
-			if *flagPull {
-				if err = rns.Pull(); err != nil {
-					slog.Error("pull", "err", err)
-					os.Exit(1)
-				}
-			}
-
-			var job *rinse.Job
-			if job, err = rns.NewJob("test.pdf", "eng"); err == nil {
-				var data []byte
-				if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
-					if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {
-						if err = job.Start(); err != nil {
-							fmt.Println(err)
-							os.Exit(1)
+			if err = rns.MaybePull(*flagPull); err == nil {
+				var job *rinse.Job
+				if job, err = rns.NewJob("test.pdf", "eng"); err == nil {
+					var data []byte
+					if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
+						if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {
+							rns.AddJob(job)
 						}
 					}
 				}
-			}
-
-			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
-				return
+				if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
+					return
+				}
 			}
 		}
 	}

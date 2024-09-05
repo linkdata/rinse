@@ -1,5 +1,7 @@
 github.com/coder/websocket v1.8.12 h1:5bUXkEPPIbewrnkU8LTCLVaxi4N4J8ahufH2vlo4NAo=
 github.com/coder/websocket v1.8.12/go.mod h1:LNVeNrXQZfe5qhS9ALED3uA+l5pPqvwXg3CKoDBB2gs=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/linkdata/deadlock v0.5.2 h1:clEEeRsMJCrEm5SuBI3v2l3sdCSP74p0ii+C1rR9nA0=
 github.com/linkdata/deadlock v0.5.2/go.mod h1:M3Td2tmYASdLm6xblKGlFvfu8SI+nPjrB7mDeFDEz/k=
 github.com/linkdata/jaws v0.77.0 h1:UnClKhJqC8ncqW9rsaMSBYmNjEQl0XTrPLipiAtBewA=
