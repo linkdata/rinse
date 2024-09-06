@@ -69,7 +69,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 						slog.Info("gVisor not found", "err", e)
 					}
 					var langs []string
-					if langs, err = getLanguages(podmanbin); err == nil {
+					if langs, err = getLanguages(podmanbin, []string{"eng", "swe"}); err == nil {
 						rns = &Rinse{
 							Config:        cfg,
 							Jaws:          jw,
@@ -124,29 +124,24 @@ func (rns *Rinse) Pull() (err error) {
 	return
 }
 
-func getLanguages(podmanBin string) (langs []string, err error) {
+func getLanguages(podmanBin string, prioLangs []string) (langs []string, err error) {
 	var out []byte
-	var gotEng, gotSwe bool
 	if out, err = exec.Command(podmanBin, "--log-level=error", "run", "--rm", "--tty", PodmanImage, "tesseract", "--list-langs").CombinedOutput(); err == nil {
 		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
 			if bytes.IndexByte(line, ' ') == -1 {
 				lang := string(bytes.ToLower(bytes.TrimSpace(line)))
-				switch lang {
-				case "eng":
-					gotEng = true
-				case "swe":
-					gotSwe = true
-				default:
+				if _, ok := LanguageCode[lang]; ok {
 					langs = append(langs, lang)
 				}
 			}
 		}
-	}
-	if gotSwe {
-		langs = append([]string{"swe"}, langs...)
-	}
-	if gotEng {
-		langs = append([]string{"eng"}, langs...)
+		slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
+		for i := len(prioLangs) - 1; i >= 0; i-- {
+			if idx := slices.Index(langs, prioLangs[i]); idx != -1 {
+				langs = slices.Delete(langs, idx, idx+1)
+				langs = append([]string{prioLangs[i]}, langs...)
+			}
+		}
 	}
 	return
 }

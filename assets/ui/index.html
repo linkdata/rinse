@@ -14,7 +14,7 @@
 		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
 			{{range .Languages}}
 			{{if $.Dot.LanguageName .}}
-			<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}</option>
+			<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}&nbsp;({{.}})</option>
 			{{end}}
 			{{end}}
 		</select>

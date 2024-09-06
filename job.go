@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/linkdata/deadlock"
-	"github.com/linkdata/jaws"
 )
 
 type JobState int
@@ -156,8 +155,8 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	} else {
 		err = fmt.Errorf("expected job state %d, have %d", fromState, job.state)
 	}
-	job.dirtyProgressLocked()
 	job.mu.Unlock()
+	job.Jaws.Dirty(job, uiJobPagecount{job})
 	return
 }
 
@@ -167,7 +166,7 @@ func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
 	go func() {
 		for atomic.LoadInt32(&done) == 0 {
 			time.Sleep(time.Millisecond * 100)
-			job.dirtyProgress()
+			job.Jaws.Dirty(job, uiJobPagecount{job})
 		}
 	}()
 	var output []byte
@@ -212,14 +211,14 @@ func (job *Job) runPdfToPpm() {
 					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
 						job.mu.Lock()
 						job.ppmtodo = outputFiles
-						job.dirtyProgressLocked()
+						job.Jaws.Dirty(job, uiJobPagecount{job})
 						job.mu.Unlock()
 						if err = job.runTesseract(); err == nil {
 							if err = job.transition(JobTesseract, JobFinished); err == nil {
 								job.mu.Lock()
 								job.stopped = time.Now()
 								ch := job.resultCh
-								job.dirtyProgressLocked()
+								job.Jaws.Dirty(job, uiJobPagecount{job})
 								job.mu.Unlock()
 								select {
 								case ch <- nil:
@@ -268,8 +267,8 @@ func (job *Job) runTesseract() (err error) {
 						}
 						return false
 					})
-					job.dirtyProgressLocked()
 					job.mu.Unlock()
+					job.Jaws.Dirty(job, uiJobPagecount{job})
 				}
 				if err = cmd.Wait(); err == nil {
 					var toremove []string
@@ -285,7 +284,7 @@ func (job *Job) runTesseract() (err error) {
 					job.mu.Lock()
 					defer job.mu.Unlock()
 					job.diskuse, _ = job.getDiskuse()
-					job.dirtyProgressLocked()
+					job.Jaws.Dirty(job, uiJobPagecount{job})
 				}
 			}
 		}
@@ -314,18 +313,6 @@ func (job *Job) Close() (err error) {
 	return
 }
 
-func (job *Job) dirtyProgressLocked() {
-	if job.Jaws != nil {
-		job.Jaws.Dirty(uiJobProgress{job}, uiJobPagecount{job})
-	}
-}
-
-func (job *Job) dirtyProgress() {
-	job.mu.Lock()
-	defer job.mu.Unlock()
-	job.dirtyProgressLocked()
-}
-
 func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
 	filepath.WalkDir(job.Workdir, func(path string, d fs.DirEntry, err error) error {
 		if fi, err := d.Info(); err == nil {
@@ -336,32 +323,5 @@ func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
 		}
 		return nil
 	})
-	return
-}
-
-func (job *Job) progress(e *jaws.Element) (pct int) {
-	job.mu.Lock()
-	if e != nil {
-		job.Jaws = e.Jaws
-	}
-	state := job.state
-	donepct := float64(1)
-	if len(job.ppmtodo) > 0 {
-		donepct = float64(len(job.ppmdone)) / float64(len(job.ppmtodo)+len(job.ppmdone))
-	}
-	job.mu.Unlock()
-
-	switch state {
-	case JobNew:
-		pct = 0
-	case JobStarting:
-		pct = 5
-	case JobPdfToPPm:
-		pct = 10
-	case JobTesseract:
-		pct = 10 + int(donepct*99)
-	case JobFinished, JobFailed:
-		pct = 100
-	}
 	return
 }
