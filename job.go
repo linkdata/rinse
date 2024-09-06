@@ -166,7 +166,7 @@ func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
 	go func() {
 		for atomic.LoadInt32(&done) == 0 {
 			time.Sleep(time.Millisecond * 100)
-			job.Jaws.Dirty(job, uiJobPagecount{job})
+			job.Jaws.Dirty(uiJobPagecount{job})
 		}
 	}()
 	var output []byte
@@ -195,8 +195,10 @@ func (job *Job) runPdfToPpm() {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
 				var outputFiles []string
 				filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-					if d.Type().IsRegular() && filepath.Ext(fpath) == ".ppm" {
-						outputFiles = append(outputFiles, d.Name())
+					if err == nil {
+						if d.Type().IsRegular() && filepath.Ext(fpath) == ".ppm" {
+							outputFiles = append(outputFiles, d.Name())
+						}
 					}
 					return nil
 				})
@@ -211,15 +213,15 @@ func (job *Job) runPdfToPpm() {
 					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
 						job.mu.Lock()
 						job.ppmtodo = outputFiles
-						job.Jaws.Dirty(job, uiJobPagecount{job})
+						job.Jaws.Dirty(uiJobPagecount{job})
 						job.mu.Unlock()
 						if err = job.runTesseract(); err == nil {
 							if err = job.transition(JobTesseract, JobFinished); err == nil {
 								job.mu.Lock()
 								job.stopped = time.Now()
 								ch := job.resultCh
-								job.Jaws.Dirty(job, uiJobPagecount{job})
 								job.mu.Unlock()
+								job.Jaws.Dirty(job, uiJobPagecount{job})
 								select {
 								case ch <- nil:
 								default:
@@ -268,7 +270,7 @@ func (job *Job) runTesseract() (err error) {
 						return false
 					})
 					job.mu.Unlock()
-					job.Jaws.Dirty(job, uiJobPagecount{job})
+					job.Jaws.Dirty(uiJobPagecount{job})
 				}
 				if err = cmd.Wait(); err == nil {
 					var toremove []string
@@ -300,6 +302,7 @@ func (job *Job) Result() (err error) {
 }
 
 func (job *Job) Close() (err error) {
+	defer job.RemoveJob(job)
 	job.mu.Lock()
 	defer job.mu.Unlock()
 	if !job.closed {
@@ -309,17 +312,20 @@ func (job *Job) Close() (err error) {
 		}
 		close(job.resultCh)
 		err = os.RemoveAll(job.Workdir)
+		job.diskuse, _ = job.getDiskuse()
 	}
 	return
 }
 
 func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
 	filepath.WalkDir(job.Workdir, func(path string, d fs.DirEntry, err error) error {
-		if fi, err := d.Info(); err == nil {
-			diskuse += fi.Size()
-		}
-		if filepath.Ext(d.Name()) == ".ppm" {
-			nfiles++
+		if err == nil {
+			if fi, err := d.Info(); err == nil {
+				diskuse += fi.Size()
+			}
+			if filepath.Ext(d.Name()) == ".ppm" {
+				nfiles++
+			}
 		}
 		return nil
 	})

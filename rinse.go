@@ -189,6 +189,13 @@ func (rns *Rinse) AddJob(job *Job) {
 	rns.Jaws.Dirty(rns)
 }
 
+func (rns *Rinse) RemoveJob(job *Job) {
+	rns.mu.Lock()
+	rns.jobs = slices.DeleteFunc(rns.jobs, func(x *Job) bool { return x == job })
+	rns.mu.Unlock()
+	rns.Jaws.Dirty(rns)
+}
+
 // JawsContains implements jaws.Container.
 func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
 	var sortedJobs []*Job
