@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"path"
 
 	"git.cparta.dev/jli/rinse"
 	"github.com/linkdata/deadlock"
@@ -55,15 +53,6 @@ func main() {
 		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw); err == nil {
 			defer rns.Close()
 			if err = rns.MaybePull(*flagPull); err == nil {
-				var job *rinse.Job
-				if job, err = rns.NewJob("test.pdf", "eng"); err == nil {
-					var data []byte
-					if data, err = os.ReadFile("testdata/input.pdf"); err == nil {
-						if err = os.WriteFile(path.Join(job.Workdir, "test.pdf"), data, 0666); err == nil {
-							rns.AddJob(job)
-						}
-					}
-				}
 				if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
 					return
 				}

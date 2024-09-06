@@ -93,6 +93,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.HandleFunc("POST /add", rns.handlePostAdd)
+	mux.HandleFunc("GET /get/{uuid}", rns.handleGetGet)
 }
 
 func (rns *Rinse) Close() {

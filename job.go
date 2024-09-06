@@ -36,20 +36,21 @@ const (
 
 type Job struct {
 	*Rinse
-	Name     string
-	Lang     string
-	Workdir  string
-	Created  time.Time
-	UUID     uuid.UUID
-	mu       deadlock.Mutex
-	state    JobState
-	resultCh chan error
-	started  time.Time
-	stopped  time.Time
-	closed   bool
-	ppmtodo  []string
-	ppmdone  []string
-	diskuse  int64
+	Name       string
+	ResultName string
+	Lang       string
+	Workdir    string
+	Created    time.Time
+	UUID       uuid.UUID
+	mu         deadlock.Mutex
+	state      JobState
+	resultCh   chan error
+	started    time.Time
+	stopped    time.Time
+	closed     bool
+	ppmtodo    []string
+	ppmdone    []string
+	diskuse    int64
 }
 
 var ErrNotPDF = errors.New("input file must be a PDF")
@@ -76,15 +77,20 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		if err = checkLangString(lang); err == nil {
 			var workdir string
 			if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
-				job = &Job{
-					Rinse:    rns,
-					Name:     filepath.Base(name),
-					Lang:     lang,
-					Workdir:  workdir,
-					Created:  time.Now(),
-					UUID:     uuid.New(),
-					state:    JobNew,
-					resultCh: make(chan error, 1),
+				if err = os.Chmod(workdir, 0777); err == nil {
+					name = filepath.Base(name)
+					ext := filepath.Ext(name)
+					job = &Job{
+						Rinse:      rns,
+						Name:       name,
+						ResultName: strings.TrimSuffix(name, ext) + "-rinsed" + ext,
+						Lang:       lang,
+						Workdir:    workdir,
+						Created:    time.Now(),
+						UUID:       uuid.New(),
+						state:      JobNew,
+						resultCh:   make(chan error, 1),
+					}
 				}
 			}
 		}
@@ -95,7 +101,10 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 func (job *Job) renameInput() (err error) {
 	if job.Name != "input.pdf" {
 		if err = os.WriteFile(path.Join(job.Workdir, "input.txt"), []byte(job.Name), 0666); err == nil {
-			err = os.Rename(path.Join(job.Workdir, job.Name), path.Join(job.Workdir, "input.pdf"))
+			inputPdf := path.Join(job.Workdir, "input.pdf")
+			if err = os.Rename(path.Join(job.Workdir, job.Name), inputPdf); err == nil {
+				err = os.Chmod(inputPdf, 0444)
+			}
 		}
 	}
 	return
@@ -126,6 +135,10 @@ func (job *Job) ResultCh() (ch <-chan error) {
 	ch = job.resultCh
 	job.mu.Unlock()
 	return
+}
+
+func (job *Job) ResultPath() string {
+	return path.Join(job.Workdir, job.ResultName)
 }
 
 func (job *Job) checkErrLocked(err error) {
@@ -165,7 +178,7 @@ func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
 	defer atomic.StoreInt32(&done, 1)
 	go func() {
 		for atomic.LoadInt32(&done) == 0 {
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Millisecond * 500)
 			job.Jaws.Dirty(uiJobPagecount{job})
 		}
 	}()
@@ -173,7 +186,7 @@ func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
 	output, err = cmd.CombinedOutput()
 	output = bytes.TrimSpace(output)
 	if len(output) > 0 {
-		slog.Warn("rinse-pdftoppm", "msg", string(output))
+		slog.Warn("pdftoppm", "msg", string(output))
 	}
 	return
 }
@@ -188,6 +201,7 @@ func (job *Job) runPdfToPpm() {
 		}
 		args = append(args, "--log-level=error", "run", "--rm",
 			"--userns=keep-id:uid=1000,gid=1000",
+			"--network=none", "--read-only",
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 		cmd := exec.Command(job.PodmanBin, args...)
@@ -247,6 +261,7 @@ func (job *Job) runTesseract() (err error) {
 		var args []string
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
 			"--env", fmt.Sprintf("OMP_THREAD_LIMIT=%d", runtime.NumCPU()),
+			"--network=none", "--read-only",
 			"--userns=keep-id:uid=1000,gid=1000",
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
 			"tesseract")
@@ -283,6 +298,7 @@ func (job *Job) runTesseract() (err error) {
 						_ = os.Remove(fn)
 					}
 					_ = os.Remove(path.Join(job.Workdir, "output.txt"))
+					err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
 					job.mu.Lock()
 					defer job.mu.Unlock()
 					job.diskuse, _ = job.getDiskuse()
