@@ -1,11 +1,25 @@
 FROM alpine:latest AS rinse
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
-ENV OMP_THREAD_LIMIT 1
-
-RUN apk --no-cache -U upgrade && \
-    apk --no-cache add \
+RUN apk --no-cache -U upgrade && apk --no-cache add \
+    msttcorefonts-installer \
+    fontconfig \
     poppler-utils \
+    openjdk8 \
+    libreoffice \
+    ttf-cantarell \
+    ttf-dejavu \
+    ttf-droid \
+    ttf-font-awesome \
+    ttf-freefont \
+    ttf-hack \
+    ttf-inconsolata \
+    ttf-liberation \
+    ttf-linux-libertine \
+    ttf-mononoki \
+    ttf-opensans \
+    font-noto-cjk \
+    icu-data-full \
     tesseract-ocr \
     tesseract-ocr-data-afr \
     tesseract-ocr-data-ara \
@@ -74,7 +88,11 @@ RUN apk --no-cache -U upgrade && \
 
 COPY tesseract_opencl_profile_devices.dat /
 
-RUN addgroup -g 1000 rinse && adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse
-RUN mkdir -p /var/rinse && chmod 777 /var/rinse
+RUN update-ms-fonts && \
+    addgroup -g 1000 rinse && \
+    adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse && \
+    mkdir -p /var/rinse && \
+    chmod 777 /var/rinse
+
 WORKDIR /
 USER rinse

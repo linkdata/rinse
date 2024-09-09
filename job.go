@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -191,6 +190,10 @@ func (job *Job) waitForPdfToPpm(cmd *exec.Cmd) (err error) {
 	return
 }
 
+/*
+   libreoffice --headless --safe-mode --convert-to pdf --outdir /var/rinse /var/rinse/input.xxx
+*/
+
 func (job *Job) runPdfToPpm() {
 	err := job.transition(JobStarting, JobPdfToPPm)
 
@@ -260,7 +263,6 @@ func (job *Job) runTesseract() (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
 		var args []string
 		args = append(args, "--log-level=error", "run", "--rm", "--tty",
-			"--env", fmt.Sprintf("OMP_THREAD_LIMIT=%d", runtime.NumCPU()),
 			"--network=none", "--read-only",
 			"--userns=keep-id:uid=1000,gid=1000",
 			"-v", job.Workdir+":/var/rinse", PodmanImage,
