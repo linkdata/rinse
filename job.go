@@ -49,6 +49,7 @@ type Job struct {
 	ppmtodo    []string
 	ppmdone    []string
 	diskuse    int64
+	nfiles     int
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -332,15 +333,16 @@ func (job *Job) Close() (err error) {
 		}
 		close(job.resultCh)
 		err = os.RemoveAll(job.Workdir)
-		job.diskuse, _ = job.getDiskuse()
+		job.diskuse, job.nfiles = job.getDiskuse()
 	}
 	return
 }
 
 func (job *Job) refreshDiskuse() {
-	diskuse, _ := job.getDiskuse()
+	diskuse, nfiles := job.getDiskuse()
 	job.mu.Lock()
 	job.diskuse = diskuse
+	job.nfiles = nfiles
 	job.mu.Unlock()
 }
 

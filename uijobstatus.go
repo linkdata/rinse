@@ -13,6 +13,7 @@ type uiJobStatus struct{ *Job }
 func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	u.mu.Lock()
 	diskuse := u.diskuse
+	nfiles := u.nfiles
 	state := u.state
 	todo := len(u.ppmtodo)
 	done := len(u.ppmdone)
@@ -27,7 +28,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	case JobDocToPdf:
 		statetxt = "Converting"
 	case JobPdfToPPm:
-		statetxt = fmt.Sprintf("Rendering %d", todo+done)
+		statetxt = fmt.Sprintf("Rendering %d", nfiles)
 	case JobTesseract:
 		statetxt = fmt.Sprintf("Scanning %d/%d", done, todo+done)
 	case JobFailed:
