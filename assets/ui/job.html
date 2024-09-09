@@ -1,7 +1,17 @@
-<div id="{{.Jid}}" class="row">{{with .Dot}}
-	<div class="input-group mx-0 mb-1 text-nowrap">
-		{{$.Span .Link (printf `class="form-control" data-toggle="tooltip" title="%s"` .Workdir) .}}
-		{{$.Span .Pagecount `class="input-group-text text-end"`}}
+<div id="{{.Jid}}" class="row mb-1 text-nowrap">{{with .Dot}}
+	<div class="col">
+		<div class="form-control">
+			<div class="row">
+				<div class="col">
+					{{$.Span .Link (printf `class="" data-toggle="tooltip" title="%s"` .Workdir) .}}
+				</div>
+				<div class="col-auto">
+					{{$.Span .Status `class="text-end"`}}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-auto">
 		{{$.Button .Button `class="btn btn-outline-secondary" name="jobact"` .}}
 	</div>
 {{end}}</div>
