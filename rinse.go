@@ -23,7 +23,7 @@ import (
 //go:embed assets
 var assetsFS embed.FS
 
-const PodmanImage = "ghcr.io/linkdata/rinse:latest"
+const PodmanImage = "ghcr.io/linkdata/rinse"
 
 type Rinse struct {
 	Config        *webserv.Config
@@ -119,9 +119,10 @@ func (rns *Rinse) Pull() (err error) {
 	cmd := exec.Command(rns.PodmanBin, "pull", PodmanImage)
 	if out, err = cmd.CombinedOutput(); err != nil {
 		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
-			slog.Error("podman", "msg", string(bytes.TrimSpace(line)))
+			slog.Error("podman pull", "msg", string(bytes.TrimSpace(line)))
 		}
 	}
+	slog.Info("podman pull done")
 	return
 }
 
