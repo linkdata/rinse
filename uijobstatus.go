@@ -28,7 +28,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	case JobDocToPdf:
 		statetxt = "Converting"
 	case JobPdfToPPm:
-		statetxt = fmt.Sprintf("Rendering %d", nfiles)
+		statetxt = fmt.Sprintf("Rendered %d", nfiles)
 	case JobTesseract:
 		statetxt = fmt.Sprintf("Scanning %d/%d", done, todo+done)
 	case JobFailed:
