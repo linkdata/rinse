@@ -114,9 +114,10 @@ func (rns *Rinse) MaybePull(doPull bool) (err error) {
 }
 
 func (rns *Rinse) Pull() (err error) {
-	slog.Info("podman pull", "image", PodmanImage)
+	img := PodmanImage + ":latest"
+	slog.Info("podman pull", "image", img)
 	var out []byte
-	cmd := exec.Command(rns.PodmanBin, "pull", PodmanImage)
+	cmd := exec.Command(rns.PodmanBin, "pull", img)
 	if out, err = cmd.CombinedOutput(); err != nil {
 		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
 			slog.Error("podman pull", "msg", string(bytes.TrimSpace(line)))
