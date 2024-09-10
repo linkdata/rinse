@@ -22,7 +22,7 @@ func (rns *Rinse) findJob(u uuid.UUID) *Job {
 	return nil
 }
 
-func (rns *Rinse) handleGetGet(w http.ResponseWriter, r *http.Request) {
+func (rns *Rinse) handleGetJob(w http.ResponseWriter, r *http.Request) {
 	if s := r.PathValue("uuid"); s != "" {
 		u, err := uuid.Parse(s)
 		if err == nil {

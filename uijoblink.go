@@ -14,7 +14,7 @@ type uiJobLink struct{ *Job }
 func (u uiJobLink) JawsGetHtml(rq *jaws.Element) template.HTML {
 	var s string
 	if u.State() == JobFinished {
-		s = fmt.Sprintf(`<a target="_blank" href="/get/%s">%s</a>`, u.UUID, html.EscapeString(u.ResultName))
+		s = fmt.Sprintf(`<a target="_blank" href="/job/%s">%s</a>`, u.UUID, html.EscapeString(u.ResultName))
 	} else {
 		s = html.EscapeString(u.Name)
 	}

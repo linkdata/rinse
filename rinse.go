@@ -96,7 +96,8 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.HandleFunc("POST /add", rns.handlePostAdd)
-	mux.HandleFunc("GET /get/{uuid}", rns.handleGetGet)
+	mux.HandleFunc("POST /submit", rns.handlePostSubmit)
+	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
 }
 
 func (rns *Rinse) Close() {
@@ -192,14 +193,13 @@ func (rns *Rinse) MaybeStartJob() (err error) {
 	return
 }
 
-func (rns *Rinse) AddJob(job *Job) {
+func (rns *Rinse) AddJob(job *Job) (err error) {
 	rns.mu.Lock()
 	rns.jobs = append(rns.jobs, job)
 	rns.mu.Unlock()
-	if err := rns.MaybeStartJob(); err != nil {
-		rns.Jaws.Alert("danger", err.Error())
-	}
+	err = rns.MaybeStartJob()
 	rns.Jaws.Dirty(rns)
+	return
 }
 
 func (rns *Rinse) RemoveJob(job *Job) {
