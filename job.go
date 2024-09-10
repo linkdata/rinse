@@ -88,15 +88,10 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 }
 
 func (job *Job) renameInput() (fn string, err error) {
-	if strings.ToLower(job.Name) != "input.pdf" {
-		if err = os.WriteFile(path.Join(job.Workdir, "input.txt"), []byte(job.Name), 0666); err == nil {
-			ext := strings.ToLower(filepath.Ext(job.Name))
-			fn = "input" + ext
-			fp := path.Join(job.Workdir, fn)
-			if err = os.Rename(path.Join(job.Workdir, job.Name), fp); err == nil {
-				err = os.Chmod(fp, 0444)
-			}
-		}
+	fn = "input" + strings.ToLower(filepath.Ext(job.Name))
+	dst := path.Join(job.Workdir, fn)
+	if err = os.Rename(path.Join(job.Workdir, job.Name), dst); err == nil {
+		err = os.Chmod(dst, 0444)
 	}
 	return
 }
@@ -317,7 +312,6 @@ func (job *Job) runTesseract() (err error) {
 
 func (job *Job) Result() (err error) {
 	if err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.Name)); err == nil {
-		_ = os.Remove(path.Join(job.Workdir, "input.txt"))
 	}
 	return
 }
