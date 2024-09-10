@@ -292,27 +292,24 @@ func (job *Job) runTesseract() (err error) {
 			return nil
 		}
 		if err = job.podrun(stdouthandler, args...); err == nil {
-			var toremove []string
-			job.mu.Lock()
-			for _, fn := range job.ppmdone {
-				toremove = append(toremove, path.Join(job.Workdir, fn))
-			}
-			job.mu.Unlock()
-			for _, fn := range toremove {
-				_ = os.Remove(fn)
-			}
-			_ = os.Remove(path.Join(job.Workdir, "output.txt"))
-			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
-			job.refreshDiskuse()
-			job.Jaws.Dirty(job, uiJobStatus{job})
+			err = job.finished()
 		}
 	}
 	return
 }
 
-func (job *Job) Result() (err error) {
-	if err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.Name)); err == nil {
-	}
+func (job *Job) finished() (err error) {
+	_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+		if err == nil {
+			if d.Type().IsRegular() && d.Name() != "output.pdf" {
+				_ = os.Remove(fpath)
+			}
+		}
+		return nil
+	})
+	err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
+	job.refreshDiskuse()
+	job.Jaws.Dirty(job, uiJobStatus{job})
 	return
 }
 
