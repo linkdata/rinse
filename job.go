@@ -1,19 +1,14 @@
 package rinse
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
-	"slices"
-	"sort"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,7 +37,6 @@ type Job struct {
 	UUID       uuid.UUID
 	mu         deadlock.Mutex
 	state      JobState
-	resultCh   chan error
 	started    time.Time
 	stopped    time.Time
 	closed     bool
@@ -79,7 +73,6 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 					Created:    time.Now(),
 					UUID:       uuid.New(),
 					state:      JobNew,
-					resultCh:   make(chan error, 1),
 				}
 			}
 		}
@@ -87,29 +80,9 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	return
 }
 
-func (job *Job) renameInput() (fn string, err error) {
-	fn = "input" + strings.ToLower(filepath.Ext(job.Name))
-	dst := path.Join(job.Workdir, fn)
-	if err = os.Rename(path.Join(job.Workdir, job.Name), dst); err == nil {
-		err = os.Chmod(dst, 0444)
-	}
-	return
-}
-
 func (job *Job) Start() (err error) {
 	if err = job.transition(JobNew, JobStarting); err == nil {
-		var fn string
-		if fn, err = job.renameInput(); err == nil {
-			job.mu.Lock()
-			job.started = time.Now()
-			job.mu.Unlock()
-			if strings.HasSuffix(fn, ".pdf") {
-				go job.runPdfToPpm(JobStarting)
-			} else {
-				go job.runDocToPdf(fn)
-			}
-		}
-		job.checkErr(err)
+		go job.process()
 	}
 	return
 }
@@ -121,36 +94,8 @@ func (job *Job) State() (state JobState) {
 	return
 }
 
-func (job *Job) ResultCh() (ch <-chan error) {
-	job.mu.Lock()
-	ch = job.resultCh
-	job.mu.Unlock()
-	return
-}
-
 func (job *Job) ResultPath() string {
 	return path.Join(job.Workdir, job.ResultName)
-}
-
-func (job *Job) checkErrLocked(err error) {
-	if err != nil && job.state != JobFailed {
-		job.state = JobFailed
-		slog.Info("job failed", "job", job.Name, "err", err)
-		select {
-		case job.resultCh <- err:
-		default:
-			slog.Error("failed to signal job failed", "name", job.Name, "err", err)
-		}
-
-	}
-}
-
-func (job *Job) checkErr(err error) {
-	if err != nil {
-		job.mu.Lock()
-		defer job.mu.Unlock()
-		job.checkErrLocked(err)
-	}
 }
 
 func (job *Job) transition(fromState, toState JobState) (err error) {
@@ -170,149 +115,6 @@ func (job *Job) podrun(stdouthandler func(string) error, cmds ...string) (err er
 	return podrun(context.Background(), job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
 }
 
-/*
-	libreoffice --headless --safe-mode --convert-to pdf --outdir /var/rinse /var/rinse/input.xxx
-
- 	.docx, .doc, .docm, .xlsx, .xls, .pptx, .ppt, .odt, .odg, .odp, .ods, .ots, .ott
-*/
-
-func (job *Job) waitForDocToPdf(fn string) (err error) {
-	var done int32
-	defer atomic.StoreInt32(&done, 1)
-	go func() {
-		for atomic.LoadInt32(&done) == 0 {
-			time.Sleep(time.Millisecond * 500)
-			job.Jaws.Dirty(uiJobStatus{job})
-		}
-	}()
-	return job.podrun(nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn)
-}
-
-func (job *Job) runDocToPdf(fn string) {
-	err := job.transition(JobStarting, JobDocToPdf)
-	if err == nil {
-		if err = job.waitForDocToPdf(fn); err == nil {
-			if err = os.Remove(path.Join(job.Workdir, fn)); err == nil {
-				job.runPdfToPpm(JobDocToPdf)
-				return
-			}
-		}
-	}
-	job.checkErr(err)
-}
-
-func (job *Job) waitForPdfToPpm() (err error) {
-	var done int32
-	defer atomic.StoreInt32(&done, 1)
-	go func() {
-		for atomic.LoadInt32(&done) == 0 {
-			time.Sleep(time.Millisecond * 500)
-			job.refreshDiskuse()
-			job.Jaws.Dirty(uiJobStatus{job})
-		}
-	}()
-	return job.podrun(nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
-}
-
-func (job *Job) runPdfToPpm(fromState JobState) {
-	err := job.transition(fromState, JobPdfToPPm)
-
-	if err == nil {
-		if err = job.waitForPdfToPpm(); err == nil {
-			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
-				var outputFiles []string
-				filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-					if err == nil {
-						if d.Type().IsRegular() && filepath.Ext(fpath) == ".ppm" {
-							outputFiles = append(outputFiles, d.Name())
-						}
-					}
-					return nil
-				})
-				if len(outputFiles) > 0 {
-					sort.Strings(outputFiles)
-					var outputTxt bytes.Buffer
-					for _, fn := range outputFiles {
-						outputTxt.WriteString("/var/rinse/")
-						outputTxt.WriteString(fn)
-						outputTxt.WriteByte('\n')
-					}
-					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
-						job.mu.Lock()
-						job.ppmtodo = outputFiles
-						job.Jaws.Dirty(uiJobStatus{job})
-						job.mu.Unlock()
-						if err = job.runTesseract(); err == nil {
-							if err = job.transition(JobTesseract, JobFinished); err == nil {
-								job.mu.Lock()
-								job.stopped = time.Now()
-								ch := job.resultCh
-								job.mu.Unlock()
-								job.Jaws.Dirty(job, uiJobStatus{job})
-								select {
-								case ch <- nil:
-								default:
-								}
-							}
-						}
-					}
-				} else {
-					err = fmt.Errorf("pdftoppm created no .ppm files")
-				}
-			}
-		}
-		job.mu.Lock()
-		job.stopped = time.Now()
-		job.mu.Unlock()
-	}
-
-	job.checkErr(err)
-}
-
-func (job *Job) runTesseract() (err error) {
-	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
-		var args []string
-		args = append(args, "tesseract")
-		if job.Lang != "" {
-			args = append(args, "-l", job.Lang)
-		}
-		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
-
-		stdouthandler := func(s string) error {
-			job.mu.Lock()
-			job.ppmtodo = slices.DeleteFunc(job.ppmtodo, func(fn string) bool {
-				if strings.Contains(s, fn) {
-					job.ppmdone = append(job.ppmdone, fn)
-					return true
-				}
-				return false
-			})
-			job.mu.Unlock()
-			job.Jaws.Dirty(uiJobStatus{job})
-			return nil
-		}
-		if err = job.podrun(stdouthandler, args...); err == nil {
-			err = job.finished()
-		}
-	}
-	return
-}
-
-func (job *Job) finished() (err error) {
-	_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-		if err == nil {
-			if d.Type().IsRegular() && d.Name() != "output.pdf" {
-				_ = os.Remove(fpath)
-			}
-		}
-		return nil
-	})
-	err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
-	job.refreshDiskuse()
-	job.Jaws.Dirty(job, uiJobStatus{job})
-	return
-}
-
 func (job *Job) Close() (err error) {
 	defer job.RemoveJob(job)
 	job.mu.Lock()
@@ -322,7 +124,6 @@ func (job *Job) Close() (err error) {
 		if job.state != JobFinished {
 			job.state = JobFailed
 		}
-		close(job.resultCh)
 		err = os.RemoveAll(job.Workdir)
 		job.diskuse, job.nfiles = job.getDiskuse()
 	}

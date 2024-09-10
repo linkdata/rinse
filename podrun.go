@@ -16,14 +16,15 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 	podmanargs = append(podmanargs, "run", "--rm",
 		"--log-driver", "none",
 		"--security-opt", "no-new-privileges",
-		"--cap-drop", "all",
-		"--cap-add", "SYS_CHROOT",
 		"--security-opt", "label=type:container_engine_t",
 		"--network=none",
 		"--read-only",
+		"--cap-drop", "all",
 	)
 	if runscBin == "" {
 		podmanargs = append(podmanargs, "--userns=keep-id:uid=1000,gid=1000")
+	} else {
+		podmanargs = append(podmanargs, "--cap-add", "SYS_CHROOT")
 	}
 	if stdouthandler != nil {
 		podmanargs = append(podmanargs, "--tty")
@@ -33,7 +34,7 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 	}
 	podmanargs = append(podmanargs, PodmanImage)
 	podmanargs = append(podmanargs, cmds...)
-	slog.Info("podman", "args", podmanargs)
+	slog.Debug("podman", "args", podmanargs)
 	cmd := exec.Command(podmanBin, podmanargs...)
 	var stdout io.ReadCloser
 	if stdout, err = cmd.StdoutPipe(); err == nil {
