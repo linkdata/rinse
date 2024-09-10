@@ -2,6 +2,7 @@ package rinse
 
 import (
 	"fmt"
+	"html"
 	"html/template"
 
 	"github.com/linkdata/jaws"
@@ -34,7 +35,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	case JobFailed:
 		statetxt = "Failed"
 	case JobFinished:
-		statetxt = "Done"
+		statetxt = "Rinsed " + u.Name
 	}
 
 	diskuseflt := float64(diskuse)
@@ -51,7 +52,8 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		diskusesuffix = "KB"
 	}
 
-	return template.HTML(fmt.Sprintf(`%s (%.2f%s)`, statetxt, diskuseflt, diskusesuffix))
+	s := html.EscapeString(fmt.Sprintf(`%s (%.2f%s)`, statetxt, diskuseflt, diskusesuffix))
+	return template.HTML(s)
 }
 
 func (job *Job) Status() (ui jaws.HtmlGetter) {

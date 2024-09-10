@@ -42,6 +42,7 @@ func (job *Job) processDone() {
 	job.mu.Lock()
 	job.stopped = time.Now()
 	job.mu.Unlock()
+	job.MaybeStartJob()
 }
 
 func (job *Job) renameInput() (fn string, err error) {
