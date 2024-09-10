@@ -50,12 +50,10 @@ func main() {
 	if err == nil {
 		defer l.Close()
 		var rns *rinse.Rinse
-		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw); err == nil {
+		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw, *flagPull); err == nil {
 			defer rns.Close()
-			if err = rns.MaybePull(*flagPull); err == nil {
-				if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
-					return
-				}
+			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
+				return
 			}
 		}
 	}

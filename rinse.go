@@ -4,6 +4,7 @@ package rinse
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"html/template"
 	"log/slog"
@@ -37,7 +38,7 @@ type Rinse struct {
 	jobs          []*Job
 }
 
-func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, err error) {
+func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool) (rns *Rinse, err error) {
 	var tmpl *template.Template
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
@@ -54,9 +55,9 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 		}
 		if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
 			if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
-				var podmanbin string
-				if podmanbin, err = exec.LookPath("podman"); err == nil {
-					slog.Info("podman", "bin", podmanbin)
+				var podmanBin string
+				if podmanBin, err = exec.LookPath("podman"); err == nil {
+					slog.Info("podman", "bin", podmanBin)
 					var runscbin string
 					if s, e := exec.LookPath("runsc"); e == nil {
 						if os.Getuid() == 0 && cfg.User == "" {
@@ -68,18 +69,20 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 					} else {
 						slog.Info("gVisor not found", "err", e)
 					}
-					var langs []string
-					if langs, err = getLanguages(podmanbin, []string{"eng", "swe"}); err == nil {
-						rns = &Rinse{
-							Config:        cfg,
-							Jaws:          jw,
-							PodmanBin:     podmanbin,
-							RunscBin:      runscbin,
-							FaviconURI:    faviconuri,
-							MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
-							Languages:     langs,
+					if err = maybePullImage(maybePull, podmanBin); err == nil {
+						var langs []string
+						if langs, err = getLanguages(podmanBin, []string{"eng", "swe"}); err == nil {
+							rns = &Rinse{
+								Config:        cfg,
+								Jaws:          jw,
+								PodmanBin:     podmanBin,
+								RunscBin:      runscbin,
+								FaviconURI:    faviconuri,
+								MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
+								Languages:     langs,
+							}
+							rns.addRoutes(mux)
 						}
-						rns.addRoutes(mux)
 					}
 				}
 			}
@@ -106,44 +109,51 @@ func (rns *Rinse) Close() {
 	}
 }
 
-func (rns *Rinse) MaybePull(doPull bool) (err error) {
-	if doPull {
-		return rns.Pull()
+func maybePullImage(maybePull bool, podmanBin string) (err error) {
+	if maybePull {
+		err = pullImage(podmanBin)
 	}
-	return nil
+	return
 }
 
-func (rns *Rinse) Pull() (err error) {
+func pullImage(podmanBin string) (err error) {
 	img := PodmanImage + ":latest"
-	slog.Info("podman pull", "image", img)
+	slog.Info("pullImage", "image", img)
 	var out []byte
-	cmd := exec.Command(rns.PodmanBin, "pull", img)
+	cmd := exec.Command(podmanBin, "pull", "-q", img)
 	if out, err = cmd.CombinedOutput(); err != nil {
 		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
-			slog.Error("podman pull", "msg", string(bytes.TrimSpace(line)))
+			slog.Error("pullImage", "msg", string(bytes.TrimSpace(line)))
 		}
+	} else {
+		slog.Info("pullImage", "result", string(bytes.TrimSpace(out)))
 	}
-	slog.Info("podman pull done")
 	return
 }
 
 func getLanguages(podmanBin string, prioLangs []string) (langs []string, err error) {
-	var out []byte
-	if out, err = exec.Command(podmanBin, "--log-level=error", "run", "--rm", "--tty", PodmanImage, "tesseract", "--list-langs").CombinedOutput(); err == nil {
-		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
-			if bytes.IndexByte(line, ' ') == -1 {
-				lang := string(bytes.ToLower(bytes.TrimSpace(line)))
-				if _, ok := LanguageCode[lang]; ok {
-					langs = append(langs, lang)
-				}
+	var msgs []string
+	stdouthandler := func(line string) error {
+		msgs = append(msgs, line)
+		if strings.IndexByte(line, ' ') == -1 {
+			lang := strings.TrimSpace(line)
+			if _, ok := LanguageCode[lang]; ok {
+				langs = append(langs, lang)
 			}
 		}
+		return nil
+	}
+	if err = podrun(context.Background(), podmanBin, "", "", stdouthandler, "tesseract", "--list-langs"); err == nil {
 		slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
 		for i := len(prioLangs) - 1; i >= 0; i-- {
 			if idx := slices.Index(langs, prioLangs[i]); idx != -1 {
 				langs = slices.Delete(langs, idx, idx+1)
 				langs = append([]string{prioLangs[i]}, langs...)
 			}
+		}
+	} else {
+		for _, s := range msgs {
+			slog.Error("getLanguages", "msg", s)
 		}
 	}
 	return

@@ -34,7 +34,9 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 	}
 	podmanargs = append(podmanargs, PodmanImage)
 	podmanargs = append(podmanargs, cmds...)
+
 	slog.Debug("podman", "args", podmanargs)
+
 	cmd := exec.Command(podmanBin, podmanargs...)
 	var stdout io.ReadCloser
 	if stdout, err = cmd.StdoutPipe(); err == nil {
