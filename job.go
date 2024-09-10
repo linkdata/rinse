@@ -109,8 +109,8 @@ func (job *Job) Start() (err error) {
 				go job.runDocToPdf(fn)
 			}
 		}
+		job.checkErr(err)
 	}
-	job.checkErr(err)
 	return
 }
 
