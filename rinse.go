@@ -95,7 +95,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
-	mux.HandleFunc("POST /add", rns.handlePostAdd)
+	mux.HandleFunc("POST /job", rns.handlePostJob)
 	mux.HandleFunc("POST /submit", rns.handlePostSubmit)
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
 }
