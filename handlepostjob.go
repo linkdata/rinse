@@ -46,6 +46,6 @@ func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 			job.Close()
 		}
 	}
-	slog.Error("handlePostAdd", "err", err)
+	slog.Error("handlePostJob", "err", err)
 	w.WriteHeader(http.StatusInternalServerError)
 }
