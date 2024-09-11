@@ -23,6 +23,7 @@ const (
 	JobDocToPdf
 	JobPdfToPPm
 	JobTesseract
+	JobEnding
 	JobFinished
 	JobFailed
 )

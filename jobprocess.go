@@ -26,8 +26,10 @@ func (job *Job) process() {
 		if err = job.runDocToPdf(fn); err == nil {
 			if err = job.runPdfToPpm(); err == nil {
 				if err = job.runTesseract(); err == nil {
-					if err = job.finished(); err == nil {
-						return
+					if err = job.jobEnding(); err == nil {
+						if err = job.transition(JobEnding, JobFinished); err == nil {
+							return
+						}
 					}
 				}
 			}
@@ -169,8 +171,8 @@ func (job *Job) cleanup(except string) (err error) {
 	return
 }
 
-func (job *Job) finished() (err error) {
-	if err = job.transition(JobTesseract, JobFinished); err == nil {
+func (job *Job) jobEnding() (err error) {
+	if err = job.transition(JobTesseract, JobEnding); err == nil {
 		if err = job.cleanup("output.pdf"); err == nil {
 			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
 		}

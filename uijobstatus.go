@@ -36,10 +36,12 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		statetxt = fmt.Sprintf("Rendered %d", ppmcount)
 	case JobTesseract:
 		statetxt = fmt.Sprintf("Scanning %d/%d", ppmdone, ppmcount)
-	case JobFailed:
-		statetxt = "Failed"
+	case JobEnding:
+		statetxt = "Cleanup"
 	case JobFinished:
 		statetxt = "Rinsed " + u.Name
+	case JobFailed:
+		statetxt = "Failed"
 	}
 
 	diskuseflt := float64(diskuse)
