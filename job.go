@@ -40,10 +40,8 @@ type Job struct {
 	started    time.Time
 	stopped    time.Time
 	closed     bool
-	ppmtodo    []string
-	ppmdone    []string
+	ppmfiles   map[string]bool
 	diskuse    int64
-	nfiles     int
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -80,6 +78,7 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 					Created:    time.Now(),
 					UUID:       uuid.New(),
 					state:      JobNew,
+					ppmfiles:   make(map[string]bool),
 				}
 			}
 		}
@@ -131,32 +130,33 @@ func (job *Job) Close() (err error) {
 			job.state = JobFailed
 		}
 		if err = os.RemoveAll(job.Workdir); err == nil {
-			job.diskuse, job.nfiles = 0, 0
+			job.diskuse = 0
 		}
 	}
 	return
 }
 
 func (job *Job) refreshDiskuse() {
-	diskuse, nfiles := job.getDiskuse()
-	job.mu.Lock()
-	job.diskuse = diskuse
-	job.nfiles = nfiles
-	job.mu.Unlock()
-	job.Jaws.Dirty(job, uiJobStatus{job})
-}
-
-func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
-	filepath.WalkDir(job.Workdir, func(path string, d fs.DirEntry, err error) error {
+	var ppmfiles []string
+	var diskuse int64
+	filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if fi, e := d.Info(); e == nil {
 				diskuse += fi.Size()
 			}
 			if strings.HasSuffix(d.Name(), ".ppm") {
-				nfiles++
+				ppmfiles = append(ppmfiles, d.Name())
 			}
 		}
 		return nil
 	})
-	return
+	job.mu.Lock()
+	job.diskuse = diskuse
+	for _, fn := range ppmfiles {
+		if seen := job.ppmfiles[fn]; !seen {
+			job.ppmfiles[fn] = false
+		}
+	}
+	job.mu.Unlock()
+	job.Jaws.Dirty(job, uiJobStatus{job})
 }

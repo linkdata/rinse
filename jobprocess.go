@@ -1,18 +1,20 @@
 package rinse
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
 )
+
+var ErrPpmSeenTwice = errors.New("ppm file seen twice")
 
 func (job *Job) process() {
 	job.mu.Lock()
@@ -83,21 +85,23 @@ func (job *Job) waitForPdfToPpm() (err error) {
 	return job.podrun(nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 }
 
-func (job *Job) makeOutputTxt(outputFiles []string) (err error) {
-	if len(outputFiles) > 0 {
+func (job *Job) makeOutputTxt() (err error) {
+	var f *os.File
+	if f, err = os.OpenFile(path.Join(job.Workdir, "output.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666); err == nil {
+		defer f.Close()
+		job.mu.Lock()
+		var outputFiles []string
+		for fn := range job.ppmfiles {
+			outputFiles = append(outputFiles, fn)
+		}
+		job.mu.Unlock()
 		sort.Strings(outputFiles)
-		var outputTxt bytes.Buffer
 		for _, fn := range outputFiles {
-			outputTxt.WriteString("/var/rinse/")
-			outputTxt.WriteString(fn)
-			outputTxt.WriteByte('\n')
+			if _, err = fmt.Fprintf(f, "/var/rinse/%s\n", fn); err != nil {
+				return
+			}
 		}
-		if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
-			job.mu.Lock()
-			job.ppmtodo = outputFiles
-			job.mu.Unlock()
-			job.Jaws.Dirty(uiJobStatus{job})
-		}
+		err = f.Sync()
 	}
 	return
 }
@@ -106,16 +110,8 @@ func (job *Job) runPdfToPpm() (err error) {
 	if err = job.transition(JobDocToPdf, JobPdfToPPm); err == nil {
 		if err = job.waitForPdfToPpm(); err == nil {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
-				var outputFiles []string
-				filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-					if err == nil {
-						if d.Type().IsRegular() && strings.HasSuffix(d.Name(), ".ppm") {
-							outputFiles = append(outputFiles, d.Name())
-						}
-					}
-					return nil
-				})
-				err = job.makeOutputTxt(outputFiles)
+				job.refreshDiskuse()
+				err = job.makeOutputTxt()
 			}
 		}
 	}
@@ -124,20 +120,28 @@ func (job *Job) runPdfToPpm() (err error) {
 
 func (job *Job) runTesseract() (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
+		var output []string
 		stdouthandler := func(s string) error {
+			defer job.Jaws.Dirty(uiJobStatus{job})
 			job.mu.Lock()
-			job.ppmtodo = slices.DeleteFunc(job.ppmtodo, func(fn string) bool {
+			defer job.mu.Unlock()
+			output = append(output, s)
+			for fn, seen := range job.ppmfiles {
 				if strings.Contains(s, fn) {
-					job.ppmdone = append(job.ppmdone, fn)
-					return true
+					if seen {
+						return ErrPpmSeenTwice
+					}
+					job.ppmfiles[fn] = true
+					break
 				}
-				return false
-			})
-			job.mu.Unlock()
-			job.Jaws.Dirty(uiJobStatus{job})
+			}
 			return nil
 		}
-		err = job.podrun(stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
+		if err = job.podrun(stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf"); err != nil {
+			for _, s := range output {
+				slog.Error("tesseract", "msg", s)
+			}
+		}
 	}
 	return
 }
@@ -160,7 +164,6 @@ func (job *Job) cleanup(except string) (err error) {
 	})
 	job.mu.Lock()
 	job.diskuse = diskuse
-	job.nfiles = 0
 	job.mu.Unlock()
 	job.Jaws.Dirty(job, uiJobStatus{job})
 	return
