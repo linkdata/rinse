@@ -57,6 +57,13 @@ func checkLangString(lang string) error {
 	return nil
 }
 
+func defaultLanguage(lang string) string {
+	if lang == "" {
+		return "eng"
+	}
+	return lang
+}
+
 func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		var workdir string
@@ -68,7 +75,7 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 					Rinse:      rns,
 					Name:       name,
 					ResultName: strings.TrimSuffix(name, ext) + "-rinsed.pdf",
-					Lang:       lang,
+					Lang:       defaultLanguage(lang),
 					Workdir:    workdir,
 					Created:    time.Now(),
 					UUID:       uuid.New(),

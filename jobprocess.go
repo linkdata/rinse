@@ -124,13 +124,6 @@ func (job *Job) runPdfToPpm() (err error) {
 
 func (job *Job) runTesseract() (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
-		var args []string
-		args = append(args, "tesseract")
-		if job.Lang != "" {
-			args = append(args, "-l", job.Lang)
-		}
-		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
-
 		stdouthandler := func(s string) error {
 			job.mu.Lock()
 			job.ppmtodo = slices.DeleteFunc(job.ppmtodo, func(fn string) bool {
@@ -144,7 +137,7 @@ func (job *Job) runTesseract() (err error) {
 			job.Jaws.Dirty(uiJobStatus{job})
 			return nil
 		}
-		err = job.podrun(stdouthandler, args...)
+		err = job.podrun(stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
 	}
 	return
 }
