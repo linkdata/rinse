@@ -36,6 +36,7 @@ func (job *Job) process() {
 	job.mu.Lock()
 	job.state = JobFailed
 	job.mu.Unlock()
+	job.cleanup("")
 }
 
 func (job *Job) processDone() {
@@ -57,14 +58,6 @@ func (job *Job) renameInput() (fn string, err error) {
 
 func (job *Job) waitForDocToPdf(fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
-		var done int32
-		defer atomic.StoreInt32(&done, 1)
-		go func() {
-			for atomic.LoadInt32(&done) == 0 {
-				time.Sleep(time.Millisecond * 500)
-				job.Jaws.Dirty(uiJobStatus{job})
-			}
-		}()
 		if err = job.podrun(nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
 			err = os.Remove(path.Join(job.Workdir, fn))
 		}
@@ -86,7 +79,6 @@ func (job *Job) waitForPdfToPpm() (err error) {
 		for atomic.LoadInt32(&done) == 0 {
 			time.Sleep(time.Millisecond * 500)
 			job.refreshDiskuse()
-			job.Jaws.Dirty(uiJobStatus{job})
 		}
 	}()
 	return job.podrun(nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
@@ -155,19 +147,34 @@ func (job *Job) runTesseract() (err error) {
 	return
 }
 
-func (job *Job) finished() (err error) {
-	if err = job.transition(JobTesseract, JobFinished); err == nil {
-		_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-			if err == nil {
-				if d.Type().IsRegular() && d.Name() != "output.pdf" {
+func (job *Job) cleanup(except string) (err error) {
+	var diskuse int64
+	err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+		if err == nil {
+			if d.Type().IsRegular() {
+				if except == "" || except != d.Name() {
 					_ = os.Remove(fpath)
+					return nil
 				}
 			}
-			return nil
-		})
-		err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
-	}
-	job.refreshDiskuse()
+			if fi, e := d.Info(); e == nil {
+				diskuse += fi.Size()
+			}
+		}
+		return nil
+	})
+	job.mu.Lock()
+	job.diskuse = diskuse
+	job.mu.Unlock()
 	job.Jaws.Dirty(job, uiJobStatus{job})
+	return
+}
+
+func (job *Job) finished() (err error) {
+	if err = job.transition(JobTesseract, JobFinished); err == nil {
+		if err = job.cleanup("output.pdf"); err == nil {
+			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
+		}
+	}
 	return
 }

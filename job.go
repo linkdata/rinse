@@ -107,7 +107,6 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	}
 	job.mu.Unlock()
 	job.refreshDiskuse()
-	job.Jaws.Dirty(job, uiJobStatus{job})
 	return
 }
 
@@ -124,8 +123,9 @@ func (job *Job) Close() (err error) {
 		if job.state != JobFinished {
 			job.state = JobFailed
 		}
-		err = os.RemoveAll(job.Workdir)
-		job.diskuse, job.nfiles = job.getDiskuse()
+		if err = os.RemoveAll(job.Workdir); err == nil {
+			job.diskuse, job.nfiles = 0, 0
+		}
 	}
 	return
 }
@@ -136,15 +136,16 @@ func (job *Job) refreshDiskuse() {
 	job.diskuse = diskuse
 	job.nfiles = nfiles
 	job.mu.Unlock()
+	job.Jaws.Dirty(job, uiJobStatus{job})
 }
 
 func (job *Job) getDiskuse() (diskuse int64, nfiles int) {
 	filepath.WalkDir(job.Workdir, func(path string, d fs.DirEntry, err error) error {
 		if err == nil {
-			if fi, err := d.Info(); err == nil {
+			if fi, e := d.Info(); e == nil {
 				diskuse += fi.Size()
 			}
-			if filepath.Ext(d.Name()) == ".ppm" {
+			if strings.HasSuffix(d.Name(), ".ppm") {
 				nfiles++
 			}
 		}
