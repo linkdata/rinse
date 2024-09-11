@@ -165,6 +165,7 @@ func (job *Job) cleanup(except string) (err error) {
 	})
 	job.mu.Lock()
 	job.diskuse = diskuse
+	job.nfiles = 0
 	job.mu.Unlock()
 	job.Jaws.Dirty(job, uiJobStatus{job})
 	return
