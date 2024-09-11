@@ -179,7 +179,8 @@ func (rns *Rinse) nextJob() (nextJob *Job) {
 		switch job.State() {
 		case JobNew:
 			nextJob = job
-		case JobStarting, JobDocToPdf, JobPdfToPPm, JobTesseract, JobEnding:
+		case JobFailed, JobFinished:
+		default:
 			return nil
 		}
 	}
