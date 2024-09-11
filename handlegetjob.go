@@ -38,7 +38,6 @@ func (rns *Rinse) handleGetJob(w http.ResponseWriter, r *http.Request) {
 						hdr["Content-Length"] = []string{strconv.FormatInt(fi.Size(), 10)}
 						hdr["Content-Type"] = []string{"application/pdf"}
 						hdr["Content-Disposition"] = []string{fmt.Sprintf(`attachment; filename="%s"`, job.ResultName)}
-						w.WriteHeader(http.StatusOK)
 						var f *os.File
 						if f, err = os.Open(job.ResultPath()); err == nil {
 							defer f.Close()
