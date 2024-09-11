@@ -62,6 +62,10 @@ func defaultLanguage(lang string) string {
 	return lang
 }
 
+func makeResultName(name, ext string) string {
+	return strings.ReplaceAll(strings.TrimSuffix(name, ext)+"-rinsed.pdf", "\"", "")
+}
+
 func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		var workdir string
@@ -72,7 +76,7 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 				job = &Job{
 					Rinse:      rns,
 					Name:       name,
-					ResultName: strings.TrimSuffix(name, ext) + "-rinsed.pdf",
+					ResultName: makeResultName(name, ext),
 					Lang:       defaultLanguage(lang),
 					Workdir:    workdir,
 					Created:    time.Now(),
