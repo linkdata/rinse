@@ -153,11 +153,11 @@ func (job *Job) cleanup(except string) (err error) {
 			if d.Type().IsRegular() {
 				if except == "" || except != d.Name() {
 					_ = os.Remove(fpath)
-					return nil
+				} else {
+					if fi, e := d.Info(); e == nil {
+						diskuse += fi.Size()
+					}
 				}
-			}
-			if fi, e := d.Info(); e == nil {
-				diskuse += fi.Size()
 			}
 		}
 		return nil
