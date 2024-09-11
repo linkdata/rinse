@@ -142,7 +142,7 @@ func (job *Job) refreshDiskuse() {
 	job.mu.Lock()
 	job.diskuse = diskuse
 	for _, fn := range ppmfiles {
-		if seen := job.ppmfiles[fn]; !seen {
+		if _, ok := job.ppmfiles[fn]; !ok {
 			job.ppmfiles[fn] = false
 		}
 	}
