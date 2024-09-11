@@ -62,7 +62,8 @@ func defaultLanguage(lang string) string {
 	return lang
 }
 
-func makeResultName(name, ext string) string {
+func makeResultName(name string) string {
+	ext := filepath.Ext(name)
 	return strings.ReplaceAll(strings.TrimSuffix(name, ext)+"-rinsed.pdf", "\"", "")
 }
 
@@ -72,11 +73,10 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
 			if err = os.Chmod(workdir, 0777); err == nil {
 				name = filepath.Base(name)
-				ext := filepath.Ext(name)
 				job = &Job{
 					Rinse:      rns,
 					Name:       name,
-					ResultName: makeResultName(name, ext),
+					ResultName: makeResultName(name),
 					Lang:       defaultLanguage(lang),
 					Workdir:    workdir,
 					Created:    time.Now(),
