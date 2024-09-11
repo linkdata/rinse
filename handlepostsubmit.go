@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-func (rns *Rinse) handlePostSubmit(w http.ResponseWriter, r *http.Request) {
+func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 	srcFormFile, info, err := r.FormFile(FormFileKey)
 	srcLang := r.FormValue(FormLangKey)
 
@@ -34,6 +34,6 @@ func (rns *Rinse) handlePostSubmit(w http.ResponseWriter, r *http.Request) {
 			job.Close()
 		}
 	}
-	slog.Error("handlePostSubmit", "err", err)
+	slog.Error("handlePostJob", "err", err)
 	w.WriteHeader(http.StatusInternalServerError)
 }
