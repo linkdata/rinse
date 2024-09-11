@@ -55,10 +55,10 @@ func (rns *Rinse) handleGetJob(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
+			slog.Error("handleGetJob", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-		slog.Error("handleGetJob", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 	w.WriteHeader(http.StatusBadRequest)
 }
