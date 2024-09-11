@@ -178,7 +178,9 @@ func (rns *Rinse) nextJob() (nextJob *Job) {
 	for _, job := range rns.jobs {
 		switch job.State() {
 		case JobNew:
-			nextJob = job
+			if nextJob == nil {
+				nextJob = job
+			}
 		case JobFailed, JobFinished:
 		default:
 			return nil
