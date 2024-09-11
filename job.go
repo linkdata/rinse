@@ -40,7 +40,6 @@ type Job struct {
 	state      JobState
 	started    time.Time
 	stopped    time.Time
-	closed     bool
 	ppmfiles   map[string]bool
 	diskuse    int64
 }
@@ -121,20 +120,9 @@ func (job *Job) podrun(stdouthandler func(string) error, cmds ...string) (err er
 	return podrun(context.Background(), job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
 }
 
-func (job *Job) Close() (err error) {
+func (job *Job) Close() error {
 	defer job.RemoveJob(job)
-	job.mu.Lock()
-	defer job.mu.Unlock()
-	if !job.closed {
-		job.closed = true
-		if job.state != JobFinished {
-			job.state = JobFailed
-		}
-		if err = os.RemoveAll(job.Workdir); err == nil {
-			job.diskuse = 0
-		}
-	}
-	return
+	return os.RemoveAll(job.Workdir)
 }
 
 func (job *Job) refreshDiskuse() {
