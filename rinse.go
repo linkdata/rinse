@@ -98,6 +98,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /job", rns.handlePostJob)
 	mux.HandleFunc("POST /submit", rns.handlePostSubmit)
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
+	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
 }
 
 func (rns *Rinse) Close() {
