@@ -1,6 +1,7 @@
 package rinse
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,18 +10,7 @@ import (
 	"path/filepath"
 )
 
-const FormFileKey = "file"
-const FormLangKey = "lang"
-
-func (rns *Rinse) FormFileKey() string {
-	return FormFileKey
-}
-
-func (rns *Rinse) FormLangKey() string {
-	return FormLangKey
-}
-
-func (rns *Rinse) handlePostSubmit(w http.ResponseWriter, r *http.Request) {
+func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 	srcFormFile, info, err := r.FormFile(FormFileKey)
 	srcLang := r.FormValue(FormLangKey)
 
@@ -35,17 +25,15 @@ func (rns *Rinse) handlePostSubmit(w http.ResponseWriter, r *http.Request) {
 			if dstFile, err = os.Create(dstName); err == nil {
 				defer dstFile.Close()
 				if _, err = io.Copy(dstFile, srcFile); err == nil {
-					if err = rns.AddJob(job); err != nil {
-						rns.Jaws.Alert("danger", err.Error())
+					if err = rns.AddJob(job); err == nil {
+						fmt.Fprintf(w, "%s\n", job.UUID.String())
+						return
 					}
-					w.Header().Add("Location", "/")
-					w.WriteHeader(http.StatusFound)
-					return
 				}
 			}
 			job.Close()
 		}
 	}
-	slog.Error("handlePostSubmit", "err", err)
+	slog.Error("handlePostJob", "err", err)
 	w.WriteHeader(http.StatusInternalServerError)
 }
