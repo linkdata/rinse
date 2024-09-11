@@ -2,7 +2,6 @@ package rinse
 
 import (
 	"bytes"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -84,6 +83,25 @@ func (job *Job) waitForPdfToPpm() (err error) {
 	return job.podrun(nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 }
 
+func (job *Job) makeOutputTxt(outputFiles []string) (err error) {
+	if len(outputFiles) > 0 {
+		sort.Strings(outputFiles)
+		var outputTxt bytes.Buffer
+		for _, fn := range outputFiles {
+			outputTxt.WriteString("/var/rinse/")
+			outputTxt.WriteString(fn)
+			outputTxt.WriteByte('\n')
+		}
+		if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
+			job.mu.Lock()
+			job.ppmtodo = outputFiles
+			job.mu.Unlock()
+			job.Jaws.Dirty(uiJobStatus{job})
+		}
+	}
+	return
+}
+
 func (job *Job) runPdfToPpm() (err error) {
 	if err = job.transition(JobDocToPdf, JobPdfToPPm); err == nil {
 		if err = job.waitForPdfToPpm(); err == nil {
@@ -91,29 +109,13 @@ func (job *Job) runPdfToPpm() (err error) {
 				var outputFiles []string
 				filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
 					if err == nil {
-						if d.Type().IsRegular() && filepath.Ext(fpath) == ".ppm" {
+						if d.Type().IsRegular() && strings.HasSuffix(d.Name(), ".ppm") {
 							outputFiles = append(outputFiles, d.Name())
 						}
 					}
 					return nil
 				})
-				if len(outputFiles) > 0 {
-					sort.Strings(outputFiles)
-					var outputTxt bytes.Buffer
-					for _, fn := range outputFiles {
-						outputTxt.WriteString("/var/rinse/")
-						outputTxt.WriteString(fn)
-						outputTxt.WriteByte('\n')
-					}
-					if err = os.WriteFile(path.Join(job.Workdir, "output.txt"), outputTxt.Bytes(), 0666); err == nil {
-						job.mu.Lock()
-						job.ppmtodo = outputFiles
-						job.mu.Unlock()
-						job.Jaws.Dirty(uiJobStatus{job})
-					}
-				} else {
-					err = fmt.Errorf("pdftoppm created no .ppm files")
-				}
+				err = job.makeOutputTxt(outputFiles)
 			}
 		}
 	}
