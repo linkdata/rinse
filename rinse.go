@@ -15,6 +15,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
@@ -24,6 +25,8 @@ import (
 
 //go:embed assets
 var assetsFS embed.FS
+
+var ErrDuplicateUUID = errors.New("duplicate UUID")
 
 const PodmanImage = "ghcr.io/linkdata/rinse"
 
@@ -35,6 +38,7 @@ type Rinse struct {
 	FaviconURI    string
 	Languages     []string
 	mu            deadlock.Mutex // protects following
+	closed        bool
 	maxUploadSize int64
 	autoCleanup   int
 	jobs          []*Job
@@ -83,12 +87,14 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 									FaviconURI:    faviconuri,
 									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
 									autoCleanup:   60 * 24,            // 1 day
+									jobs:          make([]*Job, 0),
 									Languages:     langs,
 								}
 								rns.addRoutes(mux)
 								if e := rns.loadSettings(); e != nil {
-									slog.Error("loadSettings", "err", e)
+									slog.Error("loadSettings", "file", rns.settingsFile(), "err", e)
 								}
+								go rns.runBackgroundTasks()
 							}
 						}
 					}
@@ -98,6 +104,41 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 	}
 
 	return
+}
+
+func (rns *Rinse) runAutoCleanup() (todo []*Job) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	if rns.autoCleanup > 0 {
+		deadline := time.Minute * time.Duration(rns.autoCleanup)
+		for _, job := range rns.jobs {
+			switch job.State() {
+			case JobFailed, JobFinished:
+				if time.Since(job.stopped) > deadline {
+					todo = append(todo, job)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (rns *Rinse) IsClosed() (yes bool) {
+	rns.mu.Lock()
+	yes = rns.closed
+	rns.mu.Unlock()
+	return
+}
+
+func (rns *Rinse) runBackgroundTasks() {
+	for !rns.IsClosed() {
+		time.Sleep(time.Second)
+		for _, job := range rns.runAutoCleanup() {
+			if err := job.Close(); err != nil {
+				slog.Error("job.Close", "job", job.Name, "err", err)
+			}
+		}
+	}
 }
 
 func (rns *Rinse) addRoutes(mux *http.ServeMux) {
@@ -128,10 +169,13 @@ func (rns *Rinse) AutoCleanup() (n int) {
 func (rns *Rinse) Close() {
 	rns.mu.Lock()
 	jobs := rns.jobs
-	rns.jobs = nil
+	if !rns.closed {
+		rns.closed = true
+		rns.jobs = nil
+	}
 	rns.mu.Unlock()
 	for _, job := range jobs {
-		job.Close()
+		_ = job.Close()
 	}
 }
 
@@ -225,21 +269,24 @@ func (rns *Rinse) MaybeStartJob() (err error) {
 	return
 }
 
-var ErrDuplicateUUID = errors.New("duplicate UUID")
-
 func (rns *Rinse) AddJob(job *Job) (err error) {
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
-	for _, j := range rns.jobs {
-		if job.UUID == j.UUID {
-			return ErrDuplicateUUID
+	err = http.ErrServerClosed
+	if !rns.closed {
+		err = ErrDuplicateUUID
+		for _, j := range rns.jobs {
+			if job.UUID == j.UUID {
+				return
+			}
 		}
+		err = nil
+		rns.jobs = append(rns.jobs, job)
+		if nextJob := rns.nextJobLocked(); nextJob != nil {
+			_ = nextJob.Start()
+		}
+		rns.Jaws.Dirty(rns)
 	}
-	rns.jobs = append(rns.jobs, job)
-	if nextJob := rns.nextJobLocked(); nextJob != nil {
-		nextJob.Start()
-	}
-	rns.Jaws.Dirty(rns)
 	return
 }
 

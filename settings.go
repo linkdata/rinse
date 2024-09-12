@@ -12,6 +12,10 @@ type settings struct {
 	AutoCleanup   int
 }
 
+func (rns *Rinse) settingsFile() string {
+	return path.Join(rns.Config.DataDir, "settings.json")
+}
+
 func (rns *Rinse) saveSettings() (err error) {
 	rns.mu.Lock()
 	x := settings{
@@ -21,14 +25,14 @@ func (rns *Rinse) saveSettings() (err error) {
 	rns.mu.Unlock()
 	var b []byte
 	if b, err = json.MarshalIndent(x, "", " "); err == nil {
-		err = os.WriteFile(path.Join(rns.Config.DataDir, "settings.json"), b, 0664)
+		err = os.WriteFile(rns.settingsFile(), b, 0664)
 	}
 	return
 }
 
 func (rns *Rinse) loadSettings() (err error) {
 	var b []byte
-	if b, err = os.ReadFile(path.Join(rns.Config.DataDir, "settings.json")); err == nil {
+	if b, err = os.ReadFile(rns.settingsFile()); err == nil {
 		var x settings
 		if err = json.Unmarshal(b, &x); err == nil {
 			rns.mu.Lock()
