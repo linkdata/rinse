@@ -28,9 +28,11 @@ func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 				if dstFile, err = os.Create(dstName); err == nil {
 					defer dstFile.Close()
 					if _, err = io.Copy(dstFile, srcFile); err == nil {
-						if err = rns.AddJob(job); err == nil {
-							if _, err = fmt.Fprintf(w, "%s\n", job.UUID.String()); err == nil {
-								return
+						if err = dstFile.Sync(); err == nil {
+							if err = rns.AddJob(job); err == nil {
+								if _, err = fmt.Fprintf(w, "%s\n", job.UUID.String()); err == nil {
+									return
+								}
 							}
 						}
 					}
