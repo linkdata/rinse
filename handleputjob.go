@@ -24,8 +24,9 @@ func (rns *Rinse) handlePutJob(w http.ResponseWriter, r *http.Request) {
 						if _, err = io.Copy(f, r.Body); err == nil {
 							if err = f.Sync(); err == nil {
 								if err = rns.AddJob(job); err == nil {
-									fmt.Fprintf(w, "%s\n", job.UUID.String())
-									return
+									if _, err = fmt.Fprintf(w, "%s\n", job.UUID.String()); err == nil {
+										return
+									}
 								}
 							}
 						}
