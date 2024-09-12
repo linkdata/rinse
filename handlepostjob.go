@@ -16,13 +16,13 @@ func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 	status := http.StatusBadRequest
 
 	if err == nil {
-		if r.Header.Get("Content-Encoding") == "" {
-			status = http.StatusInternalServerError
-			srcName := filepath.Base(info.Filename)
+		srcName := filepath.Base(info.Filename)
+		if filepath.Ext(srcName) != "" {
 			srcFile := http.MaxBytesReader(w, srcFormFile, rns.MaxUploadSize)
 			defer srcFile.Close()
 			var job *Job
 			if job, err = NewJob(rns, srcName, srcLang); err == nil {
+				status = http.StatusInternalServerError
 				dstName := path.Join(job.Workdir, srcName)
 				var dstFile *os.File
 				if dstFile, err = os.Create(dstName); err == nil {

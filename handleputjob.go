@@ -15,9 +15,9 @@ func (rns *Rinse) handlePutJob(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Encoding") == "" {
 		if name := filepath.Base(r.PathValue("file")); name != "" {
 			if ext := filepath.Ext(name); ext != "" {
-				status = http.StatusInternalServerError
 				job, err := rns.NewJob(name, r.URL.Query().Get("lang"))
 				if err == nil {
+					status = http.StatusInternalServerError
 					var f *os.File
 					if f, err = os.Create(path.Join(job.Workdir, name)); err == nil {
 						defer f.Close()

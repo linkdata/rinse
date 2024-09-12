@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">{{with .Dot}}
+
+<head>
+	{{template "head.html" $}}
+</head>
+{{template "body_start.html" $}}
+
+<h3>API endpoints</h3>
+
+<form autocomplete="off" action="/job" method="post" enctype="multipart/form-data">
+	<div class="input-group mt-3 mb-1">
+		<span class="input-group-text">POST /job</span>
+		<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}" accept=".pdf, .docx, .doc, .docm, .xlsx, .xls, .pptx, .ppt, .odt, .odg, .odp, .ods, .ots, .ott">
+		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
+			{{range .Languages}}
+			{{if $.Dot.LanguageName .}}
+			<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}&nbsp;({{.}})</option>
+			{{end}}
+			{{end}}
+		</select>
+		<button type="submit" class="btn btn-primary">Submit</button>
+	</div>
+</form>
+<div>
+	Requires Content-Encoding "multipart/form-data" and the file data provided using the form key "file".
+	The file name must be present and have an extension.
+	Optionally you can provide the OCR language using the form key "lang".
+	Submitting this test request won't show the response here - check the browsers console to see it.
+</div>
+<ul>
+	<li>200 OK: Response is the UUID string of the created job.</li>
+	<li>400 Bad Request: Likely malformed encoding or language code.</li>
+</ul>
+
+<div class="input-group mt-3 mb-1">{{with .TestPut}}
+	<span class="input-group-text">PUT /job/</span>
+	{{$.Text . `class="form-control" placeholder="filename.txt?lang=eng"`}}
+	{{$.Button "Submit" `class="btn btn-primary" name="put"` .}}
+{{end}}</div>
+<div>
+	The request body is the file data. Accepts an optional "lang" query parameter.
+	The file name must be present and have an extension.
+	Must not set Content-Encoding header.
+	Submitting this test request sends a request body containing the text "Hello World!",
+	and will show the response as a toast on this page.
+</div>
+<ul>
+	<li>200 OK: Response is the UUID string of the created job.</li>
+	<li>400 Bad Request: Likely illegal file name or language code.</li>
+	<li>404 Not Found: The filename was omitted or illegal.</li>
+</ul>
+
+<div class="input-group mt-3 mb-1">{{with .TestGet}}
+	<span class="input-group-text">GET /job/</span>
+	{{$.Text . `class="form-control" placeholder="uuid"`}}
+	{{$.Button "Submit" `class="btn btn-primary" name="get"` .}}
+{{end}}</div>
+<ul>
+	<li>200 OK: Response body is rinsed PDF file. Rinsed file name in Content-Disposition header.</li>
+	<li>202 Accepted: The UUID is valid but the job has not yet completed.</li>
+	<li>204 No Content: The UUID was valid but the job has failed.</li>
+	<li>404 Not Found: The given UUID was invalid or does not identify an active job.</li>
+</ul>
+
+<div class="input-group mt-3 mb-1">{{with .TestDelete}}
+	<span class="input-group-text">DELETE /job/</span>
+	{{$.Text . `class="form-control" placeholder="uuid"`}}
+	{{$.Button "Submit" `class="btn btn-primary" name="delete"` .}}
+{{end}}</div>
+<ul>
+	<li>200 OK: The job was found and will be deleted.</li>
+	<li>404 Not Found: The given UUID was invalid or does not identify an active job.</li>
+</ul>
+
+{{template "body_end.html" $}}
+{{end}}</html>
