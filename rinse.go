@@ -78,7 +78,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 						}
 						if err = maybePullImage(maybePull, podmanBin); err == nil {
 							var langs []string
-							if langs, err = getLanguages(podmanBin, []string{"eng", "swe"}); err == nil {
+							if langs, err = getLanguages(podmanBin); err == nil {
 								rns = &Rinse{
 									Config:        cfg,
 									Jaws:          jw,
@@ -201,7 +201,7 @@ func pullImage(podmanBin string) (err error) {
 	return
 }
 
-func getLanguages(podmanBin string, prioLangs []string) (langs []string, err error) {
+func getLanguages(podmanBin string) (langs []string, err error) {
 	var msgs []string
 	stdouthandler := func(line string) error {
 		msgs = append(msgs, line)
@@ -215,12 +215,6 @@ func getLanguages(podmanBin string, prioLangs []string) (langs []string, err err
 	}
 	if err = podrun(context.Background(), podmanBin, "", "", stdouthandler, "tesseract", "--list-langs"); err == nil {
 		slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
-		for i := len(prioLangs) - 1; i >= 0; i-- {
-			if idx := slices.Index(langs, prioLangs[i]); idx != -1 {
-				langs = slices.Delete(langs, idx, idx+1)
-				langs = append([]string{prioLangs[i]}, langs...)
-			}
-		}
 	} else {
 		for _, s := range msgs {
 			slog.Error("getLanguages", "msg", s)
