@@ -30,6 +30,8 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		statetxt = "Waiting"
 	case JobStarting:
 		statetxt = "Starting"
+	case JobDetect:
+		statetxt = "Detect Language"
 	case JobDocToPdf:
 		statetxt = "Converting"
 	case JobPdfToPPm:
@@ -39,7 +41,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	case JobEnding:
 		statetxt = "Cleanup"
 	case JobFinished:
-		statetxt = "Rinsed " + u.Name
+		statetxt = "Finished"
 	case JobFailed:
 		statetxt = "Failed"
 	}

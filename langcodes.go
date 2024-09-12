@@ -127,5 +127,8 @@ var LanguageCode = map[string]string{
 }
 
 func (rns *Rinse) LanguageName(code string) string {
-	return LanguageCode[code]
+	if s, ok := LanguageCode[code]; ok {
+		return s
+	}
+	return code
 }

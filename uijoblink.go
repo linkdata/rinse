@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"path/filepath"
 
 	"github.com/linkdata/jaws"
 )
@@ -18,7 +19,8 @@ func (u uiJobLink) JawsGetHtml(rq *jaws.Element) template.HTML {
 	} else {
 		s = html.EscapeString(u.Name)
 	}
-	s += fmt.Sprintf(`<span class="ms-2 badge text-bg-light">%s</span>`, u.LanguageName(u.Lang))
+	s += fmt.Sprintf(`<span class="ms-2 badge text-bg-light">%s</span><span class="ms-2 badge text-bg-light">%s</span>`,
+		filepath.Ext(u.Name), u.LanguageName(u.Lang))
 	return template.HTML(s)
 }
 

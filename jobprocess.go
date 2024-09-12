@@ -23,13 +23,14 @@ func (job *Job) process() {
 	defer job.processDone()
 	fn, err := job.renameInput()
 	if err == nil {
-		job.runDetectLanguage(fn)
-		if err = job.runDocToPdf(fn); err == nil {
-			if err = job.runPdfToPpm(); err == nil {
-				if err = job.runTesseract(); err == nil {
-					if err = job.jobEnding(); err == nil {
-						if err = job.transition(JobEnding, JobFinished); err == nil {
-							return
+		if err = job.runDetectLanguage(fn); err == nil {
+			if err = job.runDocToPdf(fn); err == nil {
+				if err = job.runPdfToPpm(); err == nil {
+					if err = job.runTesseract(); err == nil {
+						if err = job.jobEnding(); err == nil {
+							if err = job.transition(JobEnding, JobFinished); err == nil {
+								return
+							}
 						}
 					}
 				}
@@ -60,25 +61,28 @@ func (job *Job) renameInput() (fn string, err error) {
 	return
 }
 
-func (job *Job) runDetectLanguage(fn string) {
+func (job *Job) runDetectLanguage(fn string) (err error) {
 	// java -jar /usr/local/bin/tika.jar --language /var/rinse/input.ext 2>/dev/null
-	if job.Lang == "auto" {
-		lang := "eng"
-		stdouthandler := func(s string) (err error) {
-			if len(s) == 2 {
-				lang = s
+	if err = job.transition(JobStarting, JobDetect); err == nil {
+		if job.Lang == "auto" {
+			lang := "eng"
+			stdouthandler := func(s string) (err error) {
+				if len(s) == 2 {
+					lang = s
+				}
+				return
 			}
-			return
-		}
-		if err := job.podrun(stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); err == nil {
-			if s, ok := LanguageTika[lang]; ok {
-				lang = s
+			if e := job.podrun(stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
+				if s, ok := LanguageTika[lang]; ok {
+					lang = s
+				}
 			}
+			job.mu.Lock()
+			job.Lang = lang
+			job.mu.Unlock()
 		}
-		job.mu.Lock()
-		job.Lang = lang
-		job.mu.Unlock()
 	}
+	return
 }
 
 func (job *Job) waitForDocToPdf(fn string) (err error) {
@@ -91,7 +95,7 @@ func (job *Job) waitForDocToPdf(fn string) (err error) {
 }
 
 func (job *Job) runDocToPdf(fn string) (err error) {
-	if err = job.transition(JobStarting, JobDocToPdf); err == nil {
+	if err = job.transition(JobDetect, JobDocToPdf); err == nil {
 		err = job.waitForDocToPdf(fn)
 	}
 	return

@@ -20,6 +20,7 @@ type JobState int
 const (
 	JobNew JobState = iota
 	JobStarting
+	JobDetect
 	JobDocToPdf
 	JobPdfToPPm
 	JobTesseract
