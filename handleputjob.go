@@ -21,7 +21,9 @@ func (rns *Rinse) handlePutJob(w http.ResponseWriter, r *http.Request) {
 					var f *os.File
 					if f, err = os.Create(path.Join(job.Workdir, name)); err == nil {
 						_, err = io.Copy(f, r.Body)
-						f.Close()
+						if e := f.Close(); e != nil && err == nil {
+							err = e
+						}
 						if err == nil {
 							if err = rns.AddJob(job); err == nil {
 								fmt.Fprintf(w, "%s\n", job.UUID.String())
