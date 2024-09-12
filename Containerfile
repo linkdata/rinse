@@ -86,8 +86,6 @@ RUN apk --no-cache -U upgrade && apk --no-cache add \
     tesseract-ocr-data-ukr \
     tesseract-ocr-data-vie
 
-RUN curl --silent --output /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/2.9.2/tika-app-2.9.2.jar
-
 COPY tesseract_opencl_profile_devices.dat /
 
 RUN update-ms-fonts && \
@@ -95,6 +93,8 @@ RUN update-ms-fonts && \
     adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse && \
     mkdir -p /var/rinse && \
     chmod 777 /var/rinse
+
+RUN wget -q -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/2.9.2/tika-app-2.9.2.jar
 
 WORKDIR /
 USER rinse
