@@ -33,9 +33,10 @@ type Rinse struct {
 	PodmanBin     string
 	RunscBin      string
 	FaviconURI    string
-	MaxUploadSize int64
 	Languages     []string
 	mu            deadlock.Mutex // protects following
+	maxUploadSize int64
+	autoCleanup   int
 	jobs          []*Job
 }
 
@@ -54,35 +55,41 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 			mux.Handle(uri, ss)
 			return
 		}
-		if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
-			if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
-				var podmanBin string
-				if podmanBin, err = exec.LookPath("podman"); err == nil {
-					slog.Info("podman", "bin", podmanBin)
-					var runscbin string
-					if s, e := exec.LookPath("runsc"); e == nil {
-						if os.Getuid() == 0 && cfg.User == "" {
-							runscbin = s
-							slog.Info("gVisor", "bin", runscbin)
-						} else {
-							slog.Warn("gVisor needs root", "bin", s)
-						}
-					} else {
-						slog.Info("gVisor not found", "err", e)
-					}
-					if err = maybePullImage(maybePull, podmanBin); err == nil {
-						var langs []string
-						if langs, err = getLanguages(podmanBin, []string{"eng", "swe"}); err == nil {
-							rns = &Rinse{
-								Config:        cfg,
-								Jaws:          jw,
-								PodmanBin:     podmanBin,
-								RunscBin:      runscbin,
-								FaviconURI:    faviconuri,
-								MaxUploadSize: 1024 * 1024 * 1024, // 1Gb
-								Languages:     langs,
+		if err = os.MkdirAll(cfg.DataDir, 0775); err == nil {
+			if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
+				if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
+					var podmanBin string
+					if podmanBin, err = exec.LookPath("podman"); err == nil {
+						slog.Info("podman", "bin", podmanBin)
+						var runscbin string
+						if s, e := exec.LookPath("runsc"); e == nil {
+							if os.Getuid() == 0 && cfg.User == "" {
+								runscbin = s
+								slog.Info("gVisor", "bin", runscbin)
+							} else {
+								slog.Warn("gVisor needs root", "bin", s)
 							}
-							rns.addRoutes(mux)
+						} else {
+							slog.Info("gVisor not found", "err", e)
+						}
+						if err = maybePullImage(maybePull, podmanBin); err == nil {
+							var langs []string
+							if langs, err = getLanguages(podmanBin, []string{"eng", "swe"}); err == nil {
+								rns = &Rinse{
+									Config:        cfg,
+									Jaws:          jw,
+									PodmanBin:     podmanBin,
+									RunscBin:      runscbin,
+									FaviconURI:    faviconuri,
+									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
+									autoCleanup:   60 * 24,            // 1 day
+									Languages:     langs,
+								}
+								rns.addRoutes(mux)
+								if e := rns.loadSettings(); e != nil {
+									slog.Error("loadSettings", "err", e)
+								}
+							}
 						}
 					}
 				}
@@ -102,6 +109,20 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
 	mux.HandleFunc("PUT /job/{file}", rns.handlePutJob)
 	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
+}
+
+func (rns *Rinse) MaxUploadSize() (n int64) {
+	rns.mu.Lock()
+	n = rns.maxUploadSize
+	rns.mu.Unlock()
+	return
+}
+
+func (rns *Rinse) AutoCleanup() (n int) {
+	rns.mu.Lock()
+	n = rns.autoCleanup
+	rns.mu.Unlock()
+	return
 }
 
 func (rns *Rinse) Close() {

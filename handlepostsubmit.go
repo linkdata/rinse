@@ -29,7 +29,7 @@ func (rns *Rinse) handlePostSubmit(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") == "" {
 			status = http.StatusInternalServerError
 			srcName := filepath.Base(info.Filename)
-			srcFile := http.MaxBytesReader(w, srcFormFile, rns.MaxUploadSize)
+			srcFile := http.MaxBytesReader(w, srcFormFile, rns.MaxUploadSize())
 			defer srcFile.Close()
 			var job *Job
 			if job, err = NewJob(rns, srcName, srcLang); err == nil {

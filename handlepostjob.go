@@ -18,7 +18,7 @@ func (rns *Rinse) handlePostJob(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		srcName := filepath.Base(info.Filename)
 		if filepath.Ext(srcName) != "" {
-			srcFile := http.MaxBytesReader(w, srcFormFile, rns.MaxUploadSize)
+			srcFile := http.MaxBytesReader(w, srcFormFile, rns.MaxUploadSize())
 			defer srcFile.Close()
 			var job *Job
 			if job, err = NewJob(rns, srcName, srcLang); err == nil {

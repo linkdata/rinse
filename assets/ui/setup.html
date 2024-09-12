@@ -6,6 +6,15 @@
 </head>
 {{template "body_start.html" $}}
 
+<div class="input-group mt-3 mb-1">
+	<span class="input-group-text">Max upload size (MB)</span>
+	{{$.Number .UiMaxSize `class="form-control"`}}
+</div>
+
+<div class="input-group mt-3 mb-1">
+	<span class="input-group-text">Remove completed jobs after (minutes)</span>
+	{{$.Number .UiAutoCleanup `class="form-control"`}}
+</div>
 
 {{template "body_end.html" $}}
 {{end}}</html>
