@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -98,6 +99,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /job", rns.handlePostJob)
 	mux.HandleFunc("POST /submit", rns.handlePostSubmit)
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
+	mux.HandleFunc("PUT /job/{file}", rns.handlePutJob)
 	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
 }
 
@@ -173,9 +175,7 @@ func (rns *Rinse) NewJob(name, lang string) (job *Job, err error) {
 	return NewJob(rns, name, lang)
 }
 
-func (rns *Rinse) nextJob() (nextJob *Job) {
-	rns.mu.Lock()
-	defer rns.mu.Unlock()
+func (rns *Rinse) nextJobLocked() (nextJob *Job) {
 	for _, job := range rns.jobs {
 		switch job.State() {
 		case JobNew:
@@ -190,6 +190,12 @@ func (rns *Rinse) nextJob() (nextJob *Job) {
 	return
 }
 
+func (rns *Rinse) nextJob() (nextJob *Job) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	return rns.nextJobLocked()
+}
+
 func (rns *Rinse) MaybeStartJob() (err error) {
 	if job := rns.nextJob(); job != nil {
 		err = job.Start()
@@ -197,11 +203,20 @@ func (rns *Rinse) MaybeStartJob() (err error) {
 	return
 }
 
+var ErrDuplicateUUID = errors.New("duplicate UUID")
+
 func (rns *Rinse) AddJob(job *Job) (err error) {
 	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	for _, j := range rns.jobs {
+		if job.UUID == j.UUID {
+			return ErrDuplicateUUID
+		}
+	}
 	rns.jobs = append(rns.jobs, job)
-	rns.mu.Unlock()
-	err = rns.MaybeStartJob()
+	if nextJob := rns.nextJobLocked(); nextJob != nil {
+		nextJob.Start()
+	}
 	rns.Jaws.Dirty(rns)
 	return
 }

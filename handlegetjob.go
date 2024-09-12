@@ -11,16 +11,21 @@ import (
 	"github.com/google/uuid"
 )
 
+func (rns *Rinse) findJobUuid(u uuid.UUID) *Job {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	for _, job := range rns.jobs {
+		if job.UUID == u {
+			return job
+		}
+	}
+	return nil
+}
+
 func (rns *Rinse) findJob(s string) *Job {
 	if s != "" {
 		if u, err := uuid.Parse(s); err == nil {
-			rns.mu.Lock()
-			defer rns.mu.Unlock()
-			for _, job := range rns.jobs {
-				if job.UUID == u {
-					return job
-				}
-			}
+			return rns.findJobUuid(u)
 		}
 	}
 	return nil
