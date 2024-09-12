@@ -57,7 +57,7 @@ func checkLangString(lang string) error {
 
 func defaultLanguage(lang string) string {
 	if lang == "" {
-		return "eng"
+		return "auto"
 	}
 	return lang
 }

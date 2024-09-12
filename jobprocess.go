@@ -23,6 +23,7 @@ func (job *Job) process() {
 	defer job.processDone()
 	fn, err := job.renameInput()
 	if err == nil {
+		job.runDetectLanguage(fn)
 		if err = job.runDocToPdf(fn); err == nil {
 			if err = job.runPdfToPpm(); err == nil {
 				if err = job.runTesseract(); err == nil {
@@ -57,6 +58,27 @@ func (job *Job) renameInput() (fn string, err error) {
 		err = os.Chmod(dst, 0444)
 	}
 	return
+}
+
+func (job *Job) runDetectLanguage(fn string) {
+	// java -jar /usr/local/bin/tika.jar --language /var/rinse/input.ext 2>/dev/null
+	if job.Lang == "auto" {
+		lang := "eng"
+		stdouthandler := func(s string) (err error) {
+			if len(s) == 2 {
+				lang = s
+			}
+			return
+		}
+		if err := job.podrun(stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); err == nil {
+			if s, ok := LanguageTika[lang]; ok {
+				lang = s
+			}
+		}
+		job.mu.Lock()
+		job.Lang = lang
+		job.mu.Unlock()
+	}
 }
 
 func (job *Job) waitForDocToPdf(fn string) (err error) {

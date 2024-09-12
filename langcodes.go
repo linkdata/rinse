@@ -1,5 +1,26 @@
 package rinse
 
+var LanguageTika = map[string]string{
+	"da": "dan", // Danish
+	"de": "deu", // German
+	"et": "est", // Estonian
+	"el": "ell", // Greek
+	"en": "eng", // English
+	"es": "spa", // Spanish
+	"fi": "fin", // Finnish
+	"fr": "fra", // French
+	"hu": "hun", // Hungarian
+	"is": "isl", // Icelandic
+	"it": "ita", // Italian
+	"nl": "nld", // Dutch
+	"no": "nor", // Norwegian
+	"pl": "pol", // Polish
+	"pt": "por", // Portuguese
+	"ru": "rus", // Russian
+	"sv": "swe", // Swedish
+	"th": "tha", // Thai
+}
+
 var LanguageCode = map[string]string{
 	"afr":      "Afrikaans",             // 	afr.traineddata
 	"amh":      "Amharic",               // 	amh.traineddata
