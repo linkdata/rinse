@@ -13,10 +13,9 @@
 		<span class="input-group-text">POST /job</span>
 		<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}" accept=".pdf, .docx, .doc, .docm, .xlsx, .xls, .pptx, .ppt, .odt, .odg, .odp, .ods, .ots, .ott">
 		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
+			<option value="auto" href="#">Language (auto)</option>
 			{{range .Languages}}
-			{{if $.Dot.LanguageName .}}
 			<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}&nbsp;({{.}})</option>
-			{{end}}
 			{{end}}
 		</select>
 		<button type="submit" class="btn btn-primary">Submit</button>
