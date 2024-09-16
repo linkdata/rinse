@@ -26,6 +26,8 @@ soon as the stage is complete. `rinse` removes files as soon as possible after
 each stage. At the end, only the final `document-rinsed.pdf` file remains on 
 disk until the job is deleted, which also deletes the final PDF.
 
+If the language is to be auto-detected, Apache Tika is used to do so.
+
 If the document is not a PDF, LibreOffice is used to try to covert it to one,
 and if successful, the original document is deleted.
 
