@@ -43,6 +43,7 @@ type Job struct {
 	stopped    time.Time
 	ppmfiles   map[string]bool
 	diskuse    int64
+	cancelFn   context.CancelFunc
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -91,9 +92,13 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	return
 }
 
-func (job *Job) Start() (err error) {
+func (job *Job) Start(maxTime time.Duration) (err error) {
 	if err = job.transition(JobNew, JobStarting); err == nil {
-		go job.process()
+		ctx, cancel := context.WithTimeout(context.Background(), maxTime)
+		job.mu.Lock()
+		job.cancelFn = cancel
+		job.mu.Unlock()
+		go job.process(ctx)
 	}
 	return
 }
@@ -121,13 +126,20 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	return
 }
 
-func (job *Job) podrun(stdouthandler func(string) error, cmds ...string) (err error) {
-	return podrun(context.Background(), job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
+func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cmds ...string) (err error) {
+	return podrun(ctx, job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
 }
 
-func (job *Job) Close() error {
-	defer job.RemoveJob(job)
-	return os.RemoveAll(job.Workdir)
+func (job *Job) Close() {
+	job.mu.Lock()
+	cancel := job.cancelFn
+	job.cancelFn = nil
+	job.mu.Unlock()
+	if cancel != nil {
+		cancel()
+	} else {
+		job.RemoveJob(job)
+	}
 }
 
 func (job *Job) refreshDiskuse() {

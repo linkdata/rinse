@@ -18,6 +18,12 @@
 		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="0" max="1440" step="1"`}}</span>
 		{{$.Span .UiAutoCleanup `class="input-group-text"`}}
 	</div>
+
+	<div class="input-group mb-3">
+		<div class="input-group-text">Max job runtime</div>
+		<span class="form-control">{{$.Range .UiMaxRuntime `class="form-range align-bottom" min="0" max="3600" step="10"`}}</span>
+		{{$.Span .UiMaxRuntime `class="input-group-text"`}}
+	</div>
 </form>
 
 {{template "body_end.html" $}}

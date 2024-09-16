@@ -1,6 +1,7 @@
 package rinse
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -16,17 +17,17 @@ import (
 
 var ErrPpmSeenTwice = errors.New("ppm file seen twice")
 
-func (job *Job) process() {
+func (job *Job) process(ctx context.Context) {
 	job.mu.Lock()
 	job.started = time.Now()
 	job.mu.Unlock()
 	defer job.processDone()
 	fn, err := job.renameInput()
 	if err == nil {
-		if err = job.runDetectLanguage(fn); err == nil {
-			if err = job.runDocToPdf(fn); err == nil {
-				if err = job.runPdfToPpm(); err == nil {
-					if err = job.runTesseract(); err == nil {
+		if err = job.runDetectLanguage(ctx, fn); err == nil {
+			if err = job.runDocToPdf(ctx, fn); err == nil {
+				if err = job.runPdfToPpm(ctx); err == nil {
+					if err = job.runTesseract(ctx); err == nil {
 						if err = job.jobEnding(); err == nil {
 							if err = job.transition(JobEnding, JobFinished); err == nil {
 								return
@@ -48,6 +49,11 @@ func (job *Job) processDone() {
 	job.mu.Lock()
 	job.stopped = time.Now()
 	job.mu.Unlock()
+	if err := os.RemoveAll(job.Workdir); err != nil {
+		slog.Error("processDone", "job", job.Name, "err", err)
+	} else {
+		job.RemoveJob(job)
+	}
 	job.MaybeStartJob()
 }
 
@@ -61,7 +67,7 @@ func (job *Job) renameInput() (fn string, err error) {
 	return
 }
 
-func (job *Job) runDetectLanguage(fn string) (err error) {
+func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 	// java -jar /usr/local/bin/tika.jar --language /var/rinse/input.ext 2>/dev/null
 	if err = job.transition(JobStarting, JobDetect); err == nil {
 		if job.Lang == "auto" {
@@ -72,7 +78,7 @@ func (job *Job) runDetectLanguage(fn string) (err error) {
 				}
 				return
 			}
-			if e := job.podrun(stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
+			if e := job.podrun(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
 				if s, ok := LanguageTika[lang]; ok {
 					lang = s
 				}
@@ -85,23 +91,23 @@ func (job *Job) runDetectLanguage(fn string) (err error) {
 	return
 }
 
-func (job *Job) waitForDocToPdf(fn string) (err error) {
+func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
-		if err = job.podrun(nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
+		if err = job.podrun(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
 			err = os.Remove(path.Join(job.Workdir, fn))
 		}
 	}
 	return
 }
 
-func (job *Job) runDocToPdf(fn string) (err error) {
+func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
 	if err = job.transition(JobDetect, JobDocToPdf); err == nil {
-		err = job.waitForDocToPdf(fn)
+		err = job.waitForDocToPdf(ctx, fn)
 	}
 	return
 }
 
-func (job *Job) waitForPdfToPpm() (err error) {
+func (job *Job) waitForPdfToPpm(ctx context.Context) (err error) {
 	var done int32
 	defer atomic.StoreInt32(&done, 1)
 	go func() {
@@ -110,7 +116,7 @@ func (job *Job) waitForPdfToPpm() (err error) {
 			job.refreshDiskuse()
 		}
 	}()
-	return job.podrun(nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
+	return job.podrun(ctx, nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 }
 
 func (job *Job) makeOutputTxt() (err error) {
@@ -134,9 +140,9 @@ func (job *Job) makeOutputTxt() (err error) {
 	return
 }
 
-func (job *Job) runPdfToPpm() (err error) {
+func (job *Job) runPdfToPpm(ctx context.Context) (err error) {
 	if err = job.transition(JobDocToPdf, JobPdfToPPm); err == nil {
-		if err = job.waitForPdfToPpm(); err == nil {
+		if err = job.waitForPdfToPpm(ctx); err == nil {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
 				job.refreshDiskuse()
 				err = job.makeOutputTxt()
@@ -146,7 +152,7 @@ func (job *Job) runPdfToPpm() (err error) {
 	return
 }
 
-func (job *Job) runTesseract() (err error) {
+func (job *Job) runTesseract(ctx context.Context) (err error) {
 	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
 		var output []string
 		stdouthandler := func(s string) error {
@@ -165,7 +171,7 @@ func (job *Job) runTesseract() (err error) {
 			}
 			return nil
 		}
-		if err = job.podrun(stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf"); err != nil {
+		if err = job.podrun(ctx, stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf"); err != nil {
 			for _, s := range output {
 				slog.Error("tesseract", "msg", s)
 			}

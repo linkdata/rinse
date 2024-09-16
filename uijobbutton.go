@@ -1,8 +1,8 @@
 package rinse
 
 import (
-	"errors"
 	"html/template"
+	"time"
 
 	"github.com/linkdata/jaws"
 )
@@ -12,13 +12,11 @@ type uiJobButton struct{ *Job }
 // JawsClick implements jaws.ClickHandler.
 func (ui uiJobButton) JawsClick(e *jaws.Element, name string) (err error) {
 	if name == "jobact" {
-		switch ui.State() {
-		case JobNew:
-			return ui.Start()
-		case JobFinished, JobFailed:
-			return ui.Close()
+		if ui.State() == JobNew {
+			return ui.Start(time.Duration(ui.MaxRuntime()) * time.Second)
 		}
-		return errors.New("not implemented")
+		ui.Close()
+		return nil
 	}
 	return jaws.ErrEventUnhandled
 }

@@ -41,6 +41,7 @@ type Rinse struct {
 	closed        bool
 	maxUploadSize int64
 	autoCleanup   int
+	maxRuntime    int
 	jobs          []*Job
 }
 
@@ -87,6 +88,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 									FaviconURI:    faviconuri,
 									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
 									autoCleanup:   60 * 24,            // 1 day
+									maxRuntime:    60 * 60,            // 1 hour
 									jobs:          make([]*Job, 0),
 									Languages:     langs,
 								}
@@ -134,9 +136,7 @@ func (rns *Rinse) runBackgroundTasks() {
 	for !rns.IsClosed() {
 		time.Sleep(time.Second)
 		for _, job := range rns.runAutoCleanup() {
-			if err := job.Close(); err != nil {
-				slog.Error("job.Close", "job", job.Name, "err", err)
-			}
+			job.Close()
 		}
 	}
 }
@@ -166,6 +166,13 @@ func (rns *Rinse) AutoCleanup() (n int) {
 	return
 }
 
+func (rns *Rinse) MaxRuntime() (n int) {
+	rns.mu.Lock()
+	n = rns.maxRuntime
+	rns.mu.Unlock()
+	return
+}
+
 func (rns *Rinse) Close() {
 	rns.mu.Lock()
 	jobs := rns.jobs
@@ -175,7 +182,7 @@ func (rns *Rinse) Close() {
 	}
 	rns.mu.Unlock()
 	for _, job := range jobs {
-		_ = job.Close()
+		job.Close()
 	}
 }
 
@@ -258,7 +265,7 @@ func (rns *Rinse) nextJob() (nextJob *Job) {
 
 func (rns *Rinse) MaybeStartJob() (err error) {
 	if job := rns.nextJob(); job != nil {
-		err = job.Start()
+		err = job.Start(time.Duration(rns.MaxRuntime()) * time.Second)
 	}
 	return
 }
@@ -277,7 +284,7 @@ func (rns *Rinse) AddJob(job *Job) (err error) {
 		err = nil
 		rns.jobs = append(rns.jobs, job)
 		if nextJob := rns.nextJobLocked(); nextJob != nil {
-			_ = nextJob.Start()
+			_ = nextJob.Start(time.Duration(rns.maxRuntime) * time.Second)
 		}
 		rns.Jaws.Dirty(rns)
 	}
