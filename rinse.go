@@ -1,7 +1,5 @@
 package rinse
 
-//go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name rinse -out version.gen.go
-
 import (
 	"bytes"
 	"context"

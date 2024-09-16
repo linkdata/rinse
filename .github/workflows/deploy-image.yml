@@ -3,7 +3,7 @@ name: Create and publish the container image
 
 on:
   push:
-    branches: ['release']
+    branches: ['main']
 
 env:
     IMAGE_NAME: ${{ github.repository }}
