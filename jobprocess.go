@@ -56,7 +56,7 @@ func (job *Job) processDone() {
 	if closed {
 		job.removeAll()
 	} else {
-		job.cleanup("")
+		job.cleanup(job.ResultName)
 	}
 }
 
