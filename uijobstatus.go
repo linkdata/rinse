@@ -26,9 +26,11 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	u.mu.Unlock()
 
 	var statetxt string
+	stateclass := "text-body"
 	switch state {
 	case JobNew:
 		statetxt = "Waiting"
+		stateclass = "text-secondary fw-light"
 	case JobStarting:
 		statetxt = "Starting"
 	case JobDetect:
@@ -43,16 +45,15 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		statetxt = "Cleanup"
 	case JobFinished:
 		statetxt = "Finished"
+		stateclass = "text-success fw-bold"
 	case JobFailed:
-		s := "Failed"
+		statetxt = "Failed"
+		stateclass = "text-danger fw-bold"
 		if err != nil {
-			s = err.Error()
+			statetxt = err.Error()
 		}
-		s = fmt.Sprintf(`<span class="text-danger">%s</span>`, html.EscapeString(s))
-		return template.HTML(s)
 	}
-
-	s := html.EscapeString(fmt.Sprintf(`%s (%s)`, statetxt, prettyByteSize(diskuse)))
+	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, html.EscapeString(statetxt), prettyByteSize(diskuse))
 	return template.HTML(s)
 }
 
