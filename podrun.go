@@ -38,7 +38,7 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 
 	slog.Debug("podman", "args", podmanargs)
 
-	cmd := exec.Command(podmanBin, podmanargs...)
+	cmd := exec.Command(podmanBin, podmanargs...) // #nosec G204
 	var stdout io.ReadCloser
 	if stdout, err = cmd.StdoutPipe(); err == nil {
 		if err = cmd.Start(); err == nil {

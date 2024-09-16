@@ -59,7 +59,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 			mux.Handle(uri, ss)
 			return
 		}
-		if err = os.MkdirAll(cfg.DataDir, 0775); err == nil {
+		if err = os.MkdirAll(cfg.DataDir, 0775); err == nil { // #nosec G301
 			if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
 				if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
 					var podmanBin string
@@ -156,8 +156,8 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
-	mux.HandleFunc("POST /job", rns.handlePostJob)
-	mux.HandleFunc("POST /submit", rns.handlePostSubmit)
+	mux.HandleFunc("POST /job", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(false, w, r) })
+	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
 	mux.HandleFunc("PUT /job/{file}", rns.handlePutJob)
 	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)

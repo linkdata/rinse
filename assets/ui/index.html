@@ -10,6 +10,12 @@
 	<div class="col">
 		<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}" accept=".pdf, .docx, .doc, .docm, .xlsx, .xls, .pptx, .ppt, .odt, .odg, .odp, .ods, .ots, .ott">
 	</div>
+	<div class="col">
+		<div class="input-group">
+			<div class="input-group-text">URL</div>
+			<input class="form-control" type="text" name="{{.FormURLKey}}" id="{{.FormURLKey}}">
+		</div>
+	</div>
 	<div class="col-auto">
 		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
 			<option value="auto" href="#">Language (auto)</option>

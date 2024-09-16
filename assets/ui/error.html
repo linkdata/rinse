@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">{{with .Dot}}
+
+<head>
+	{{template "head.html" $}}
+</head>
+<body style="padding-top: 50px;" class="vh-100">
+	{{template "header.html" $}}
+	<div class="h3 text-center text-danger">{{.Error}}</div>
+</body>
+
+{{template "body_end.html" $}}
+{{end}}</html>

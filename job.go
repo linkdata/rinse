@@ -76,7 +76,7 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		var workdir string
 		if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
-			if err = os.Chmod(workdir, 0777); err == nil {
+			if err = os.Chmod(workdir, 0777); err == nil { // #nosec G302
 				name = filepath.Base(name)
 				job = &Job{
 					Rinse:      rns,

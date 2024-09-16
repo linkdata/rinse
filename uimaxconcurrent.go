@@ -15,7 +15,7 @@ func (u uiMaxConcurrent) Text() string {
 
 // JawsGetHtml implements jaws.HtmlGetter.
 func (u uiMaxConcurrent) JawsGetHtml(rq *jaws.Element) template.HTML {
-	return template.HTML(u.Text())
+	return template.HTML(u.Text()) // #nosec G203
 }
 
 // JawsGetFloat implements jaws.FloatSetter.
