@@ -11,6 +11,7 @@ type settings struct {
 	MaxUploadSize int64
 	AutoCleanup   int
 	MaxRuntime    int
+	MaxConcurrent int
 }
 
 func (rns *Rinse) settingsFile() string {
@@ -23,6 +24,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		MaxUploadSize: rns.maxUploadSize,
 		AutoCleanup:   rns.autoCleanup,
 		MaxRuntime:    rns.maxRuntime,
+		MaxConcurrent: rns.maxConcurrent,
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -42,6 +44,7 @@ func (rns *Rinse) loadSettings() (err error) {
 			rns.maxUploadSize = max(1024*1024, x.MaxUploadSize)
 			rns.autoCleanup = max(0, x.AutoCleanup)
 			rns.maxRuntime = max(0, x.MaxRuntime)
+			rns.maxConcurrent = max(1, x.MaxConcurrent)
 		}
 	} else if errors.Is(err, os.ErrNotExist) {
 		err = nil

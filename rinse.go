@@ -42,6 +42,7 @@ type Rinse struct {
 	maxUploadSize int64
 	autoCleanup   int
 	maxRuntime    int
+	maxConcurrent int
 	jobs          []*Job
 }
 
@@ -89,6 +90,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
 									autoCleanup:   60 * 24,            // 1 day
 									maxRuntime:    60 * 60,            // 1 hour
+									maxConcurrent: 2,
 									jobs:          make([]*Job, 0),
 									Languages:     langs,
 								}
@@ -108,18 +110,29 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 	return
 }
 
-func (rns *Rinse) runAutoCleanup() (todo []*Job) {
+func (rns *Rinse) runTasks() (todo []*Job) {
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
-	if rns.autoCleanup > 0 {
-		deadline := time.Minute * time.Duration(rns.autoCleanup)
-		for _, job := range rns.jobs {
-			switch job.State() {
-			case JobFailed, JobFinished:
-				if time.Since(job.stopped) > deadline {
-					todo = append(todo, job)
-				}
+	deadline := time.Minute * time.Duration(rns.autoCleanup)
+	running := 0
+	var nextJob *Job
+	for _, job := range rns.jobs {
+		switch job.State() {
+		case JobNew:
+			if nextJob == nil {
+				nextJob = job
 			}
+		case JobFailed, JobFinished:
+			if rns.autoCleanup > 0 && time.Since(job.stopped) > deadline {
+				todo = append(todo, job)
+			}
+		default:
+			running++
+		}
+	}
+	if nextJob != nil && running < rns.maxConcurrent {
+		if err := nextJob.Start(time.Duration(rns.maxRuntime) * time.Second); err != nil {
+			slog.Error("startjob", "job", nextJob.Name, "err", err)
 		}
 	}
 	return
@@ -135,8 +148,8 @@ func (rns *Rinse) IsClosed() (yes bool) {
 func (rns *Rinse) runBackgroundTasks() {
 	for !rns.IsClosed() {
 		time.Sleep(time.Second)
-		for _, job := range rns.runAutoCleanup() {
-			job.Close()
+		for _, job := range rns.runTasks() {
+			rns.RemoveJob(job)
 		}
 	}
 }
@@ -169,6 +182,13 @@ func (rns *Rinse) AutoCleanup() (n int) {
 func (rns *Rinse) MaxRuntime() (n int) {
 	rns.mu.Lock()
 	n = rns.maxRuntime
+	rns.mu.Unlock()
+	return
+}
+
+func (rns *Rinse) MaxConcurrent() (n int) {
+	rns.mu.Lock()
+	n = rns.maxConcurrent
 	rns.mu.Unlock()
 	return
 }
@@ -243,6 +263,7 @@ func (rns *Rinse) NewJob(name, lang string) (job *Job, err error) {
 }
 
 func (rns *Rinse) nextJobLocked() (nextJob *Job) {
+	running := 0
 	for _, job := range rns.jobs {
 		switch job.State() {
 		case JobNew:
@@ -251,7 +272,10 @@ func (rns *Rinse) nextJobLocked() (nextJob *Job) {
 			}
 		case JobFailed, JobFinished:
 		default:
-			return nil
+			running++
+			if running >= rns.maxConcurrent {
+				return nil
+			}
 		}
 	}
 	return
@@ -295,6 +319,7 @@ func (rns *Rinse) RemoveJob(job *Job) {
 	rns.mu.Lock()
 	rns.jobs = slices.DeleteFunc(rns.jobs, func(x *Job) bool { return x == job })
 	rns.mu.Unlock()
+	job.Close()
 	rns.Jaws.Dirty(rns)
 }
 

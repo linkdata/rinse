@@ -16,6 +16,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	diskuse := u.diskuse
 	state := u.state
 	ppmcount := len(u.ppmfiles)
+	err := u.err
 	var ppmdone int
 	for _, seen := range u.ppmfiles {
 		if seen {
@@ -43,7 +44,12 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	case JobFinished:
 		statetxt = "Finished"
 	case JobFailed:
-		statetxt = "Failed"
+		s := "Failed"
+		if err != nil {
+			s = err.Error()
+		}
+		s = fmt.Sprintf(`<span class="text-danger">%s</span>`, html.EscapeString(s))
+		return template.HTML(s)
 	}
 
 	s := html.EscapeString(fmt.Sprintf(`%s (%s)`, statetxt, prettyByteSize(diskuse)))

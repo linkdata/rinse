@@ -3,6 +3,7 @@ package rinse
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os/exec"
@@ -77,7 +78,9 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 		}
 	}
 	if err != nil {
-		slog.Warn("podman", "err", err)
+		if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
+			slog.Error("podman", "err", err)
+		}
 	}
 	return
 }

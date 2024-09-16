@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -44,6 +45,8 @@ type Job struct {
 	ppmfiles   map[string]bool
 	diskuse    int64
 	cancelFn   context.CancelFunc
+	closed     bool
+	err        error
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -130,15 +133,37 @@ func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cm
 	return podrun(ctx, job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
 }
 
-func (job *Job) Close() {
+func (job *Job) Stop() {
 	job.mu.Lock()
 	cancel := job.cancelFn
-	job.cancelFn = nil
+	if job.state != JobFinished {
+		job.state = JobFailed
+	}
 	job.mu.Unlock()
 	if cancel != nil {
 		cancel()
+	}
+}
+
+func (job *Job) removeAll() {
+	if err := os.RemoveAll(job.Workdir); err != nil {
+		slog.Error("job.removeAll", "job", job.Name, "err", err)
+	}
+}
+
+func (job *Job) Close() {
+	job.mu.Lock()
+	cancel := job.cancelFn
+	closed := job.closed
+	job.closed = true
+	job.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
 	} else {
-		job.RemoveJob(job)
+		if !closed {
+			job.removeAll()
+		}
 	}
 }
 

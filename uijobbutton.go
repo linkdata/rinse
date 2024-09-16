@@ -15,7 +15,7 @@ func (ui uiJobButton) JawsClick(e *jaws.Element, name string) (err error) {
 		if ui.State() == JobNew {
 			return ui.Start(time.Duration(ui.MaxRuntime()) * time.Second)
 		}
-		ui.Close()
+		ui.RemoveJob(ui.Job)
 		return nil
 	}
 	return jaws.ErrEventUnhandled

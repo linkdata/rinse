@@ -1,7 +1,6 @@
 package rinse
 
 import (
-	"fmt"
 	"html/template"
 	"time"
 
@@ -14,7 +13,7 @@ func (u uiMaxRuntime) Text() string {
 	if n := u.MaxRuntime(); n < 1 {
 		return "unlimited"
 	} else {
-		return fmt.Sprintf("%v", time.Second*time.Duration(n))
+		return prettyDuration(time.Second * time.Duration(n))
 	}
 }
 

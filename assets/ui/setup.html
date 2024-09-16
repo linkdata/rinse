@@ -21,8 +21,14 @@
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">Max job runtime</div>
-		<span class="form-control">{{$.Range .UiMaxRuntime `class="form-range align-bottom" min="0" max="3600" step="10"`}}</span>
+		<span class="form-control">{{$.Range .UiMaxRuntime `class="form-range align-bottom" min="0" max="7200" step="60"`}}</span>
 		{{$.Span .UiMaxRuntime `class="input-group-text"`}}
+	</div>
+
+	<div class="input-group mb-3">
+		<div class="input-group-text">Concurrent jobs</div>
+		<span class="form-control">{{$.Range .UiMaxConcurrent `class="form-range align-bottom" min="1" max="8" step="1"`}}</span>
+		{{$.Span .UiMaxConcurrent `class="input-group-text"`}}
 	</div>
 </form>
 

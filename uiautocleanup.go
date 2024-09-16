@@ -1,9 +1,7 @@
 package rinse
 
 import (
-	"fmt"
 	"html/template"
-	"strings"
 	"time"
 
 	"github.com/linkdata/jaws"
@@ -15,7 +13,7 @@ func (u uiAutoCleanup) Text() string {
 	if n := u.AutoCleanup(); n < 1 {
 		return "never"
 	} else {
-		return strings.TrimSuffix(fmt.Sprintf("%v", time.Minute*time.Duration(n)), "0s")
+		return prettyDuration(time.Minute * time.Duration(n))
 	}
 }
 

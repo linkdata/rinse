@@ -38,23 +38,26 @@ func (job *Job) process(ctx context.Context) {
 			}
 		}
 	}
-	slog.Error("job failed", "job", job.Name, "state", job.State(), "err", err)
+	if !errors.Is(err, context.Canceled) {
+		slog.Error("job failed", "job", job.Name, "state", job.State(), "err", err)
+	}
 	job.mu.Lock()
 	job.state = JobFailed
+	job.err = err
 	job.mu.Unlock()
-	job.cleanup("")
 }
 
 func (job *Job) processDone() {
 	job.mu.Lock()
 	job.stopped = time.Now()
+	job.cancelFn = nil
+	closed := job.closed
 	job.mu.Unlock()
-	if err := os.RemoveAll(job.Workdir); err != nil {
-		slog.Error("processDone", "job", job.Name, "err", err)
+	if closed {
+		job.removeAll()
 	} else {
-		job.RemoveJob(job)
+		job.cleanup("")
 	}
-	job.MaybeStartJob()
 }
 
 func (job *Job) renameInput() (fn string, err error) {
@@ -163,6 +166,9 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 			for fn, seen := range job.ppmfiles {
 				if strings.Contains(s, fn) {
 					if seen {
+						if strings.Contains(s, "file not found") {
+							return errors.New(s)
+						}
 						return ErrPpmSeenTwice
 					}
 					job.ppmfiles[fn] = true
@@ -172,8 +178,10 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 			return nil
 		}
 		if err = job.podrun(ctx, stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf"); err != nil {
-			for _, s := range output {
-				slog.Error("tesseract", "msg", s)
+			if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
+				for _, s := range output {
+					slog.Error("tesseract", "msg", s)
+				}
 			}
 		}
 	}
