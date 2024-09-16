@@ -6,15 +6,19 @@
 </head>
 {{template "body_start.html" $}}
 
-<div class="input-group mt-3 mb-1">
-	<span class="input-group-text">Max upload size (MB)</span>
-	{{$.Number .UiMaxSize `class="form-control"`}}
-</div>
+<form autocomplete="off">
+	<div class="input-group mb-3">
+		<div class="input-group-text">Max upload size</div>
+		<span class="form-control">{{$.Range .UiMaxSize `class="form-range align-bottom" min="0" max="2048" step="1"`}}</span>
+		{{$.Span .UiMaxSize `class="input-group-text"`}}
+	</div>
 
-<div class="input-group mt-3 mb-1">
-	<span class="input-group-text">Remove completed jobs after (minutes)</span>
-	{{$.Number .UiAutoCleanup `class="form-control"`}}
-</div>
+	<div class="input-group mb-3">
+		<div class="input-group-text">Remove jobs after</div>
+		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="0" max="1440" step="1"`}}</span>
+		{{$.Span .UiAutoCleanup `class="input-group-text"`}}
+	</div>
+</form>
 
 {{template "body_end.html" $}}
 {{end}}</html>

@@ -1,10 +1,28 @@
 package rinse
 
 import (
+	"fmt"
+	"html/template"
+	"strings"
+	"time"
+
 	"github.com/linkdata/jaws"
 )
 
 type uiAutoCleanup struct{ *Rinse }
+
+func (u uiAutoCleanup) Text() string {
+	if n := u.AutoCleanup(); n < 1 {
+		return "never"
+	} else {
+		return strings.TrimSuffix(fmt.Sprintf("%v", time.Minute*time.Duration(n)), "0s")
+	}
+}
+
+// JawsGetHtml implements jaws.HtmlGetter.
+func (u uiAutoCleanup) JawsGetHtml(rq *jaws.Element) template.HTML {
+	return template.HTML(u.Text())
+}
 
 // JawsGetFloat implements jaws.FloatSetter.
 func (u uiAutoCleanup) JawsGetFloat(e *jaws.Element) float64 {
@@ -19,6 +37,6 @@ func (u uiAutoCleanup) JawsSetFloat(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiAutoCleanup() jaws.FloatSetter {
+func (rns *Rinse) UiAutoCleanup() jaws.HtmlGetter {
 	return uiAutoCleanup{rns}
 }

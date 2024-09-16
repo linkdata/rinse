@@ -46,21 +46,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		statetxt = "Failed"
 	}
 
-	diskuseflt := float64(diskuse)
-	diskusesuffix := "B"
-	switch {
-	case diskuse > 1024*1024*1024:
-		diskuseflt /= (1024 * 1024 * 1024)
-		diskusesuffix = "GB"
-	case diskuse > 1024*1024:
-		diskuseflt /= (1024 * 1024)
-		diskusesuffix = "MB"
-	case diskuse > 1024:
-		diskuseflt /= (1024)
-		diskusesuffix = "KB"
-	}
-
-	s := html.EscapeString(fmt.Sprintf(`%s (%.2f%s)`, statetxt, diskuseflt, diskusesuffix))
+	s := html.EscapeString(fmt.Sprintf(`%s (%s)`, statetxt, prettyByteSize(diskuse)))
 	return template.HTML(s)
 }
 
