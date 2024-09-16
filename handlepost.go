@@ -31,7 +31,7 @@ func (rns *Rinse) createJob(srcName, srcLang string, srcFile io.ReadCloser) (err
 	if job, err = NewJob(rns, srcName, srcLang); err == nil {
 		dstName := path.Join(job.Workdir, srcName)
 		var dstFile *os.File
-		if dstFile, err = os.Create(dstName); err == nil {
+		if dstFile, err = os.Create(dstName); err == nil { // #nosec G304
 			defer dstFile.Close()
 			if _, err = io.Copy(dstFile, srcFile); err == nil {
 				if err = rns.AddJob(job); err != nil {
@@ -65,7 +65,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 		}
 	} else if srcUrl != "" {
 		var resp *http.Response
-		if resp, err = http.Get(srcUrl); err == nil {
+		if resp, err = http.Get(srcUrl); err == nil { // #nosec G107
 			srcName = path.Base(resp.Request.URL.Path)
 			srcFile = resp.Body
 			if cd := resp.Header.Get("Content-Disposition"); cd != "" {

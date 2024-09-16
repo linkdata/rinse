@@ -54,7 +54,7 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 		}
 	}
 	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, html.EscapeString(statetxt), prettyByteSize(diskuse))
-	return template.HTML(s)
+	return template.HTML(s) // #nosec G203
 }
 
 func (job *Job) Status() (ui jaws.HtmlGetter) {

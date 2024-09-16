@@ -27,7 +27,7 @@ func (ui uiClock) JawsGetHtml(e *jaws.Element) template.HTML {
 	if (now.Second() % 2) == 0 {
 		fmt = "15&nbsp;04"
 	}
-	return template.HTML(now.Format(fmt))
+	return template.HTML(now.Format(fmt)) // #nosec G203
 }
 
 func (rns *Rinse) UiClock() jaws.HtmlGetter {

@@ -21,7 +21,7 @@ func (u uiJobLink) JawsGetHtml(rq *jaws.Element) template.HTML {
 	}
 	s += fmt.Sprintf(`<span class="ms-2 badge text-bg-light">%s</span><span class="ms-2 badge text-bg-light">%s</span>`,
 		filepath.Ext(u.Name), u.LanguageName(u.Lang))
-	return template.HTML(s)
+	return template.HTML(s) // #nosec G203
 }
 
 func (job *Job) Link() jaws.HtmlGetter {

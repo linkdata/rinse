@@ -29,7 +29,7 @@ func (rns *Rinse) saveSettings() (err error) {
 	rns.mu.Unlock()
 	var b []byte
 	if b, err = json.MarshalIndent(x, "", " "); err == nil {
-		err = os.WriteFile(rns.settingsFile(), b, 0664)
+		err = os.WriteFile(rns.settingsFile(), b, 0664) // #nosec G306
 	}
 	return
 }

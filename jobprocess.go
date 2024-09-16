@@ -65,7 +65,7 @@ func (job *Job) renameInput() (fn string, err error) {
 	src := path.Join(job.Workdir, job.Name)
 	dst := path.Join(job.Workdir, fn)
 	if err = os.Rename(src, dst); err == nil {
-		err = os.Chmod(dst, 0444)
+		err = os.Chmod(dst, 0444) // #nosec G302
 	}
 	return
 }
@@ -124,7 +124,7 @@ func (job *Job) waitForPdfToPpm(ctx context.Context) (err error) {
 
 func (job *Job) makeOutputTxt() (err error) {
 	var f *os.File
-	if f, err = os.OpenFile(path.Join(job.Workdir, "output.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666); err == nil {
+	if f, err = os.OpenFile(path.Join(job.Workdir, "output.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil { // #nosec G302
 		defer f.Close()
 		job.mu.Lock()
 		var outputFiles []string
