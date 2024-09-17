@@ -156,10 +156,10 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
+	mux.HandleFunc("PUT /job", rns.handlePutJob)
 	mux.HandleFunc("POST /job", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(false, w, r) })
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
-	mux.HandleFunc("PUT /job/{file}", rns.handlePutJob)
 	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
 }
 

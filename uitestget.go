@@ -25,6 +25,7 @@ func toastResponse(jw *jaws.Jaws, resp *http.Response) {
 
 func describeResponse(resp *http.Response) string {
 	var sb strings.Builder
+	fmt.Fprintf(&sb, "%s\n<br>", html.EscapeString(resp.Request.URL.String()))
 	fmt.Fprintf(&sb, "%s\n<br>", html.EscapeString(resp.Status))
 	for k, vv := range resp.Header {
 		fmt.Fprintf(&sb, "%s: ", k)

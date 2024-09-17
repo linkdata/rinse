@@ -25,11 +25,11 @@
 	</div>
 </form>
 <div>
-	Requires Content-Encoding "multipart/form-data".
-	If the form key "file" is used, the file name must be present and have an extension.
-	If the form key "url" is used, we will attempt to download whatever is found on that URL and process it.
-	Optionally you can provide the OCR language using the form key "lang".
-	Submitting this test request won't show the response here - check the browsers console to see it.
+	If the form key "file" is used, the file name must be present and have an extension.<br>
+	If the form key "url" is used, attempt to download whatever is found on that URL and process it.<br>
+	Accepts an optional "lang" form key specifying the OCR language to use.<br>
+	Requires Content-Encoding "multipart/form-data".<br>
+	Pressing "Submit" won't show the response here - check the browsers console to see it.
 </div>
 <ul>
 	<li>200 OK: Response is the UUID string of the created job.</li>
@@ -37,21 +37,24 @@
 </ul>
 
 <div class="input-group mt-3 mb-1">{{with .TestPut}}
-	<span class="input-group-text">PUT /job/</span>
-	{{$.Text . `class="form-control" placeholder="filename.txt?lang=eng"`}}
+	<span class="input-group-text">PUT /job?url=</span>
+	{{$.Text .URLParam `class="form-control"`}}
+	<span class="input-group-text">&file=</span>
+	{{$.Text .FileParam `class="form-control"`}}
+	<span class="input-group-text">&lang=</span>
+	{{$.Text .LangParam `class="form-control"`}}
 	{{$.Button "Submit" `class="btn btn-primary" name="put"` .}}
 {{end}}</div>
 <div>
-	The request body is the file data. Accepts an optional "lang" query parameter.
-	The file name must be present and have an extension.
-	Must not set Content-Encoding header.
-	Submitting this test request sends a request body containing the text "Hello World!",
-	and will show the response as a toast on this page.
+	If "url" query parameter is given, attempt to download whatever is found on that URL and process it.<br>
+	If "file" query parameter is given, the file name must have an extension and the request body is the file data.<br>
+	Accepts an optional "lang" query parameter specifying the OCR language to use.<br>
+	Must not set Content-Encoding header.<br>
+	Pressing "Submit" with a "file" parameter will send a request body containing the text "Hello World!".
 </div>
 <ul>
 	<li>200 OK: Response is the UUID string of the created job.</li>
-	<li>400 Bad Request: Likely illegal file name or language code.</li>
-	<li>404 Not Found: The filename was omitted or illegal.</li>
+	<li>400 Bad Request: Likely illegal file name, URL or language code.</li>
 </ul>
 
 <div class="input-group mt-3 mb-1">{{with .TestGet}}
