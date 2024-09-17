@@ -86,7 +86,7 @@ func (rns *Rinse) handleGetPreview(w http.ResponseWriter, r *http.Request) {
 				rect.Min.Y = y
 				y += heights[i]
 				rect.Max.Y = y
-				draw.ApproxBiLinear.Scale(dst, rect, src, src.Bounds(), draw.Over, nil)
+				draw.BiLinear.Scale(dst, rect, src, src.Bounds(), draw.Over, nil)
 			}
 
 			var buf bytes.Buffer
