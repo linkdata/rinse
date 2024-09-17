@@ -22,6 +22,7 @@ var LanguageTika = map[string]string{
 }
 
 var LanguageCode = map[string]string{
+	"":         "auto",
 	"afr":      "Afrikaans",             // 	afr.traineddata
 	"amh":      "Amharic",               // 	amh.traineddata
 	"ara":      "Arabic",                // 	ara.traineddata

@@ -21,7 +21,8 @@ type JobState int
 const (
 	JobNew JobState = iota
 	JobStarting
-	JobDetect
+	JobDownload
+	JobDetectLanguage
 	JobDocToPdf
 	JobPdfToPPm
 	JobTesseract
@@ -32,21 +33,23 @@ const (
 
 type Job struct {
 	*Rinse
-	Name       string
-	ResultName string
-	Lang       string
-	Workdir    string
-	Created    time.Time
-	UUID       uuid.UUID
-	mu         deadlock.Mutex
-	state      JobState
-	started    time.Time
-	stopped    time.Time
-	ppmfiles   map[string]bool
-	diskuse    int64
-	cancelFn   context.CancelFunc
-	closed     bool
-	err        error
+	Workdir  string
+	Name     string // document file name or URL to download document from
+	Created  time.Time
+	UUID     uuid.UUID
+	mu       deadlock.Mutex // protects following
+	docName  string         // document file name, once known
+	pdfName  string         // rinsed PDF file name
+	lang     string         // language
+	state    JobState
+	started  time.Time
+	stopped  time.Time
+	ppmfiles map[string]bool
+	diskuse  int64
+	cancelFn context.CancelFunc
+	closed   bool
+	errstate JobState
+	err      error
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -60,34 +63,23 @@ func checkLangString(lang string) error {
 	return nil
 }
 
-func defaultLanguage(lang string) string {
-	if lang == "" {
-		return "auto"
-	}
-	return lang
-}
-
-func makeResultName(name string) string {
-	ext := filepath.Ext(name)
-	return strings.ReplaceAll(strings.TrimSuffix(name, ext)+"-rinsed.pdf", "\"", "")
-}
-
 func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
+		if lang == "auto" {
+			lang = ""
+		}
 		var workdir string
 		if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
 			if err = os.Chmod(workdir, 0777); err == nil { // #nosec G302
-				name = filepath.Base(name)
 				job = &Job{
-					Rinse:      rns,
-					Name:       name,
-					ResultName: makeResultName(name),
-					Lang:       defaultLanguage(lang),
-					Workdir:    workdir,
-					Created:    time.Now(),
-					UUID:       uuid.New(),
-					state:      JobNew,
-					ppmfiles:   make(map[string]bool),
+					Rinse:    rns,
+					Name:     name,
+					lang:     lang,
+					Workdir:  workdir,
+					Created:  time.Now(),
+					UUID:     uuid.New(),
+					state:    JobNew,
+					ppmfiles: make(map[string]bool),
 				}
 			}
 		}
@@ -113,8 +105,29 @@ func (job *Job) State() (state JobState) {
 	return
 }
 
+func (job *Job) Lang() (s string) {
+	job.mu.Lock()
+	s = job.lang
+	job.mu.Unlock()
+	return
+}
+
+func (job *Job) DocumentName() (s string) {
+	job.mu.Lock()
+	s = job.docName
+	job.mu.Unlock()
+	return
+}
+
+func (job *Job) ResultName() (s string) {
+	job.mu.Lock()
+	s = job.pdfName
+	job.mu.Unlock()
+	return
+}
+
 func (job *Job) ResultPath() string {
-	return path.Join(job.Workdir, job.ResultName)
+	return path.Join(job.Workdir, job.ResultName())
 }
 
 func (job *Job) transition(fromState, toState JobState) (err error) {

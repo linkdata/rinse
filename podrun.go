@@ -18,10 +18,12 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 		"--log-driver", "none",
 		"--security-opt", "no-new-privileges",
 		"--security-opt", "label=type:container_engine_t",
-		"--network=none",
 		"--read-only",
 		"--cap-drop", "all",
 	)
+	if cmds[0] != "wget" {
+		podmanargs = append(podmanargs, "--network=none")
+	}
 	if runscBin == "" {
 		podmanargs = append(podmanargs, "--userns=keep-id:uid=1000,gid=1000")
 	} else {

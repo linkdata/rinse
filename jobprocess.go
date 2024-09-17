@@ -22,15 +22,19 @@ func (job *Job) process(ctx context.Context) {
 	job.started = time.Now()
 	job.mu.Unlock()
 	defer job.processDone()
-	fn, err := job.renameInput()
-	if err == nil {
-		if err = job.runDetectLanguage(ctx, fn); err == nil {
-			if err = job.runDocToPdf(ctx, fn); err == nil {
-				if err = job.runPdfToPpm(ctx); err == nil {
-					if err = job.runTesseract(ctx); err == nil {
-						if err = job.jobEnding(); err == nil {
-							if err = job.transition(JobEnding, JobFinished); err == nil {
-								return
+
+	var err error
+	if err = job.runDownload(ctx); err == nil {
+		var wrkName string
+		if wrkName, err = job.runDocumentName(); err == nil {
+			if err = job.runDetectLanguage(ctx, wrkName); err == nil {
+				if err = job.runDocToPdf(ctx, wrkName); err == nil {
+					if err = job.runPdfToPpm(ctx); err == nil {
+						if err = job.runTesseract(ctx); err == nil {
+							if err = job.jobEnding(); err == nil {
+								if err = job.transition(JobEnding, JobFinished); err == nil {
+									return
+								}
 							}
 						}
 					}
@@ -38,12 +42,14 @@ func (job *Job) process(ctx context.Context) {
 			}
 		}
 	}
+
 	if !errors.Is(err, context.Canceled) {
-		slog.Error("job failed", "job", job.Name, "state", job.State(), "err", err)
+		slog.Error("job failed", "job", job.Name, "state", jobStateText(job.State()), "err", err)
 	}
 	job.mu.Lock()
-	job.state = JobFailed
+	job.errstate = job.state
 	job.err = err
+	job.state = JobFailed
 	job.mu.Unlock()
 }
 
@@ -56,39 +62,106 @@ func (job *Job) processDone() {
 	if closed {
 		job.removeAll()
 	} else {
-		job.cleanup(job.ResultName)
+		job.cleanup(job.ResultName())
 	}
 }
 
-func (job *Job) renameInput() (fn string, err error) {
-	fn = "input" + strings.ToLower(filepath.Ext(job.Name))
-	src := path.Join(job.Workdir, job.Name)
-	dst := path.Join(job.Workdir, fn)
-	if err = os.Rename(src, dst); err == nil {
-		err = os.Chmod(dst, 0444) // #nosec G302
+var ErrIllegalURLScheme = errors.New("illegal URL scheme")
+var ErrMultipleDocuments = errors.New("multiple documents found")
+var ErrMissingDocument = errors.New("no document found")
+
+func hasHTTPScheme(s string) bool {
+	return strings.HasPrefix(s, "http:") || strings.HasPrefix(s, "https:")
+}
+
+func (job *Job) runDownload(ctx context.Context) (err error) {
+	if err = job.transition(JobStarting, JobDownload); err == nil {
+		if hasHTTPScheme(job.Name) {
+			var msgs []string
+			stdouthandler := func(s string) (err error) {
+				msgs = append(msgs, s)
+				return
+			}
+			args := []string{
+				"wget",
+				"--quiet",
+				"--content-disposition",
+				"--no-directories",
+				"--directory-prefix=/var/rinse",
+			}
+			if n := job.MaxUploadSize(); n > 0 {
+				args = append(args, fmt.Sprintf("--quota=%v", job.MaxUploadSize()))
+			}
+			args = append(args, job.Name)
+			if err = job.podrun(ctx, stdouthandler, args...); err != nil {
+				for _, s := range msgs {
+					slog.Error("wget", "msg", s)
+				}
+			}
+		}
+	}
+	return
+}
+
+func mustHaveDocument(s string) error {
+	if s == "" {
+		return ErrMissingDocument
+	}
+	return nil
+}
+
+func (job *Job) runDocumentName() (wrkName string, err error) {
+	var docName string
+	err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+		if err == nil {
+			if d.Type().IsRegular() {
+				if docName != "" {
+					slog.Error("more than one document", "docName", docName, "other", d.Name())
+					return ErrMultipleDocuments
+				}
+				docName = d.Name()
+			}
+		}
+		return nil
+	})
+
+	if err == nil {
+		if err = mustHaveDocument(docName); err == nil {
+			ext := filepath.Ext(docName)
+
+			job.mu.Lock()
+			job.docName = docName
+			job.pdfName = strings.ReplaceAll(strings.TrimSuffix(docName, ext)+"-rinsed.pdf", "\"", "")
+			job.mu.Unlock()
+
+			wrkName = "input" + strings.ToLower(ext)
+			src := path.Join(job.Workdir, docName)
+			dst := path.Join(job.Workdir, wrkName)
+			if err = os.Rename(src, dst); err == nil {
+				err = os.Chmod(dst, 0444) // #nosec G302
+			}
+		}
 	}
 	return
 }
 
 func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
-	// java -jar /usr/local/bin/tika.jar --language /var/rinse/input.ext 2>/dev/null
-	if err = job.transition(JobStarting, JobDetect); err == nil {
-		if job.Lang == "auto" {
-			lang := "eng"
+	if err = job.transition(JobDownload, JobDetectLanguage); err == nil {
+		if job.Lang() == "" {
+			var lang string
 			stdouthandler := func(s string) (err error) {
 				if len(s) == 2 {
-					lang = s
+					if l, ok := LanguageTika[s]; ok {
+						lang = l
+					}
 				}
 				return
 			}
 			if e := job.podrun(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
-				if s, ok := LanguageTika[lang]; ok {
-					lang = s
-				}
+				job.mu.Lock()
+				job.lang = lang
+				job.mu.Unlock()
 			}
-			job.mu.Lock()
-			job.Lang = lang
-			job.mu.Unlock()
 		}
 	}
 	return
@@ -104,7 +177,7 @@ func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 }
 
 func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
-	if err = job.transition(JobDetect, JobDocToPdf); err == nil {
+	if err = job.transition(JobDetectLanguage, JobDocToPdf); err == nil {
 		err = job.waitForDocToPdf(ctx, fn)
 	}
 	return
@@ -177,7 +250,14 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 			}
 			return nil
 		}
-		if err = job.podrun(ctx, stdouthandler, "tesseract", "-l", job.Lang, "/var/rinse/output.txt", "/var/rinse/output", "pdf"); err != nil {
+		args := []string{
+			"tesseract",
+		}
+		if s := job.Lang(); s != "" {
+			args = append(args, "-l", s)
+		}
+		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
+		if err = job.podrun(ctx, stdouthandler, args...); err != nil {
 			if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
 				for _, s := range output {
 					slog.Error("tesseract", "msg", s)
@@ -214,7 +294,7 @@ func (job *Job) cleanup(except string) (err error) {
 func (job *Job) jobEnding() (err error) {
 	if err = job.transition(JobTesseract, JobEnding); err == nil {
 		if err = job.cleanup("output.pdf"); err == nil {
-			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName))
+			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName()))
 		}
 	}
 	return
