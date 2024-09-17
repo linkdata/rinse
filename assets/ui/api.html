@@ -47,7 +47,7 @@
 {{end}}</div>
 <div>
 	If "url" query parameter is given, attempt to download whatever is found on that URL and process it.<br>
-	If "file" query parameter is given, the file name must have an extension and the request body is the file data.<br>
+	If "file" query parameter is given the file name must have an extension and the request body is the file data.<br>
 	Accepts an optional "lang" query parameter specifying the OCR language to use.<br>
 	Must not set Content-Encoding header.<br>
 	Pressing "Submit" with a "file" parameter will send a request body containing the text "Hello World!".
@@ -77,6 +77,19 @@
 <ul>
 	<li>200 OK: The job was found and will be deleted.</li>
 	<li>404 Not Found: The given UUID was invalid or does not identify an active job.</li>
+</ul>
+
+<div class="input-group mt-3 mb-1">{{with .TestPreview}}
+	<span class="input-group-text">GET /preview/</span>
+	{{$.Text . `class="form-control" placeholder="uuid"`}}
+	<span class="input-group-text">?pages=</span>
+	{{$.Number .PagesParam `class="form-control"`}}
+	<span class="input-group-text">&width=</span>
+	{{$.Number .WidthParam `class="form-control"`}}
+	{{$.Button "Submit" `class="btn btn-primary" name="preview"` .}}
+{{end}}</div>
+<ul>
+	<li>200 OK: Response is a HTML page with an embedded base64-encoded JPEG.</li>
 </ul>
 
 {{template "body_end.html" $}}

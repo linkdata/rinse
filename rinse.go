@@ -161,6 +161,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
 	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
 	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
+	mux.HandleFunc("GET /preview/{uuid}", rns.handleGetPreview)
 }
 
 func (rns *Rinse) MaxUploadSize() (n int64) {

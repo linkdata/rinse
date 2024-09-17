@@ -23,7 +23,7 @@ func jobStateText(n JobState) (statetxt string) {
 		statetxt = "Detect Language"
 	case JobDocToPdf:
 		statetxt = "Converting"
-	case JobPdfToPPm:
+	case JobPdfToImages:
 		statetxt = "Rendering"
 	case JobTesseract:
 		statetxt = "Scanning"
@@ -44,13 +44,13 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	u.mu.Lock()
 	diskuse := u.diskuse
 	state := u.state
-	ppmcount := len(u.ppmfiles)
+	imgcount := len(u.imgfiles)
 	err := u.err
 	errstate := u.errstate
-	var ppmdone int
-	for _, seen := range u.ppmfiles {
+	var imgdone int
+	for _, seen := range u.imgfiles {
 		if seen {
-			ppmdone++
+			imgdone++
 		}
 	}
 	u.mu.Unlock()
@@ -60,10 +60,10 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	switch state {
 	case JobNew:
 		stateclass = "text-secondary fw-light"
-	case JobPdfToPPm:
-		statetxt = fmt.Sprintf("Rendered %d", ppmcount)
+	case JobPdfToImages:
+		statetxt = fmt.Sprintf("Rendered %d", imgcount)
 	case JobTesseract:
-		statetxt = fmt.Sprintf("Scanning %d/%d", ppmdone, ppmcount)
+		statetxt = fmt.Sprintf("Scanning %d/%d", imgdone, imgcount)
 	case JobFinished:
 		stateclass = "text-success fw-bold"
 	case JobFailed:
