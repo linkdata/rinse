@@ -1,10 +1,11 @@
 package rinse
 
 import (
+	"errors"
 	"io"
 	"log/slog"
-	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +14,8 @@ import (
 const FormFileKey = "file"
 const FormLangKey = "lang"
 const FormURLKey = "url"
+
+var ErrContentEncoded = errors.New("Content-Encoding is set")
 
 func (rns *Rinse) FormFileKey() string {
 	return FormFileKey
@@ -26,23 +29,11 @@ func (rns *Rinse) FormURLKey() string {
 	return FormURLKey
 }
 
-func (rns *Rinse) createJob(srcName, srcLang string, srcFile io.ReadCloser) (err error) {
-	var job *Job
-	if job, err = NewJob(rns, srcName, srcLang); err == nil {
-		dstName := path.Join(job.Workdir, srcName)
-		var dstFile *os.File
-		if dstFile, err = os.Create(dstName); err == nil { // #nosec G304
-			defer dstFile.Close()
-			if _, err = io.Copy(dstFile, srcFile); err == nil {
-				if err = rns.AddJob(job); err != nil {
-					rns.Jaws.Alert("danger", err.Error())
-				}
-				return
-			}
-		}
-		job.Close()
+func mustNotBeContentEncoded(r *http.Request) error {
+	if r.Header.Get("Content-Encoding") == "" {
+		return nil
 	}
-	return
+	return ErrContentEncoded
 }
 
 func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Request) {
@@ -54,50 +45,45 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 		interactive = true
 		returnUrl = "/api/"
 	}
-	var srcName string
-	var srcFile io.ReadCloser
 
+	var job *Job
 	if err == nil && info != nil {
-		if r.Header.Get("Content-Encoding") == "" {
-			srcName = filepath.Base(info.Filename)
-			srcFile = srcFormFile
+		if err = mustNotBeContentEncoded(r); err == nil {
+			srcName := filepath.Base(info.Filename)
+			srcFile := srcFormFile.(io.ReadCloser)
+			if maxUploadSize := rns.MaxUploadSize(); maxUploadSize > 0 {
+				srcFile = http.MaxBytesReader(w, srcFile, maxUploadSize)
+			}
 			defer srcFile.Close()
+			if job, err = NewJob(rns, srcName, srcLang); err == nil {
+				dstName := path.Join(job.Workdir, srcName)
+				var dstFile *os.File
+				if dstFile, err = os.Create(dstName); err == nil { // #nosec G304
+					defer dstFile.Close()
+					if _, err = io.Copy(dstFile, srcFile); err == nil {
+						err = dstFile.Sync()
+					}
+				}
+			}
 		}
 	} else if srcUrl != "" {
-		var resp *http.Response
-		if resp, err = http.Get(srcUrl); err == nil { // #nosec G107
-			srcName = path.Base(resp.Request.URL.Path)
-			srcFile = resp.Body
-			if cd := resp.Header.Get("Content-Disposition"); cd != "" {
-				if _, params, e := mime.ParseMediaType(cd); e == nil {
-					if s, ok := params["filename"]; ok {
-						srcName = s
-					}
-				}
-			}
-			if filepath.Ext(srcName) == "" {
-				if ct := resp.Header.Get("Content-Type"); ct != "" {
-					if mediatype, _, e := mime.ParseMediaType(ct); e == nil {
-						if exts, e := mime.ExtensionsByType(mediatype); e == nil {
-							srcName += exts[0]
-						}
-					}
-				}
-			}
+		var u *url.URL
+		if u, err = url.Parse(srcUrl); err == nil {
+			job, err = NewJob(rns, u.String(), srcLang)
 		}
 	}
 
-	if err == nil {
-		if maxUploadSize := rns.MaxUploadSize(); maxUploadSize > 0 {
-			srcFile = http.MaxBytesReader(w, srcFile, maxUploadSize)
-		}
-		if err = rns.createJob(srcName, srcLang, srcFile); err == nil {
-			if interactive {
-				w.Header().Add("Location", returnUrl)
-				w.WriteHeader(http.StatusFound)
+	if job != nil {
+		if err == nil {
+			if err = rns.AddJob(job); err == nil {
+				if interactive {
+					w.Header().Add("Location", returnUrl)
+					w.WriteHeader(http.StatusFound)
+				}
+				return
 			}
-			return
 		}
+		job.Close()
 	}
 
 	slog.Error("handlePost", "err", err)
