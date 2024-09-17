@@ -183,7 +183,7 @@ func (job *Job) Close() {
 func (job *Job) refreshDiskuse() {
 	var ppmfiles []string
 	var diskuse int64
-	filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if fi, e := d.Info(); e == nil {
 				diskuse += fi.Size()
