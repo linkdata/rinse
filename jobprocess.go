@@ -197,7 +197,8 @@ func (job *Job) waitForPdfToPpm(ctx context.Context) (err error) {
 
 func (job *Job) makeOutputTxt() (err error) {
 	var f *os.File
-	if f, err = os.OpenFile(path.Join(job.Workdir, "output.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil { // #nosec G302
+	fpath := filepath.Clean(path.Join(job.Workdir, "output.txt"))
+	if f, err = os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil { // #nosec G302
 		defer f.Close()
 		job.mu.Lock()
 		var outputFiles []string

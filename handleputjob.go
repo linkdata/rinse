@@ -19,8 +19,8 @@ func (rns *Rinse) handlePutJob(w http.ResponseWriter, r *http.Request) {
 				if err == nil {
 					status = http.StatusInternalServerError
 					var f *os.File
-					fpath := path.Join(job.Workdir, name)
-					if f, err = os.Create(fpath); err == nil { // #nosec G304
+					fpath := filepath.Clean(path.Join(job.Workdir, name))
+					if f, err = os.Create(fpath); err == nil {
 						defer f.Close()
 						if _, err = io.Copy(f, r.Body); err == nil {
 							if err = f.Sync(); err == nil {
