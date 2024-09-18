@@ -24,7 +24,7 @@ const (
 	JobDownload
 	JobDetectLanguage
 	JobDocToPdf
-	JobPdfToPPm
+	JobPdfToImages
 	JobTesseract
 	JobEnding
 	JobFinished
@@ -44,12 +44,13 @@ type Job struct {
 	state    JobState
 	started  time.Time
 	stopped  time.Time
-	ppmfiles map[string]bool
+	imgfiles map[string]bool
 	diskuse  int64
 	cancelFn context.CancelFunc
 	closed   bool
 	errstate JobState
 	err      error
+	previews map[uint64][]byte
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -79,11 +80,19 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 					Created:  time.Now(),
 					UUID:     uuid.New(),
 					state:    JobNew,
-					ppmfiles: make(map[string]bool),
+					imgfiles: make(map[string]bool),
+					previews: make(map[uint64][]byte),
 				}
 			}
 		}
 	}
+	return
+}
+
+func (job *Job) Previewable() (yes bool) {
+	job.mu.Lock()
+	yes = len(job.imgfiles) > 0
+	job.mu.Unlock()
 	return
 }
 
@@ -181,24 +190,24 @@ func (job *Job) Close() {
 }
 
 func (job *Job) refreshDiskuse() {
-	var ppmfiles []string
+	var imgfiles []string
 	var diskuse int64
 	_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if fi, e := d.Info(); e == nil {
 				diskuse += fi.Size()
 			}
-			if strings.HasSuffix(d.Name(), ".ppm") {
-				ppmfiles = append(ppmfiles, d.Name())
+			if strings.HasSuffix(d.Name(), ".png") {
+				imgfiles = append(imgfiles, d.Name())
 			}
 		}
 		return nil
 	})
 	job.mu.Lock()
 	job.diskuse = diskuse
-	for _, fn := range ppmfiles {
-		if _, ok := job.ppmfiles[fn]; !ok {
-			job.ppmfiles[fn] = false
+	for _, fn := range imgfiles {
+		if _, ok := job.imgfiles[fn]; !ok {
+			job.imgfiles[fn] = false
 		}
 	}
 	job.mu.Unlock()

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var ErrPpmSeenTwice = errors.New("ppm file seen twice")
+var ErrImageSeenTwice = errors.New("image file seen twice")
 
 func (job *Job) process(ctx context.Context) {
 	job.mu.Lock()
@@ -29,7 +29,7 @@ func (job *Job) process(ctx context.Context) {
 		if wrkName, err = job.runDocumentName(); err == nil {
 			if err = job.runDetectLanguage(ctx, wrkName); err == nil {
 				if err = job.runDocToPdf(ctx, wrkName); err == nil {
-					if err = job.runPdfToPpm(ctx); err == nil {
+					if err = job.runPdfToImages(ctx); err == nil {
 						if err = job.runTesseract(ctx); err == nil {
 							if err = job.jobEnding(); err == nil {
 								if err = job.transition(JobEnding, JobFinished); err == nil {
@@ -61,8 +61,6 @@ func (job *Job) processDone() {
 	job.mu.Unlock()
 	if closed {
 		job.removeAll()
-	} else {
-		_ = job.cleanup(job.ResultName())
 	}
 }
 
@@ -178,12 +176,16 @@ func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 
 func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
 	if err = job.transition(JobDetectLanguage, JobDocToPdf); err == nil {
-		err = job.waitForDocToPdf(ctx, fn)
+		if err = job.waitForDocToPdf(ctx, fn); err == nil {
+			if err = os.RemoveAll(path.Join(job.Workdir, ".cache")); err == nil {
+				err = os.RemoveAll(path.Join(job.Workdir, ".config"))
+			}
+		}
 	}
 	return
 }
 
-func (job *Job) waitForPdfToPpm(ctx context.Context) (err error) {
+func (job *Job) waitForPdfToImages(ctx context.Context) (err error) {
 	var done int32
 	defer atomic.StoreInt32(&done, 1)
 	go func() {
@@ -192,7 +194,7 @@ func (job *Job) waitForPdfToPpm(ctx context.Context) (err error) {
 			job.refreshDiskuse()
 		}
 	}()
-	return job.podrun(ctx, nil, "pdftoppm", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
+	return job.podrun(ctx, nil, "pdftoppm", "-png", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 }
 
 func (job *Job) makeOutputTxt() (err error) {
@@ -202,7 +204,7 @@ func (job *Job) makeOutputTxt() (err error) {
 		defer f.Close()
 		job.mu.Lock()
 		var outputFiles []string
-		for fn := range job.ppmfiles {
+		for fn := range job.imgfiles {
 			outputFiles = append(outputFiles, fn)
 		}
 		job.mu.Unlock()
@@ -217,9 +219,9 @@ func (job *Job) makeOutputTxt() (err error) {
 	return
 }
 
-func (job *Job) runPdfToPpm(ctx context.Context) (err error) {
-	if err = job.transition(JobDocToPdf, JobPdfToPPm); err == nil {
-		if err = job.waitForPdfToPpm(ctx); err == nil {
+func (job *Job) runPdfToImages(ctx context.Context) (err error) {
+	if err = job.transition(JobDocToPdf, JobPdfToImages); err == nil {
+		if err = job.waitForPdfToImages(ctx); err == nil {
 			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
 				job.refreshDiskuse()
 				err = job.makeOutputTxt()
@@ -230,22 +232,22 @@ func (job *Job) runPdfToPpm(ctx context.Context) (err error) {
 }
 
 func (job *Job) runTesseract(ctx context.Context) (err error) {
-	if err = job.transition(JobPdfToPPm, JobTesseract); err == nil {
+	if err = job.transition(JobPdfToImages, JobTesseract); err == nil {
 		var output []string
 		stdouthandler := func(s string) error {
 			defer job.Jaws.Dirty(uiJobStatus{job})
 			job.mu.Lock()
 			defer job.mu.Unlock()
 			output = append(output, s)
-			for fn, seen := range job.ppmfiles {
+			for fn, seen := range job.imgfiles {
 				if strings.Contains(s, fn) {
 					if seen {
 						if strings.Contains(s, "file not found") {
 							return errors.New(s)
 						}
-						return ErrPpmSeenTwice
+						return ErrImageSeenTwice
 					}
-					job.ppmfiles[fn] = true
+					job.imgfiles[fn] = true
 					break
 				}
 			}
@@ -269,33 +271,29 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 	return
 }
 
-func (job *Job) cleanup(except string) (err error) {
-	var diskuse int64
-	err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
-		if err == nil {
-			if d.Type().IsRegular() {
-				if except == "" || except != d.Name() {
-					_ = os.Remove(fpath)
-				} else {
-					if fi, e := d.Info(); e == nil {
-						diskuse += fi.Size()
-					}
-				}
-			}
-		}
-		return nil
-	})
-	job.mu.Lock()
-	job.diskuse = diskuse
-	job.mu.Unlock()
-	job.Jaws.Dirty(job, uiJobStatus{job})
-	return
-}
-
 func (job *Job) jobEnding() (err error) {
 	if err = job.transition(JobTesseract, JobEnding); err == nil {
-		if err = job.cleanup("output.pdf"); err == nil {
-			err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName()))
+		if err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName())); err == nil {
+			var diskuse int64
+			err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+				if err == nil {
+					if d.Type().IsRegular() {
+						switch filepath.Ext(d.Name()) {
+						case ".png", ".pdf":
+							if fi, e := d.Info(); e == nil {
+								diskuse += fi.Size()
+							}
+						default:
+							_ = os.Remove(fpath)
+						}
+					}
+				}
+				return nil
+			})
+			job.mu.Lock()
+			job.diskuse = diskuse
+			job.mu.Unlock()
+			job.Jaws.Dirty(job, uiJobStatus{job})
 		}
 	}
 	return

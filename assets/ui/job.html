@@ -3,10 +3,13 @@
 		<div class="form-control">
 			<div class="row">
 				<div class="col">
-					{{$.Span .Link (printf `class="" data-toggle="tooltip" title="%s"` .Workdir) .}}
+					{{$.Span .UiLink (printf `data-toggle="tooltip" title="%s"` .Workdir) .}}
+					<a id="{{$.Register .UiPreview .}}" class="ms-1" href="/preview/{{.UUID}}?width=172&iframe" target="_blank" data-toggle="tooltip" title="Preview" {{.UiPreviewAttr}}>
+						<svg width="16" height="16"><use href="#eye"/></svg>
+					</a>
 				</div>
 				<div class="col-auto">
-					{{$.Span .Status `class="text-end"`}}
+					{{$.Span .UiStatus `class="text-end"`}}
 				</div>
 			</div>
 		</div>
