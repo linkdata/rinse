@@ -54,7 +54,9 @@ func (ui *uiTestPreview) IframeParam() jaws.BoolSetter {
 
 func (rns *Rinse) TestPreview() jaws.StringSetter {
 	return &uiTestPreview{
-		Rinse: rns,
-		Pages: jaws.Float{Value: 1},
+		Rinse:  rns,
+		Pages:  jaws.Float{Value: 1},
+		Width:  jaws.Float{Value: 172},
+		Iframe: jaws.Bool{Value: true},
 	}
 }
