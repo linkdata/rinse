@@ -86,10 +86,22 @@
 	{{$.Number .PagesParam `class="form-control"`}}
 	<span class="input-group-text">&width=</span>
 	{{$.Number .WidthParam `class="form-control"`}}
+	<div class="input-group-text">
+		{{$.Checkbox .IframeParam `class="form-check-input me-1"`}}
+		&iframe
+	</div>
 	{{$.Button "Submit" `class="btn btn-primary" name="preview"` .}}
 {{end}}</div>
+<div>
+	Returns a preview of the document. Pages will be stacked vertically.<br>
+	Response is a JPEG image unless the "iframe" query parameter is nonzero, in which case
+	the response will be a HTML page with an embedded base64-encoded JPEG image.<br>
+	Requesting a preview will succeed as soon as at least one page has been rendered.
+</div>
 <ul>
-	<li>200 OK: Response is a HTML page with an embedded base64-encoded JPEG.</li>
+	<li>200 OK: Response as described above.</li>
+	<li>202 Accepted: The UUID is valid but no pages have been rendered yet.</li>
+	<li>204 No Content: The UUID was valid but the job has failed.</li>
 </ul>
 
 {{template "body_end.html" $}}

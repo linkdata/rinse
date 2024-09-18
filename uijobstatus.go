@@ -40,23 +40,24 @@ func jobStateText(n JobState) (statetxt string) {
 }
 
 // JawsGetHtml implements jaws.HtmlGetter.
-func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
-	u.mu.Lock()
-	diskuse := u.diskuse
-	state := u.state
-	imgcount := len(u.imgfiles)
-	err := u.err
-	errstate := u.errstate
+func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
+	ui.mu.Lock()
+	diskuse := ui.diskuse
+	state := ui.state
+	imgcount := len(ui.imgfiles)
+	err := ui.err
+	errstate := ui.errstate
 	var imgdone int
-	for _, seen := range u.imgfiles {
+	for _, seen := range ui.imgfiles {
 		if seen {
 			imgdone++
 		}
 	}
-	u.mu.Unlock()
+	ui.mu.Unlock()
 
 	statetxt := jobStateText(state)
 	stateclass := "text-body"
+
 	switch state {
 	case JobNew:
 		stateclass = "text-secondary fw-light"
@@ -73,10 +74,12 @@ func (u uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 			statetxt += fmt.Sprintf(": %v", err)
 		}
 	}
-	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, html.EscapeString(statetxt), prettyByteSize(diskuse))
+
+	statetxt = html.EscapeString(statetxt)
+	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, statetxt, prettyByteSize(diskuse))
 	return template.HTML(s) // #nosec G203
 }
 
-func (job *Job) Status() (ui jaws.HtmlGetter) {
+func (job *Job) UiStatus() (ui jaws.HtmlGetter) {
 	return uiJobStatus{job}
 }

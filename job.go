@@ -50,6 +50,7 @@ type Job struct {
 	closed   bool
 	errstate JobState
 	err      error
+	previews map[uint64][]byte
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -80,10 +81,18 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 					UUID:     uuid.New(),
 					state:    JobNew,
 					imgfiles: make(map[string]bool),
+					previews: make(map[uint64][]byte),
 				}
 			}
 		}
 	}
+	return
+}
+
+func (job *Job) Previewable() (yes bool) {
+	job.mu.Lock()
+	yes = len(job.imgfiles) > 0
+	job.mu.Unlock()
 	return
 }
 
