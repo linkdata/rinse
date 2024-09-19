@@ -89,6 +89,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 	slog.Error("handlePost", "err", err)
 	if interactive {
 		rns.Jaws.Handler("error.html", errorHTML{Rinse: rns, Error: err}).ServeHTTP(w, r)
+		return
 	}
 	w.WriteHeader(http.StatusBadRequest)
 }
