@@ -57,7 +57,7 @@ var ErrIllegalLanguage = errors.New("illegal language string")
 
 func checkLangString(lang string) error {
 	for _, ch := range lang {
-		if !(ch == '+' || (ch >= 'a' && ch <= 'z')) {
+		if !(ch == '+' || ch == '_' || (ch >= 'a' && ch <= 'z')) {
 			return ErrIllegalLanguage
 		}
 	}
@@ -168,7 +168,7 @@ func (job *Job) Stop() {
 }
 
 func (job *Job) removeAll() {
-	if err := os.RemoveAll(job.Workdir); err != nil {
+	if err := scrub(job.Workdir); err != nil {
 		slog.Error("job.removeAll", "job", job.Name, "err", err)
 	}
 }
