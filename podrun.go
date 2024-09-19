@@ -41,6 +41,15 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 	slog.Debug("podman", "args", podmanargs)
 
 	cmd := exec.Command(podmanBin, podmanargs...) // #nosec G204
+	defer func() {
+		if cmd.Process != nil {
+			if cmd.ProcessState == nil || !cmd.ProcessState.Exited() {
+				if e := cmd.Process.Kill(); e != nil {
+					slog.Error("podman kill failed", "err", e)
+				}
+			}
+		}
+	}()
 	var stdout io.ReadCloser
 	if stdout, err = cmd.StdoutPipe(); err == nil {
 		if err = cmd.Start(); err == nil {
@@ -70,11 +79,6 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 					}
 				case <-ctx.Done():
 					err = ctx.Err()
-				}
-			}
-			if cmd.Process != nil {
-				if e := cmd.Process.Kill(); e != nil {
-					slog.Error("podman kill failed", "err", e)
 				}
 			}
 		}
