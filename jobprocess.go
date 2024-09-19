@@ -119,7 +119,7 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 					return ErrMultipleDocuments
 				}
 				if d.Name() == ".wget-hsts" {
-					_ = os.Remove(fpath)
+					_ = scrub(fpath)
 				} else {
 					docName = d.Name()
 				}
@@ -141,7 +141,7 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 			src := path.Join(job.Workdir, docName)
 			dst := path.Join(job.Workdir, wrkName)
 			if err = os.Rename(src, dst); err == nil {
-				err = os.Chmod(dst, 0444) // #nosec G302
+				err = os.Chmod(dst, 0644) // #nosec G302
 			}
 		}
 	}
@@ -173,7 +173,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
 		if err = job.podrun(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
-			err = os.Remove(path.Join(job.Workdir, fn))
+			err = scrub(path.Join(job.Workdir, fn))
 		}
 	}
 	return
@@ -182,8 +182,8 @@ func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
 	if err = job.transition(JobDetectLanguage, JobDocToPdf); err == nil {
 		if err = job.waitForDocToPdf(ctx, fn); err == nil {
-			if err = os.RemoveAll(path.Join(job.Workdir, ".cache")); err == nil {
-				err = os.RemoveAll(path.Join(job.Workdir, ".config"))
+			if err = scrub(path.Join(job.Workdir, ".cache")); err == nil {
+				err = scrub(path.Join(job.Workdir, ".config"))
 			}
 		}
 	}
@@ -227,7 +227,7 @@ func (job *Job) makeOutputTxt() (err error) {
 func (job *Job) runPdfToImages(ctx context.Context) (err error) {
 	if err = job.transition(JobDocToPdf, JobPdfToImages); err == nil {
 		if err = job.waitForPdfToImages(ctx); err == nil {
-			if err = os.Remove(path.Join(job.Workdir, "input.pdf")); err == nil {
+			if err = scrub(path.Join(job.Workdir, "input.pdf")); err == nil {
 				job.refreshDiskuse()
 				err = job.makeOutputTxt()
 			}
@@ -289,7 +289,7 @@ func (job *Job) jobEnding() (err error) {
 								diskuse += fi.Size()
 							}
 						default:
-							_ = os.Remove(fpath)
+							_ = scrub(fpath)
 						}
 					}
 				}

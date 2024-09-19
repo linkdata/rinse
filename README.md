@@ -19,12 +19,17 @@ gVisor will be used to further sandbox the container.
 First, a temporary directory is created for the job. This will be mounted in the 
 container as `/var/rinse`.
 
-The original document is renamed to `input` with it's extension preserved.
 
 Then, each of these stages run in their own container, which is destroyed as 
 soon as the stage is complete. `rinse` removes files as soon as possible after
 each stage. At the end, only the final `document-rinsed.pdf` file remains on 
 disk until the job is deleted, which also deletes the final PDF.
+
+If we were given an URL, we use `wget` from the container to download
+the document. This stage allows the container to access the network (except
+for localhost).
+
+The original document is renamed to `input` with it's extension preserved.
 
 If the language is to be auto-detected, Apache Tika is used to do so.
 
@@ -34,3 +39,5 @@ and if successful, the original document is deleted.
 The `input.pdf` file is converted to a set of image files using `pdftoppm`.
 
 The set of images files is OCR-ed and processed into a PDF using `tesseract`.
+
+When the job is deleted, all it's files are overwritten and then deleted.
