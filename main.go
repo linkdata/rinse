@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"git.cparta.dev/jli/rinse"
+	"git.cparta.dev/jli/rinse/rinse"
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/webserv"
