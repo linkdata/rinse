@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/deadlock v0.5.2
 	github.com/linkdata/jaws v0.78.2
-	github.com/linkdata/webserv v0.9.4
+	github.com/linkdata/webserv v0.9.5
 	golang.org/x/image v0.20.0
 )
 
