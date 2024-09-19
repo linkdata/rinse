@@ -51,6 +51,7 @@ func (job *Job) process(ctx context.Context) {
 	job.err = err
 	job.state = JobFailed
 	job.mu.Unlock()
+	job.Jaws.Dirty(uiJobStatus{job})
 }
 
 func (job *Job) processDone() {
@@ -117,7 +118,11 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 					slog.Error("more than one document", "docName", docName, "other", d.Name())
 					return ErrMultipleDocuments
 				}
-				docName = d.Name()
+				if d.Name() == ".wget-hsts" {
+					_ = os.Remove(fpath)
+				} else {
+					docName = d.Name()
+				}
 			}
 		}
 		return nil
