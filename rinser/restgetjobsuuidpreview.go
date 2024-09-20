@@ -28,7 +28,7 @@ import (
 //	@Success		202		{object}	Job		"Preview not yet ready."
 //	@Failure		400		{object}	HTTPError
 //	@Failure		404		{object}	HTTPError
-//	@Failure		410		{object}	HTTPError	"Job failed."
+//	@Failure		410		{object}	HTTPError		"Job failed."
 //	@Failure		500		{object}	HTTPError
 //	@Router			/jobs/{uuid}/preview [get]
 func (rns *Rinse) RESTGETJobsUUIDPreview(w http.ResponseWriter, r *http.Request) {
@@ -44,12 +44,11 @@ func (rns *Rinse) RESTGETJobsUUIDPreview(w http.ResponseWriter, r *http.Request)
 			return
 		default:
 			negotiator := contentnegotiation.NewNegotiator("image/jpeg", "text/html")
-			negotiated, provided, err := negotiator.Negotiate(r.Header.Get("Accept"))
+			negotiated, _, err := negotiator.Negotiate(r.Header.Get("Accept"))
 			if err == nil {
 				numPages := 1
 				imgWidth := 172
 
-				fmt.Println(negotiated, provided)
 				iframe := negotiated.String() == "text/html"
 
 				if s := r.URL.Query().Get("pages"); s != "" {

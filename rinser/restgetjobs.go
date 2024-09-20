@@ -9,7 +9,7 @@ import "net/http"
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		json
-//	@Success		200	{array}	rinse.Job
+//	@Success		200	{array}	Job
 //	@Router			/jobs [get]
 func (rns *Rinse) RESTGETJobs(hw http.ResponseWriter, hr *http.Request) {
 	HTTPJSON(hw, http.StatusOK, rns.JobList())

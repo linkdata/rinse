@@ -16,15 +16,19 @@ import (
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		application/pdf
+//	@Produce		json
 //	@Param			uuid	path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
 //	@Success		200		{file}		file	""
+//	@Success		202		{object}	Job		"Rinsed version not yet ready."
 //	@Failure		404		{object}	HTTPError
+//	@Failure		410		{object}	HTTPError "Job failed."
+//	@Failure		500		{object}	HTTPError
 //	@Router			/jobs/{uuid}/rinsed [get]
 func (rns *Rinse) RESTGETJobsUUIDRinsed(hw http.ResponseWriter, hr *http.Request) {
 	if job := rns.FindJob(hr.PathValue("uuid")); job != nil {
 		switch job.State() {
 		case JobFailed:
-			hw.WriteHeader(http.StatusNoContent)
+			SendHTTPError(hw, http.StatusGone, job.Error)
 			return
 		case JobFinished:
 			fi, err := os.Stat(job.ResultPath())
@@ -42,11 +46,11 @@ func (rns *Rinse) RESTGETJobsUUIDRinsed(hw http.ResponseWriter, hr *http.Request
 				}
 			}
 			slog.Error("handleGetJob", "err", err)
-			hw.WriteHeader(http.StatusInternalServerError)
+			SendHTTPError(hw, http.StatusInternalServerError, err)
 		default:
-			hw.WriteHeader(http.StatusAccepted)
+			HTTPJSON(hw, http.StatusAccepted, job)
 		}
 	} else {
-		hw.WriteHeader(http.StatusNotFound)
+		SendHTTPError(hw, http.StatusNotFound, nil)
 	}
 }
