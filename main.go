@@ -13,7 +13,7 @@ import (
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/webserv"
 
-	"github.com/linkdata/rinse/rinse"
+	"github.com/linkdata/rinse/rinser"
 )
 
 //go:generate go run github.com/swaggo/swag/cmd/swag@latest init
@@ -35,7 +35,7 @@ func main() {
 	flag.Parse()
 
 	if *flagVersion {
-		fmt.Println(rinse.PkgVersion)
+		fmt.Println(rinser.PkgVersion)
 		return
 	}
 
@@ -58,8 +58,8 @@ func main() {
 	l, err := cfg.Listen()
 	if err == nil {
 		defer l.Close()
-		var rns *rinse.Rinse
-		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw, *flagPull); err == nil {
+		var rns *rinser.Rinse
+		if rns, err = rinser.New(cfg, http.DefaultServeMux, jw, *flagPull); err == nil {
 			defer rns.Close()
 
 			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
