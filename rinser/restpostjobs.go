@@ -21,7 +21,7 @@ import (
 //	@Param			addjoburl	body		AddJobURL	false	"Add job by URL"
 //	@Param			file		formData	file		false	"this is a test file"
 //	@Param			lang		query		string		false	"eng"
-//	@Success		200			{object}	rinse.Job
+//	@Success		200			{object}	Job
 //	@Failure		400			{object}	HTTPError
 //	@Failure		404			{object}	HTTPError
 //	@Failure		415			{object}	HTTPError
