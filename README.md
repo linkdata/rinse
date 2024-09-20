@@ -2,6 +2,10 @@
 
 Web service that converts untrusted documents to image-based PDF:s in a sandbox.
 
+Provides both a Web UI and a Swagger REST API.
+
+![rinse-screenshot](https://github.com/user-attachments/assets/3ff19728-beb5-4354-a2f3-7ba9fdeee424)
+
 ## Requirements
 
 * [podman](https://podman.io/) is required.
