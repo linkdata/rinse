@@ -253,7 +253,7 @@ func getLanguages(podmanBin string) (langs []string, err error) {
 }
 
 func (rns *Rinse) PkgName() string {
-	return PkgName
+	return "rinse"
 }
 
 func (rns *Rinse) PkgVersion() string {
