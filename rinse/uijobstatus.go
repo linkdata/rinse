@@ -45,7 +45,7 @@ func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	diskuse := ui.diskuse
 	state := ui.state
 	imgcount := len(ui.imgfiles)
-	err := ui.err
+	err := ui.Error
 	errstate := ui.errstate
 	var imgdone int
 	for _, seen := range ui.imgfiles {

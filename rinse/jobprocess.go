@@ -48,7 +48,7 @@ func (job *Job) process(ctx context.Context) {
 	}
 	job.mu.Lock()
 	job.errstate = job.state
-	job.err = err
+	job.Error = err
 	job.state = JobFailed
 	job.mu.Unlock()
 	job.Jaws.Dirty(uiJobStatus{job})
@@ -134,7 +134,7 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 
 			job.mu.Lock()
 			job.docName = docName
-			job.pdfName = strings.ReplaceAll(strings.TrimSuffix(docName, ext)+"-rinsed.pdf", "\"", "")
+			job.PdfName = strings.ReplaceAll(strings.TrimSuffix(docName, ext)+"-rinsed.pdf", "\"", "")
 			job.mu.Unlock()
 
 			wrkName = "input" + strings.ToLower(ext)
@@ -162,7 +162,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 			}
 			if e := job.podrun(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
 				job.mu.Lock()
-				job.lang = lang
+				job.Language = lang
 				job.mu.Unlock()
 			}
 		}

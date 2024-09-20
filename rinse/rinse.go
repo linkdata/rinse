@@ -156,12 +156,15 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
-	mux.HandleFunc("PUT /job", rns.handlePutJob)
-	mux.HandleFunc("POST /job", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(false, w, r) })
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
-	mux.HandleFunc("GET /job/{uuid}", rns.handleGetJob)
-	mux.HandleFunc("DELETE /job/{uuid}", rns.handleDeleteJob)
-	mux.HandleFunc("GET /preview/{uuid}", rns.handleGetPreview)
+
+	basePath := ""
+	mux.HandleFunc("GET "+basePath+"/jobs", rns.RESTGETJobs)
+	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}", rns.RESTGETJobsUUID)
+	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/preview", rns.RESTGETJobsUUIDPreview)
+	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/rinsed", rns.RESTGETJobsUUIDRinsed)
+	mux.HandleFunc("POST "+basePath+"/jobs", rns.RESTPOSTJobs)
+	mux.HandleFunc("DELETE "+basePath+"/jobs/{uuid}", rns.RESTDELETEJobsUUID)
 }
 
 func (rns *Rinse) MaxUploadSize() (n int64) {

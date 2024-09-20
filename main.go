@@ -6,12 +6,21 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"path"
+	"strings"
 
-	"git.cparta.dev/jli/rinse/rinse"
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/webserv"
+
+	"github.com/linkdata/rinse/rinse"
 )
+
+//go:generate go run github.com/swaggo/swag/cmd/swag@latest init
+
+//	@title			rinse REST API
+//	@version		1.0
+//	@description	Document cleaning service API
 
 var (
 	flagListen  = flag.String("listen", "", "serve HTTP requests on given [address][:port]")
@@ -52,6 +61,14 @@ func main() {
 		var rns *rinse.Rinse
 		if rns, err = rinse.New(cfg, http.DefaultServeMux, jw, *flagPull); err == nil {
 			defer rns.Close()
+
+			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
+				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
+				http.ServeFile(w, r, path.Join("docs", fpath))
+			})
+
+			maybeSwagger(cfg.ListenURL)
+
 			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
 				return
 			}

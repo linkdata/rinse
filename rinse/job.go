@@ -31,25 +31,30 @@ const (
 	JobFailed
 )
 
+type AddJobURL struct {
+	URL  string `json:"url" example:"https://getsamplefiles.com/download/pdf/sample-1.pdf"`
+	Lang string `json:"lang" example:"auto"`
+}
+
 type Job struct {
-	*Rinse
-	Workdir  string
-	Name     string // document file name or URL to download document from
-	Created  time.Time
-	UUID     uuid.UUID
+	*Rinse   `json:"-"`
+	Workdir  string         `json:"workdir" example:"/tmp/rinse-12345678"`
+	Name     string         `json:"name" example:"example.docx"`
+	Created  time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
+	UUID     uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
 	mu       deadlock.Mutex // protects following
-	docName  string         // document file name, once known
-	pdfName  string         // rinsed PDF file name
-	lang     string         // language
-	state    JobState
+	Error    error          `json:"error,omitempty"`
+	PdfName  string         `json:"pdfname,omitempty" example:"example-rinsed.pdf"` // rinsed PDF file name
+	Language string         `json:"lang,omitempty" example:"auto"`
 	started  time.Time
 	stopped  time.Time
+	docName  string // document file name, once known
+	state    JobState
 	imgfiles map[string]bool
 	diskuse  int64
 	cancelFn context.CancelFunc
 	closed   bool
 	errstate JobState
-	err      error
 	previews map[uint64][]byte
 }
 
@@ -75,7 +80,7 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 				job = &Job{
 					Rinse:    rns,
 					Name:     name,
-					lang:     lang,
+					Language: lang,
 					Workdir:  workdir,
 					Created:  time.Now(),
 					UUID:     uuid.New(),
@@ -116,7 +121,7 @@ func (job *Job) State() (state JobState) {
 
 func (job *Job) Lang() (s string) {
 	job.mu.Lock()
-	s = job.lang
+	s = job.Language
 	job.mu.Unlock()
 	return
 }
@@ -130,7 +135,7 @@ func (job *Job) DocumentName() (s string) {
 
 func (job *Job) ResultName() (s string) {
 	job.mu.Lock()
-	s = job.pdfName
+	s = job.PdfName
 	job.mu.Unlock()
 	return
 }

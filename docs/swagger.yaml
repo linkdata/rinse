@@ -1,0 +1,236 @@
+definitions:
+  rinse.AddJobURL:
+    properties:
+      lang:
+        example: auto
+        type: string
+      url:
+        example: https://getsamplefiles.com/download/pdf/sample-1.pdf
+        type: string
+    type: object
+  rinse.HTTPError:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+    type: object
+  rinse.Job:
+    properties:
+      created:
+        example: "2024-01-01T12:00:00+00:00"
+        format: dateTime
+        type: string
+      error: {}
+      lang:
+        example: auto
+        type: string
+      name:
+        example: example.docx
+        type: string
+      pdfname:
+        description: rinsed PDF file name
+        example: example-rinsed.pdf
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        format: uuid
+        type: string
+      workdir:
+        example: /tmp/rinse-12345678
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Document cleaning service API
+  title: rinse REST API
+  version: "1.0"
+paths:
+  /jobs:
+    get:
+      consumes:
+      - '*/*'
+      description: Get a list of all jobs.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/rinse.Job'
+            type: array
+      summary: List jobs
+      tags:
+      - jobs
+    post:
+      consumes:
+      - multipart/form-data
+      - application/json
+      description: Add job with either a file using multipart/form-data or a URL using
+        json.
+      parameters:
+      - description: this is a test file
+        in: formData
+        name: file
+        type: file
+      - description: eng
+        in: query
+        name: lang
+        type: string
+      - description: Add job by URL
+        in: body
+        name: addjoburl
+        schema:
+          $ref: '#/definitions/rinse.AddJobURL'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rinse.Job'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+      summary: Add a job
+      tags:
+      - jobs
+  /jobs/{uuid}:
+    delete:
+      consumes:
+      - '*/*'
+      description: Delete by job UUID
+      parameters:
+      - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rinse.Job'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+      summary: Delete a job
+      tags:
+      - jobs
+    get:
+      consumes:
+      - application/json
+      description: Get job metadata by UUID.
+      parameters:
+      - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/rinse.Job'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+      summary: Get job metadata.
+      tags:
+      - jobs
+  /jobs/{uuid}/preview:
+    get:
+      consumes:
+      - '*/*'
+      description: show job preview image by UUID
+      parameters:
+      - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: "1"
+        in: query
+        name: pages
+        type: integer
+      - description: "172"
+        in: query
+        name: width
+        type: integer
+      produces:
+      - text/html
+      - image/jpeg
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: jpeg
+        "202":
+          description: Preview not yet ready.
+          schema:
+            $ref: '#/definitions/rinse.Job'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "410":
+          description: Job failed.
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+      summary: Show a job preview image
+      tags:
+      - jobs
+  /jobs/{uuid}/rinsed:
+    get:
+      consumes:
+      - '*/*'
+      description: Get the jobs rinsed document.
+      parameters:
+      - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/rinse.HTTPError'
+      summary: Get the jobs rinsed document.
+      tags:
+      - jobs
+swagger: "2.0"
