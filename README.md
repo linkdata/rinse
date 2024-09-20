@@ -19,22 +19,28 @@ gVisor will be used to further sandbox the container.
 First, a temporary directory is created for the job. This will be mounted in the 
 container as `/var/rinse`.
 
-Then, each of these stages run in their own container, which is destroyed as 
-soon as the stage is complete or fails.
+Then, each of these stages run in their own podman container, which is destroyed 
+as soon as the stage is complete or fails. When the job is removed, all it's files
+are overwritten before they are deleted from the filesystem.
 
-- If we were given an URL, we use `wget` from the container to download
-the document. This stage allows the container to access the network (except
-for localhost).
+- If we were given an URL, we use [`wget`](https://www.gnu.org/software/wget/)
+  from within the container to download the document. This stage allows the
+  container to access the network.
 
-- The original document is renamed to `input` with it's extension preserved.
+The original document is renamed to `input` with it's extension preserved and made
+read-only before invoking the next stage.
 
-- If the language is to be auto-detected, Apache Tika is used to do so.
+- If the language is to be auto-detected, [Apache Tika](https://tika.apache.org/)
+  is used to do so.
 
 - If the document is not a PDF, LibreOffice is used to try to covert it to one,
-and if successful, the original document is deleted.
+  and if successful, the original document is deleted.
 
-- The `input.pdf` file is converted to a set of image files using `pdftoppm`.
+- The `input.pdf` file is converted to a set of PNG files using
+  [`pdftoppm`](https://poppler.freedesktop.org/).
 
-- The set of images files is OCR-ed and processed into a PDF using `tesseract`.
+- The set of PNG files is OCR-ed and processed into a PDF named
+  `output.pdf` using [`tesseract`](https://tesseract-ocr.github.io/).
 
-- When the job is deleted, all it's files are overwritten and then deleted.
+- Finally the `output.pdf` file is renamed to the original filename
+  (without extension) with `-rinsed.pdf` appended.
