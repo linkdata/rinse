@@ -28,7 +28,7 @@ import (
 //	@Success		202		{object}	Job		"Preview not yet ready."
 //	@Failure		400		{object}	HTTPError
 //	@Failure		404		{object}	HTTPError
-//	@Failure		410		{object}	HTTPError		"Job failed."
+//	@Failure		410		{object}	HTTPError	"Job failed."
 //	@Failure		500		{object}	HTTPError
 //	@Router			/jobs/{uuid}/preview [get]
 func (rns *Rinse) RESTGETJobsUUIDPreview(w http.ResponseWriter, r *http.Request) {
