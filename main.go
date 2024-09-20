@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -17,6 +18,9 @@ import (
 )
 
 //go:generate go run github.com/swaggo/swag/cmd/swag@latest init
+
+//go:embed docs
+var docsFS embed.FS
 
 //	@title			rinse REST API
 //	@version		1.0
@@ -64,7 +68,7 @@ func main() {
 
 			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
 				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
-				http.ServeFile(w, r, path.Join("docs", fpath))
+				http.ServeFileFS(w, r, docsFS, path.Join("docs", fpath))
 			})
 
 			maybeSwagger(cfg.ListenURL)
