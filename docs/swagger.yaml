@@ -21,6 +21,12 @@ definitions:
         example: "2024-01-01T12:00:00+00:00"
         format: dateTime
         type: string
+      diskuse:
+        example: 1234
+        type: integer
+      done:
+        example: false
+        type: boolean
       error: {}
       lang:
         example: auto
@@ -28,6 +34,9 @@ definitions:
       name:
         example: example.docx
         type: string
+      pages:
+        example: 1
+        type: integer
       pdfname:
         description: rinsed PDF file name
         example: example-rinsed.pdf

@@ -349,6 +349,14 @@ const docTemplate = `{
                     "format": "dateTime",
                     "example": "2024-01-01T12:00:00+00:00"
                 },
+                "diskuse": {
+                    "type": "integer",
+                    "example": 1234
+                },
+                "done": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "error": {},
                 "lang": {
                     "type": "string",
@@ -357,6 +365,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "example.docx"
+                },
+                "pages": {
+                    "type": "integer",
+                    "example": 1
                 },
                 "pdfname": {
                     "description": "rinsed PDF file name",

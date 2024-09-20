@@ -42,7 +42,7 @@ func jobStateText(n JobState) (statetxt string) {
 // JawsGetHtml implements jaws.HtmlGetter.
 func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	ui.mu.Lock()
-	diskuse := ui.diskuse
+	diskuse := ui.Diskuse
 	state := ui.state
 	imgcount := len(ui.imgfiles)
 	err := ui.Error
@@ -53,6 +53,7 @@ func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 			imgdone++
 		}
 	}
+	ui.Pages = imgcount
 	ui.mu.Unlock()
 
 	statetxt := jobStateText(state)

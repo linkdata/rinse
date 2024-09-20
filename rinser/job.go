@@ -46,12 +46,14 @@ type Job struct {
 	Error    error          `json:"error,omitempty"`
 	PdfName  string         `json:"pdfname,omitempty" example:"example-rinsed.pdf"` // rinsed PDF file name
 	Language string         `json:"lang,omitempty" example:"auto"`
+	Done     bool           `json:"done,omitempty" example:"false"`
+	Diskuse  int64          `json:"diskuse,omitempty" example:"1234"`
+	Pages    int            `json:"pages,omitempty" example:"1"`
 	started  time.Time
 	stopped  time.Time
 	docName  string // document file name, once known
 	state    JobState
 	imgfiles map[string]bool
-	diskuse  int64
 	cancelFn context.CancelFunc
 	closed   bool
 	errstate JobState
@@ -160,18 +162,6 @@ func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cm
 	return podrun(ctx, job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
 }
 
-func (job *Job) Stop() {
-	job.mu.Lock()
-	cancel := job.cancelFn
-	if job.state != JobFinished {
-		job.state = JobFailed
-	}
-	job.mu.Unlock()
-	if cancel != nil {
-		cancel()
-	}
-}
-
 func (job *Job) removeAll() {
 	if err := scrub(job.Workdir); err != nil {
 		slog.Error("job.removeAll", "job", job.Name, "err", err)
@@ -209,7 +199,7 @@ func (job *Job) refreshDiskuse() {
 		return nil
 	})
 	job.mu.Lock()
-	job.diskuse = diskuse
+	job.Diskuse = diskuse
 	for _, fn := range imgfiles {
 		if _, ok := job.imgfiles[fn]; !ok {
 			job.imgfiles[fn] = false

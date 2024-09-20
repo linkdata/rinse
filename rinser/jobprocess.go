@@ -57,6 +57,7 @@ func (job *Job) process(ctx context.Context) {
 func (job *Job) processDone() {
 	job.mu.Lock()
 	job.stopped = time.Now()
+	job.Done = true
 	job.cancelFn = nil
 	closed := job.closed
 	job.mu.Unlock()
@@ -296,7 +297,7 @@ func (job *Job) jobEnding() (err error) {
 				return nil
 			})
 			job.mu.Lock()
-			job.diskuse = diskuse
+			job.Diskuse = diskuse
 			job.mu.Unlock()
 			job.Jaws.Dirty(job, uiJobStatus{job})
 		}
