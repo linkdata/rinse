@@ -10,7 +10,10 @@ Web service that converts untrusted documents to image-based PDF:s in a sandbox.
 
 ## Container security
 
-The container is run with read-only filesystem, no privileges and no network.
+The container is based on [Alpine Linux](https://www.alpinelinux.org/) and is run
+with read-only filesystem, no privileges and no network (except if downloading
+the file has been requested).
+
 If you have gVisor installed and run `rinse` as root (which gVisor requires),
 gVisor will be used to further sandbox the container.
 
@@ -33,8 +36,9 @@ read-only before invoking the next stage.
 - If the language is to be auto-detected, [Apache Tika](https://tika.apache.org/)
   is used to do so.
 
-- If the document is not a PDF, LibreOffice is used to try to covert it to one,
-  and if successful, the original document is deleted.
+- If the document is not a PDF, [LibreOffice](https://www.libreoffice.org/) is
+  used to try to covert it to one, and if successful, the original document
+  is deleted.
 
 - The `input.pdf` file is converted to a set of PNG files using
   [`pdftoppm`](https://poppler.freedesktop.org/).
