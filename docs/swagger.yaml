@@ -1,5 +1,5 @@
 definitions:
-  rinse.AddJobURL:
+  rinser.AddJobURL:
     properties:
       lang:
         example: auto
@@ -8,14 +8,14 @@ definitions:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
         type: string
     type: object
-  rinse.HTTPError:
+  rinser.HTTPError:
     properties:
       code:
         type: integer
       error:
         type: string
     type: object
-  rinse.Job:
+  rinser.Job:
     properties:
       created:
         example: "2024-01-01T12:00:00+00:00"
@@ -58,18 +58,23 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/rinse.Job'
+              $ref: '#/definitions/rinser.Job'
             type: array
       summary: List jobs
       tags:
       - jobs
     post:
       consumes:
-      - multipart/form-data
       - application/json
+      - multipart/form-data
       description: Add job with either a file using multipart/form-data or a URL using
         json.
       parameters:
+      - description: Add job by URL
+        in: body
+        name: addjoburl
+        schema:
+          $ref: '#/definitions/rinser.AddJobURL'
       - description: this is a test file
         in: formData
         name: file
@@ -78,34 +83,29 @@ paths:
         in: query
         name: lang
         type: string
-      - description: Add job by URL
-        in: body
-        name: addjoburl
-        schema:
-          $ref: '#/definitions/rinse.AddJobURL'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rinse.Job'
+            $ref: '#/definitions/rinser.Job'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "415":
           description: Unsupported Media Type
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
       summary: Add a job
       tags:
       - jobs
@@ -126,11 +126,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rinse.Job'
+            $ref: '#/definitions/rinser.Job'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
       summary: Delete a job
       tags:
       - jobs
@@ -150,11 +150,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/rinse.Job'
+            $ref: '#/definitions/rinser.Job'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
       summary: Get job metadata.
       tags:
       - jobs
@@ -188,23 +188,23 @@ paths:
         "202":
           description: Preview not yet ready.
           schema:
-            $ref: '#/definitions/rinse.Job'
+            $ref: '#/definitions/rinser.Job'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "410":
           description: Job failed.
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
       summary: Show a job preview image
       tags:
       - jobs
@@ -221,15 +221,28 @@ paths:
         type: string
       produces:
       - application/pdf
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             type: file
+        "202":
+          description: Rinsed version not yet ready.
+          schema:
+            $ref: '#/definitions/rinser.Job'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/rinse.HTTPError'
+            $ref: '#/definitions/rinser.HTTPError'
+        "410":
+          description: Job failed.
+          schema:
+            $ref: '#/definitions/rinser.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/rinser.HTTPError'
       summary: Get the jobs rinsed document.
       tags:
       - jobs

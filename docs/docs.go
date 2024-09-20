@@ -34,7 +34,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/rinse.Job"
+                                "$ref": "#/definitions/rinser.Job"
                             }
                         }
                     }
@@ -43,8 +43,8 @@ const docTemplate = `{
             "post": {
                 "description": "Add job with either a file using multipart/form-data or a URL using json.",
                 "consumes": [
-                    "multipart/form-data",
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -54,6 +54,14 @@ const docTemplate = `{
                 ],
                 "summary": "Add a job",
                 "parameters": [
+                    {
+                        "description": "Add job by URL",
+                        "name": "addjoburl",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.AddJobURL"
+                        }
+                    },
                     {
                         "type": "file",
                         "description": "this is a test file",
@@ -65,45 +73,37 @@ const docTemplate = `{
                         "description": "eng",
                         "name": "lang",
                         "in": "query"
-                    },
-                    {
-                        "description": "Add job by URL",
-                        "name": "addjoburl",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/rinse.AddJobURL"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rinse.Job"
+                            "$ref": "#/definitions/rinser.Job"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "415": {
                         "description": "Unsupported Media Type",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     }
                 }
@@ -135,13 +135,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rinse.Job"
+                            "$ref": "#/definitions/rinser.Job"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     }
                 }
@@ -171,13 +171,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/rinse.Job"
+                            "$ref": "#/definitions/rinser.Job"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     }
                 }
@@ -228,31 +228,31 @@ const docTemplate = `{
                     "202": {
                         "description": "Preview not yet ready.",
                         "schema": {
-                            "$ref": "#/definitions/rinse.Job"
+                            "$ref": "#/definitions/rinser.Job"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "410": {
                         "description": "Job failed.",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     }
                 }
@@ -265,7 +265,8 @@ const docTemplate = `{
                     "*/*"
                 ],
                 "produces": [
-                    "application/pdf"
+                    "application/pdf",
+                    "application/json"
                 ],
                 "tags": [
                     "jobs"
@@ -287,10 +288,28 @@ const docTemplate = `{
                             "type": "file"
                         }
                     },
+                    "202": {
+                        "description": "Rinsed version not yet ready.",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.Job"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/rinse.HTTPError"
+                            "$ref": "#/definitions/rinser.HTTPError"
+                        }
+                    },
+                    "410": {
+                        "description": "Job failed.",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.HTTPError"
                         }
                     }
                 }
@@ -298,7 +317,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "rinse.AddJobURL": {
+        "rinser.AddJobURL": {
             "type": "object",
             "properties": {
                 "lang": {
@@ -311,7 +330,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rinse.HTTPError": {
+        "rinser.HTTPError": {
             "type": "object",
             "properties": {
                 "code": {
@@ -322,7 +341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "rinse.Job": {
+        "rinser.Job": {
             "type": "object",
             "properties": {
                 "created": {
