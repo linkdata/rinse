@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">{{with .Dot}}
+
+<head>
+	{{template "head.html" $}}
+</head>
+{{template "body_start.html" $}}
+
+<h3>REST API</h3>
+
+<a href="/docs/swagger.json">swagger.json</a>
+
+{{template "body_end.html" $}}
+{{end}}</html>
