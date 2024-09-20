@@ -14,7 +14,7 @@ import (
 func maybeSwagger(listenUrl string) {
 	docs.SwaggerInfo.Version = strings.TrimPrefix(rinser.PkgVersion, "v")
 	docs.SwaggerInfo.Host = listenUrl
-	http.DefaultServeMux.Handle("GET /swagger/", httpSwagger.Handler(
+	http.DefaultServeMux.Handle("GET /api/", httpSwagger.Handler(
 		httpSwagger.URL(listenUrl+"/docs/swagger.json"),
 	))
 }
