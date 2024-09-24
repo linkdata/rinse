@@ -4,7 +4,7 @@
 			<div class="row">
 				<div class="col">
 					{{$.Span .UiLink (printf `data-toggle="tooltip" title="%s"` .Workdir) .}}
-					<a id="{{$.Register .UiPreview .}}" class="ms-1" href="/jobs/{{.UUID}}/preview?width=172" target="_blank" data-toggle="tooltip" title="Preview" {{.UiPreviewAttr}}>
+					<a id="{{$.Register .UiPreview .}}" class="ms-1" href="/jobs/{{.UUID}}/preview?width=172" target="_blank" data-toggle="tooltip" title="Preview" hidden>
 						<svg width="16" height="16"><use href="#eye"/></svg>
 					</a>
 				</div>

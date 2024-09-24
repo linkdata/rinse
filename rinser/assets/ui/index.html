@@ -19,8 +19,7 @@
 	<div class="col-auto">
 		<select class="form-select" id="{{.FormLangKey}}" name="{{.FormLangKey}}">
 			<option value="auto" href="#">Language (auto)</option>
-			{{range .Languages}}
-			<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}&nbsp;({{.}})</option>
+			{{range .Languages}}<option value="{{.}}" href="#">{{$.Dot.LanguageName .}}&nbsp;({{.}})</option>
 			{{end}}
 		</select>
 	</div>

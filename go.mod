@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/deadlock v0.5.2
-	github.com/linkdata/jaws v0.78.2
+	github.com/linkdata/jaws v0.79.0
 	github.com/linkdata/webserv v0.9.5
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
@@ -28,3 +28,5 @@ require (
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// replace github.com/linkdata/jaws => ../jaws
