@@ -15,11 +15,15 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 		podmanargs = append(podmanargs, "--runtime="+runscBin)
 	}
 	podmanargs = append(podmanargs, "run", "--rm",
+		"--env", "STORAGE_DRIVER=vfs",
 		"--log-driver", "none",
+		"--security-opt", "seccomp=unconfined",
+		"--security-opt", "label=disable",
 		"--security-opt", "no-new-privileges",
 		"--security-opt", "label=type:container_engine_t",
 		"--read-only",
 		"--cap-drop", "all",
+		"--cap-add", "SYS_ADMIN",
 	)
 	if cmds[0] != "wget" {
 		podmanargs = append(podmanargs, "--network=none")
@@ -35,7 +39,7 @@ func podrun(ctx context.Context, podmanBin, runscBin, workDir string, stdouthand
 	if workDir != "" {
 		podmanargs = append(podmanargs, "-v", workDir+":/var/rinse")
 	}
-	podmanargs = append(podmanargs, PodmanImage)
+	podmanargs = append(podmanargs, WorkerImage)
 	podmanargs = append(podmanargs, cmds...)
 
 	slog.Debug("podman", "args", podmanargs)

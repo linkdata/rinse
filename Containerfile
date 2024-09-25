@@ -1,4 +1,4 @@
-FROM alpine:latest AS rinse
+FROM alpine:latest AS rinseworker
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
 RUN apk --no-cache -U upgrade && apk --no-cache add \
@@ -86,15 +86,43 @@ RUN apk --no-cache -U upgrade && apk --no-cache add \
     tesseract-ocr-data-ukr \
     tesseract-ocr-data-vie
 
+RUN update-ms-fonts
+RUN wget -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/2.9.2/tika-app-2.9.2.jar
+    
 COPY tesseract_opencl_profile_devices.dat /
 
-RUN update-ms-fonts && \
-    addgroup -g 1000 rinse && \
+RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse && \
     mkdir -p /var/rinse && \
     chmod 777 /var/rinse
 
-RUN wget -q -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/2.9.2/tika-app-2.9.2.jar
-
 WORKDIR /
+
+#############################
+
+FROM alpine:latest AS rinse
+LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
+
+RUN apk --no-cache -U upgrade
+
+COPY rinse /usr/local/bin/rinse
+
+RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname -m) && \
+    wget ${GVISOR}/runsc ${GVISOR}/runsc.sha512 && \
+    sha512sum -c runsc.sha512 && \
+    rm -f *.sha512 && \
+    chmod a+rx runsc && \
+    mv runsc /usr/local/bin
+
+RUN addgroup -g 1000 rinse && \
+    adduser -u 1000 -s /bin/true -G rinse -h /home/rinse -D rinse
+
 USER rinse
+RUN mkdir /home/rinse/rinseworker
+RUN mkdir /home/rinse/.containers
+COPY config.json /home/rinse/rinseworker
+COPY --from=rinseworker / /home/rinse/rinseworker/rootfs
+
+# podman run --rm -v /proc:/newproc --security-opt label=type:container_engine_t --cap-add SYS_ADMIN --cap-add NET_ADMIN -it ... /bin/sh
+# /usr/local/bin/runsc --root=/home/rinse/.containers --rootless=true --network=none --directfs=false run --bundle=/home/rinse/rinseworker sh
+# /usr/local/bin/runsc --root=/home/rinse/.containers list

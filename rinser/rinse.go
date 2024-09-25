@@ -26,7 +26,7 @@ var assetsFS embed.FS
 
 var ErrDuplicateUUID = errors.New("duplicate UUID")
 
-const PodmanImage = "ghcr.io/linkdata/rinse"
+const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
 	Config        *webserv.Config
@@ -218,7 +218,7 @@ func maybePullImage(maybePull bool, podmanBin string) (err error) {
 }
 
 func pullImage(podmanBin string) (err error) {
-	img := PodmanImage + ":latest"
+	img := WorkerImage + ":latest"
 	slog.Info("pullImage", "image", img)
 	var out []byte
 	cmd := exec.Command(podmanBin, "pull", "-q", img)
