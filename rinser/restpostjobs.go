@@ -43,7 +43,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 				srcLang := hr.URL.Query().Get("lang")
 				var job *Job
 				if job, err = NewJob(rns, srcName, srcLang); err == nil {
-					dstName := filepath.Clean(path.Join(job.Workdir, srcName))
+					dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 					var dstFile *os.File
 					if dstFile, err = os.Create(dstName); err == nil {
 						defer dstFile.Close()

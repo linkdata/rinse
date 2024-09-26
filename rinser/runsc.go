@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"path"
 	"text/template"
 )
-
-var configJsonTemplate = template.Must(template.New("").ParseFS(assetsFS, "assets/config.tmpl"))
 
 type configJsonData struct {
 	Args        string
@@ -29,6 +28,8 @@ func mustJson(obj any) string {
 	panic(err)
 }
 
+var configJsonTmpl = template.Must(template.New("config.tmpl").ParseFS(assetsFS, "assets/config.tmpl"))
+
 func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthandler func(string) error, cmds ...string) (err error) {
 	var f *os.File
 	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil {
@@ -39,11 +40,9 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 			RootDir:     mustJson(rootfsDir),
 			VarRinseDir: mustJson(varRinseDir),
 		}
-
-		if err = os.Mkdir(varRinseDir, 0777); err == nil {
-			var tmpl *template.Template
-			if tmpl, err = template.New("config.tmpl").ParseFS(assetsFS, "assets/config.tmpl"); err == nil {
-				if err = tmpl.ExecuteTemplate(f, "config.tmpl", cfg); err == nil {
+		if err = os.MkdirAll(varRinseDir, 0777); err == nil {
+			if err = os.Chmod(varRinseDir, 0777); err == nil {
+				if err = configJsonTmpl.ExecuteTemplate(f, "config.tmpl", cfg); err == nil {
 					if err = f.Close(); err == nil {
 						runscargs := []string{"-ignore-cgroups"}
 						if os.Getuid() != 0 {
@@ -53,9 +52,14 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 							runscargs = append(runscargs, "-network", "none")
 						}
 						runscargs = append(runscargs, "run", id)
+						fmt.Println("runsc", runscargs, "=>", cmds)
 						cmd := exec.Command("runsc", runscargs...) // #nosec G204
 						cmd.Dir = workDir
+						var outlines []string
 						defer func() {
+							for _, s := range outlines {
+								slog.Error(s)
+							}
 							if cmd.Process != nil {
 								if cmd.ProcessState == nil || !cmd.ProcessState.Exited() {
 									if e := cmd.Process.Kill(); e != nil {
@@ -64,35 +68,46 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 								}
 							}
 						}()
-						var stdout io.ReadCloser
+						var stdout, stderr io.ReadCloser
 						if stdout, err = cmd.StdoutPipe(); err == nil {
-							if err = cmd.Start(); err == nil {
-								lineCh := make(chan string)
-								go func() {
-									defer close(lineCh)
-									lineScanner := bufio.NewScanner(stdout)
-									for lineScanner.Scan() {
-										s := lineScanner.Text()
-										select {
-										case lineCh <- s:
-										case <-ctx.Done():
-											return
-										}
-									}
-								}()
-								for err == nil {
-									select {
-									case s, ok := <-lineCh:
-										if !ok {
-											if err = ctx.Err(); err == nil {
-												return cmd.Wait()
+							if stderr, err = cmd.StderrPipe(); err == nil {
+								if err = cmd.Start(); err == nil {
+									lineCh := make(chan string)
+									go func() {
+										defer close(lineCh)
+										lineScanner := bufio.NewScanner(stdout)
+										for lineScanner.Scan() {
+											s := lineScanner.Text()
+											select {
+											case lineCh <- s:
+											case <-ctx.Done():
+												return
 											}
 										}
-										if stdouthandler != nil {
-											err = stdouthandler(s)
+									}()
+									go func() {
+										lineScanner := bufio.NewScanner(stderr)
+										for lineScanner.Scan() {
+											s := lineScanner.Text()
+											fmt.Println(s)
 										}
-									case <-ctx.Done():
-										err = ctx.Err()
+									}()
+
+									for err == nil {
+										select {
+										case s, ok := <-lineCh:
+											if !ok {
+												if err = ctx.Err(); err == nil {
+													return cmd.Wait()
+												}
+											}
+											outlines = append(outlines, s)
+											if stdouthandler != nil {
+												err = stdouthandler(s)
+											}
+										case <-ctx.Done():
+											err = ctx.Err()
+										}
 									}
 								}
 							}

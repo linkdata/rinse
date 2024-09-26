@@ -112,7 +112,7 @@ func mustHaveDocument(s string) error {
 
 func (job *Job) runDocumentName() (wrkName string, err error) {
 	var docName string
-	err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if d.Type().IsRegular() {
 				if docName != "" {
@@ -139,8 +139,8 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 			job.mu.Unlock()
 
 			wrkName = "input" + strings.ToLower(ext)
-			src := path.Join(job.Workdir, docName)
-			dst := path.Join(job.Workdir, wrkName)
+			src := path.Join(job.Datadir, docName)
+			dst := path.Join(job.Datadir, wrkName)
 			if err = os.Rename(src, dst); err == nil {
 				err = os.Chmod(dst, 0644) // #nosec G302
 			}
@@ -174,7 +174,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
 		if err = job.podrun(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
-			err = scrub(path.Join(job.Workdir, fn))
+			err = scrub(path.Join(job.Datadir, fn))
 		}
 	}
 	return
@@ -183,8 +183,8 @@ func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
 	if err = job.transition(JobDetectLanguage, JobDocToPdf); err == nil {
 		if err = job.waitForDocToPdf(ctx, fn); err == nil {
-			if err = scrub(path.Join(job.Workdir, ".cache")); err == nil {
-				err = scrub(path.Join(job.Workdir, ".config"))
+			if err = scrub(path.Join(job.Datadir, ".cache")); err == nil {
+				err = scrub(path.Join(job.Datadir, ".config"))
 			}
 		}
 	}
@@ -205,7 +205,7 @@ func (job *Job) waitForPdfToImages(ctx context.Context) (err error) {
 
 func (job *Job) makeOutputTxt() (err error) {
 	var f *os.File
-	fpath := filepath.Clean(path.Join(job.Workdir, "output.txt"))
+	fpath := filepath.Clean(path.Join(job.Datadir, "output.txt"))
 	if f, err = os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil { // #nosec G302
 		defer f.Close()
 		job.mu.Lock()
@@ -228,7 +228,7 @@ func (job *Job) makeOutputTxt() (err error) {
 func (job *Job) runPdfToImages(ctx context.Context) (err error) {
 	if err = job.transition(JobDocToPdf, JobPdfToImages); err == nil {
 		if err = job.waitForPdfToImages(ctx); err == nil {
-			if err = scrub(path.Join(job.Workdir, "input.pdf")); err == nil {
+			if err = scrub(path.Join(job.Datadir, "input.pdf")); err == nil {
 				job.refreshDiskuse()
 				err = job.makeOutputTxt()
 			}
@@ -279,9 +279,9 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 
 func (job *Job) jobEnding() (err error) {
 	if err = job.transition(JobTesseract, JobEnding); err == nil {
-		if err = os.Rename(path.Join(job.Workdir, "output.pdf"), path.Join(job.Workdir, job.ResultName())); err == nil {
+		if err = os.Rename(path.Join(job.Datadir, "output.pdf"), path.Join(job.Datadir, job.ResultName())); err == nil {
 			var diskuse int64
-			err = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+			err = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {
 				if err == nil {
 					if d.Type().IsRegular() {
 						switch filepath.Ext(d.Name()) {

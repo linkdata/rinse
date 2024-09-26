@@ -1,7 +1,6 @@
 package rinser
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -216,28 +215,6 @@ func (rns *Rinse) Close() {
 	for _, job := range jobs {
 		job.Close()
 	}
-}
-
-func maybePullImage(maybePull bool, podmanBin string) (err error) {
-	if maybePull {
-		err = pullImage(podmanBin)
-	}
-	return
-}
-
-func pullImage(podmanBin string) (err error) {
-	img := WorkerImage + ":latest"
-	slog.Info("pullImage", "image", img)
-	var out []byte
-	cmd := exec.Command(podmanBin, "pull", "-q", img)
-	if out, err = cmd.CombinedOutput(); err != nil {
-		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
-			slog.Error("pullImage", "msg", string(bytes.TrimSpace(line)))
-		}
-	} else {
-		slog.Info("pullImage", "result", string(bytes.TrimSpace(out)))
-	}
-	return
 }
 
 func getLanguages(rootDir string) (langs []string, err error) {
