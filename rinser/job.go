@@ -76,20 +76,19 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		if lang == "auto" {
 			lang = ""
 		}
-		var workdir string
-		if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
-			if err = os.Chmod(workdir, 0777); err == nil { // #nosec G302
-				job = &Job{
-					Rinse:    rns,
-					Name:     name,
-					Language: lang,
-					Workdir:  workdir,
-					Created:  time.Now(),
-					UUID:     uuid.New(),
-					state:    JobNew,
-					imgfiles: make(map[string]bool),
-					previews: make(map[uint64][]byte),
-				}
+		id := uuid.New()
+		workDir := path.Join(os.TempDir(), "rinse-"+id.String())
+		if err = os.Mkdir(workDir, 0777); err == nil {
+			job = &Job{
+				Rinse:    rns,
+				Name:     name,
+				Language: lang,
+				Workdir:  workDir,
+				Created:  time.Now(),
+				UUID:     id,
+				state:    JobNew,
+				imgfiles: make(map[string]bool),
+				previews: make(map[uint64][]byte),
 			}
 		}
 	}
@@ -159,7 +158,7 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 }
 
 func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cmds ...string) (err error) {
-	return podrun(ctx, job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
+	return runsc(ctx, "rootfs", job.Workdir, job.UUID.String(), stdouthandler, cmds...)
 }
 
 func (job *Job) removeAll() {

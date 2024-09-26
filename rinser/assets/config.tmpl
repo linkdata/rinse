@@ -5,12 +5,9 @@
 			"uid": 1000,
 			"gid": 1000
 		},
-		"args": [
-			"sh"
-		],
+		"args": {{.Args}},
 		"env": [
-			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-			"TERM=xterm"
+			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 		],
 		"cwd": "/",
 		"capabilities": {
@@ -28,7 +25,7 @@
 		]
 	},
 	"root": {
-		"path": "rootfs",
+		"path": {{.RootDir}},
 		"readonly": true
 	},
 	"hostname": "rinse",
@@ -77,6 +74,15 @@
 				"nosuid",
 				"noexec",
 				"nodev"
+			]
+		},
+		{
+			"destination": "/var/rinse",
+			"source": {{.VarRinseDir}},
+			"options": [
+				"rbind",
+				"rw",
+				"noexec"
 			]
 		}
 	],

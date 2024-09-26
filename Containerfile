@@ -105,24 +105,27 @@ LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
 RUN apk --no-cache -U upgrade
 
-COPY rinse /usr/local/bin/rinse
+COPY rinse /usr/bin/rinse
 
 RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname -m) && \
     wget ${GVISOR}/runsc ${GVISOR}/runsc.sha512 && \
     sha512sum -c runsc.sha512 && \
     rm -f *.sha512 && \
     chmod a+rx runsc && \
-    mv runsc /usr/local/bin
+    mv runsc /usr/bin
 
 RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /home/rinse -D rinse
 
-USER rinse
-RUN mkdir /home/rinse/rinseworker
-RUN mkdir /home/rinse/.containers
-COPY config.json /home/rinse/rinseworker
-COPY --from=rinseworker / /home/rinse/rinseworker/rootfs
+RUN mkdir /var/run/runsc && chmod 777 /var/run/runsc
+RUN mkdir /var/rinse && chmod 777 /var/rinse
+RUN mkdir /opt/rinseworker && chmod 555 /opt/rinseworker
+COPY --from=rinseworker / /opt/rinseworker
 
-# podman run --rm -v /proc:/newproc --security-opt label=type:container_engine_t --cap-add SYS_ADMIN --cap-add NET_ADMIN -it ... /bin/sh
-# /usr/local/bin/runsc --root=/home/rinse/.containers --rootless=true --network=none --directfs=false run --bundle=/home/rinse/rinseworker sh
-# /usr/local/bin/runsc --root=/home/rinse/.containers list
+USER rinse
+COPY config.json /home/rinse/rinseworker/config.json
+USER root
+
+# podman build .
+# podman run --rm -v /proc:/newproc:ro --security-opt label=type:container_engine_t --cap-add SYS_ADMIN --cap-add NET_ADMIN -it ... /bin/sh
+# runsc -ignore-cgroups --network=none run --bundle=/home/rinse/rinseworker UUID
