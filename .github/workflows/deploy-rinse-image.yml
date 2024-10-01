@@ -12,6 +12,7 @@ env:
     IMAGE_REGISTRY: ghcr.io
     REGISTRY_USER: ${{ github.actor }}
     REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+    CGO_BUILD: 0
 
 jobs:
   build-and-push-images:
@@ -36,7 +37,7 @@ jobs:
       - name: Generate
         run: go generate ./...
       - name: Build executable
-        run: CGO_BUILD=0 go build -v .
+        run: go build -v .
       - name: Build container image
         id: build_image
         uses: redhat-actions/buildah-build@v2
