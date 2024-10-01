@@ -9,30 +9,24 @@ Provides both a Web UI and a Swagger REST API.
 ## Requirements
 
 * [podman](https://podman.io/) is required.
-* [gVisor](https://gvisor.dev/) is highly recommended, but optional.
-* 2GB+ of disk space on `/tmp`, as the conversion process can use up a lot of space.
 
-## Container security
+## Running
 
-The container is based on [Alpine Linux](https://www.alpinelinux.org/) and is run
-with read-only filesystem, no privileges and no network (except if downloading
-the file has been requested).
+`podman run --rm -v /proc:/newproc:ro -p 8080:80 --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse`
 
-If you have gVisor installed and run `rinse` as root (which gVisor requires),
-gVisor will be used to further sandbox the container.
+If you have `fullchain.pem` and `privkey.pem` at `~/certs`:
+
+`podman run --rm -v /proc:/newproc:ro -p 8443:443 -v ~/certs:/etc/certs --env RINSE_CERTDIR=/etc/certs --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse`
 
 ## Process
 
 First, a temporary directory is created for the job. This will be mounted in the 
-container as `/var/rinse`.
+[gVisor](https://gvisor.dev/) container as `/var/rinse`. If we were given an URL, 
+we download the document and place it here.
 
-Then, each of these stages run in their own podman container, which is destroyed 
+Then, each of these stages run in their own gVisor container, which is destroyed 
 as soon as the stage is complete or fails. When the job is removed, all it's files
 are overwritten before they are deleted from the filesystem.
-
-- If we were given an URL, we use [`wget`](https://www.gnu.org/software/wget/)
-  from within the container to download the document. This stage allows the
-  container to access the network.
 
 The original document is renamed to `input` with it's extension preserved and made
 read-only before invoking the next stage.

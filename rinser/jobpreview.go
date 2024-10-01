@@ -44,7 +44,7 @@ func (job *Job) Preview(numPages, imgWidth int) (b []byte, err error) {
 
 		for page := 0; err == nil && page < numPages; page++ {
 			var f *os.File
-			if f, err = os.Open(path.Join(job.Workdir, pageNames[page])); err == nil {
+			if f, err = os.Open(path.Join(job.Datadir, pageNames[page])); err == nil {
 				if src, e := png.Decode(f); e == nil {
 					images = append(images, src)
 					factor := float64(imgWidth) / float64(src.Bounds().Dx())
@@ -52,7 +52,7 @@ func (job *Job) Preview(numPages, imgWidth int) (b []byte, err error) {
 					heights = append(heights, height)
 					fullrect.Max.Y += height
 				}
-				f.Close()
+				_ = f.Close()
 			}
 		}
 

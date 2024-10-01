@@ -38,7 +38,8 @@ type AddJobURL struct {
 
 type Job struct {
 	*Rinse   `json:"-"`
-	Workdir  string         `json:"workdir" example:"/tmp/rinse-12345678"`
+	Workdir  string         `json:"workdir" example:"/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"`
+	Datadir  string         `json:"-"`
 	Name     string         `json:"name" example:"example.docx"`
 	Created  time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
 	UUID     uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
@@ -76,16 +77,19 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		if lang == "auto" {
 			lang = ""
 		}
-		var workdir string
-		if workdir, err = os.MkdirTemp("", "rinse-"); err == nil {
-			if err = os.Chmod(workdir, 0777); err == nil { // #nosec G302
+		id := uuid.New()
+		workDir := path.Join(os.TempDir(), "rinse-"+id.String())
+		if err = os.Mkdir(workDir, 0777); err == nil { //#nosec G301
+			dataDir := path.Join(workDir, "data")
+			if err = os.Mkdir(dataDir, 0777); err == nil { //#nosec G301
 				job = &Job{
 					Rinse:    rns,
 					Name:     name,
 					Language: lang,
-					Workdir:  workdir,
+					Workdir:  workDir,
+					Datadir:  dataDir,
 					Created:  time.Now(),
-					UUID:     uuid.New(),
+					UUID:     id,
 					state:    JobNew,
 					imgfiles: make(map[string]bool),
 					previews: make(map[uint64][]byte),
@@ -143,7 +147,7 @@ func (job *Job) ResultName() (s string) {
 }
 
 func (job *Job) ResultPath() string {
-	return path.Join(job.Workdir, job.ResultName())
+	return path.Join(job.Datadir, job.ResultName())
 }
 
 func (job *Job) transition(fromState, toState JobState) (err error) {
@@ -158,8 +162,8 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	return
 }
 
-func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cmds ...string) (err error) {
-	return podrun(ctx, job.PodmanBin, job.RunscBin, job.Workdir, stdouthandler, cmds...)
+func (job *Job) runsc(ctx context.Context, stdouthandler func(string) error, cmds ...string) (err error) {
+	return runsc(ctx, job.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
 }
 
 func (job *Job) removeAll() {
@@ -187,7 +191,7 @@ func (job *Job) Close() {
 func (job *Job) refreshDiskuse() {
 	var imgfiles []string
 	var diskuse int64
-	_ = filepath.WalkDir(job.Workdir, func(fpath string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if fi, e := d.Info(); e == nil {
 				diskuse += fi.Size()

@@ -1,7 +1,6 @@
 package rinser
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -11,10 +10,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/jaws/staticserve"
@@ -26,13 +27,13 @@ var assetsFS embed.FS
 
 var ErrDuplicateUUID = errors.New("duplicate UUID")
 
-const PodmanImage = "ghcr.io/linkdata/rinse"
+const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
 	Config        *webserv.Config
 	Jaws          *jaws.Jaws
-	PodmanBin     string
 	RunscBin      string
+	RootDir       string
 	FaviconURI    string
 	Languages     []string
 	mu            deadlock.Mutex // protects following
@@ -42,6 +43,23 @@ type Rinse struct {
 	maxRuntime    int
 	maxConcurrent int
 	jobs          []*Job
+}
+
+var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
+
+func locateRootDir() (fp string, err error) {
+	var fi os.FileInfo
+	fp = "/opt/rinseworker"
+	if fi, err = os.Stat(fp); err == nil && fi.IsDir() {
+		return fp, nil
+	}
+	if fp, err = filepath.Abs(path.Join("rootfs", fp)); err == nil {
+		if fi, err = os.Stat(fp); err == nil && fi.IsDir() {
+			return fp, nil
+		}
+	}
+	slog.Error("locateRootDir", "err", err)
+	return "", ErrWorkerRootDirNotFound
 }
 
 func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool) (rns *Rinse, err error) {
@@ -59,31 +77,20 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 			mux.Handle(uri, ss)
 			return
 		}
-		if err = os.MkdirAll(cfg.DataDir, 0775); err == nil { // #nosec G301
+		if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
 			if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
 				if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
-					var podmanBin string
-					if podmanBin, err = exec.LookPath("podman"); err == nil {
-						slog.Info("podman", "bin", podmanBin)
-						var runscbin string
-						if s, e := exec.LookPath("runsc"); e == nil {
-							if os.Getuid() == 0 && cfg.User == "" {
-								runscbin = s
-								slog.Info("gVisor", "bin", runscbin)
-							} else {
-								slog.Warn("gVisor needs root", "bin", s)
-							}
-						} else {
-							slog.Info("gVisor not found", "err", e)
-						}
-						if err = maybePullImage(maybePull, podmanBin); err == nil {
+					var runscbin string
+					if runscbin, err = exec.LookPath("runsc"); err == nil {
+						var rootDir string
+						if rootDir, err = locateRootDir(); err == nil {
 							var langs []string
-							if langs, err = getLanguages(podmanBin); err == nil {
+							if langs, err = getLanguages(rootDir); err == nil {
 								rns = &Rinse{
 									Config:        cfg,
 									Jaws:          jw,
-									PodmanBin:     podmanBin,
 									RunscBin:      runscbin,
+									RootDir:       rootDir,
 									FaviconURI:    faviconuri,
 									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
 									autoCleanup:   60 * 24,            // 1 day
@@ -210,29 +217,7 @@ func (rns *Rinse) Close() {
 	}
 }
 
-func maybePullImage(maybePull bool, podmanBin string) (err error) {
-	if maybePull {
-		err = pullImage(podmanBin)
-	}
-	return
-}
-
-func pullImage(podmanBin string) (err error) {
-	img := PodmanImage + ":latest"
-	slog.Info("pullImage", "image", img)
-	var out []byte
-	cmd := exec.Command(podmanBin, "pull", "-q", img)
-	if out, err = cmd.CombinedOutput(); err != nil {
-		for _, line := range bytes.Split(bytes.TrimSpace(out), []byte{'\n'}) {
-			slog.Error("pullImage", "msg", string(bytes.TrimSpace(line)))
-		}
-	} else {
-		slog.Info("pullImage", "result", string(bytes.TrimSpace(out)))
-	}
-	return
-}
-
-func getLanguages(podmanBin string) (langs []string, err error) {
+func getLanguages(rootDir string) (langs []string, err error) {
 	var msgs []string
 	stdouthandler := func(line string) error {
 		msgs = append(msgs, line)
@@ -244,11 +229,17 @@ func getLanguages(podmanBin string) (langs []string, err error) {
 		}
 		return nil
 	}
-	if err = podrun(context.Background(), podmanBin, "", "", stdouthandler, "tesseract", "--list-langs"); err == nil {
-		slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
-	} else {
-		for _, s := range msgs {
-			slog.Error("getLanguages", "msg", s)
+
+	id := uuid.New()
+	workDir := path.Join(os.TempDir(), "rinse-"+id.String())
+	if err = os.Mkdir(workDir, 0777); err == nil {
+		defer os.RemoveAll(workDir)
+		if err = runsc(context.Background(), rootDir, workDir, id.String(), stdouthandler, "tesseract", "--list-langs"); err == nil {
+			slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
+		} else {
+			for _, s := range msgs {
+				slog.Error("getLanguages", "msg", s)
+			}
 		}
 	}
 	return

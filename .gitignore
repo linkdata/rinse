@@ -26,3 +26,5 @@ go.work.sum
 /testdata
 /deploy.sh
 /rinse
+/rootfs
+*.tar

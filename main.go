@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 
@@ -27,9 +28,9 @@ var docsFS embed.FS
 //	@description	Document cleaning service API
 
 var (
-	flagListen  = flag.String("listen", "", "serve HTTP requests on given [address][:port]")
-	flagCertDir = flag.String("certdir", "", "where to find fullchain.pem and privkey.pem")
-	flagUser    = flag.String("user", "", "switch to this user after startup (*nix only)")
+	flagListen  = flag.String("listen", os.Getenv("RINSE_LISTEN"), "serve HTTP requests on given [address][:port]")
+	flagCertDir = flag.String("certdir", os.Getenv("RINSE_CERTDIR"), "where to find fullchain.pem and privkey.pem")
+	flagUser    = flag.String("user", os.Getenv("RINSE_USER"), "switch to this user after startup (*nix only)")
 	flagDataDir = flag.String("datadir", "", "where to store data files after startup")
 	flagPull    = flag.Bool("pull", false, "pull latest versions of images")
 	flagVersion = flag.Bool("v", false, "display version")

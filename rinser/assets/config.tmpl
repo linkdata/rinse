@@ -1,0 +1,109 @@
+{
+	"ociVersion": "1.0.0",
+	"process": {
+		"user": {
+			"uid": {{.Uid}},
+			"gid": {{.Gid}}
+		},
+		"args": {{.Args}},
+		"env": [
+			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+			"HOME=/home/rinse"
+		],
+		"cwd": "/",
+		"capabilities": {
+			"bounding": [],
+			"effective": [],
+			"inheritable": [],
+			"permitted": []
+		},
+		"rlimits": [
+			{
+				"type": "RLIMIT_NOFILE",
+				"hard": 4096,
+				"soft": 4096
+			}
+		]
+	},
+	"root": {
+		"path": {{.RootDir}},
+		"readonly": true
+	},
+	"hostname": "localhost",
+	"mounts": [
+		{
+			"destination": "/proc",
+			"type": "proc",
+			"source": "proc"
+		},
+		{
+			"destination": "/dev",
+			"type": "tmpfs",
+			"source": "tmpfs",
+			"options": [
+				"nosuid",
+				"noexec",
+				"nodev"
+			]
+		},
+		{
+			"destination": "/sys",
+			"type": "tmpfs",
+			"source": "tmpfs",
+			"options": [
+				"nosuid",
+				"noexec",
+				"nodev",
+				"ro"
+			]
+		},
+		{
+			"destination": "/tmp",
+			"type": "tmpfs",
+			"source": "tmpfs",
+			"options": [
+				"nosuid",
+				"noexec",
+				"nodev"
+			]
+		},
+		{
+			"destination": "/home/rinse",
+			"type": "tmpfs",
+			"source": "tmpfs",
+			"options": [
+				"nosuid",
+				"noexec",
+				"nodev"
+			]
+		},
+		{
+			"destination": "/var/rinse",
+			"source": {{.VarRinseDir}},
+			"options": [
+				"rbind",
+				"rw",
+				"noexec"
+			]
+		}
+	],
+	"linux": {
+		"namespaces": [
+			{
+				"type": "pid"
+			},
+			{
+				"type": "network"
+			},
+			{
+				"type": "ipc"
+			},
+			{
+				"type": "uts"
+			},
+			{
+				"type": "mount"
+			}
+		]
+	}
+}
