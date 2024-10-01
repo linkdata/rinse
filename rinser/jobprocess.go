@@ -197,7 +197,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 				}
 				return
 			}
-			if e := job.podrun(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
+			if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
 				job.mu.Lock()
 				job.Language = lang
 				job.mu.Unlock()
@@ -209,7 +209,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 
 func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
-		if err = job.podrun(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
+		if err = job.runsc(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
 			err = scrub(path.Join(job.Datadir, fn))
 		}
 	}
@@ -236,7 +236,7 @@ func (job *Job) waitForPdfToImages(ctx context.Context) (err error) {
 			job.refreshDiskuse()
 		}
 	}()
-	return job.podrun(ctx, nil, "pdftoppm", "-png", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
+	return job.runsc(ctx, nil, "pdftoppm", "-png", "-cropbox", "/var/rinse/input.pdf", "/var/rinse/output")
 }
 
 func (job *Job) makeOutputTxt() (err error) {
@@ -302,7 +302,7 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 			args = append(args, "-l", s)
 		}
 		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
-		if err = job.podrun(ctx, stdouthandler, args...); err != nil {
+		if err = job.runsc(ctx, stdouthandler, args...); err != nil {
 			if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
 				for _, s := range output {
 					slog.Error("tesseract", "msg", s)
