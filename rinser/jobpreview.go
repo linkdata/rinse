@@ -52,7 +52,7 @@ func (job *Job) Preview(numPages, imgWidth int) (b []byte, err error) {
 					heights = append(heights, height)
 					fullrect.Max.Y += height
 				}
-				f.Close()
+				_ = f.Close()
 			}
 		}
 

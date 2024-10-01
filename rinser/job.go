@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -78,9 +79,9 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		}
 		id := uuid.New()
 		workDir := path.Join(os.TempDir(), "rinse-"+id.String())
-		if err = os.Mkdir(workDir, 0777); err == nil {
+		if err = os.Mkdir(workDir, 0777); err == nil { //#nosec G301
 			dataDir := path.Join(workDir, "data")
-			if err = os.Mkdir(dataDir, 0777); err == nil {
+			if err = os.Mkdir(dataDir, 0777); err == nil { //#nosec G301
 				job = &Job{
 					Rinse:    rns,
 					Name:     name,
@@ -166,9 +167,9 @@ func (job *Job) podrun(ctx context.Context, stdouthandler func(string) error, cm
 }
 
 func (job *Job) removeAll() {
-	/*if err := scrub(job.Workdir); err != nil {
+	if err := scrub(job.Workdir); err != nil {
 		slog.Error("job.removeAll", "job", job.Name, "err", err)
-	}*/
+	}
 }
 
 func (job *Job) Close() {

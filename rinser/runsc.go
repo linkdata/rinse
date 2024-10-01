@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -18,6 +17,8 @@ type configJsonData struct {
 	Args        string
 	RootDir     string
 	VarRinseDir string
+	Uid         int
+	Gid         int
 }
 
 func mustJson(obj any) string {
@@ -35,31 +36,32 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil {
 		defer f.Close()
 		varRinseDir := path.Join(workDir, "data")
+		isRoot := os.Getuid() == 0
+		var uidgid int
+		if isRoot {
+			uidgid = 1000
+		}
 		cfg := &configJsonData{
 			Args:        mustJson(cmds),
 			RootDir:     mustJson(rootfsDir),
 			VarRinseDir: mustJson(varRinseDir),
+			Uid:         uidgid,
+			Gid:         uidgid,
 		}
 		if err = os.MkdirAll(varRinseDir, 0777); err == nil {
 			if err = os.Chmod(varRinseDir, 0777); err == nil {
 				if err = configJsonTmpl.ExecuteTemplate(f, "config.tmpl", cfg); err == nil {
 					if err = f.Close(); err == nil {
-						runscargs := []string{"-ignore-cgroups"}
-						if os.Getuid() != 0 {
+						runscargs := []string{"-ignore-cgroups", "-network", "none"}
+						if !isRoot {
 							runscargs = append(runscargs, "-rootless")
 						}
-						if cmds[0] != "wget" {
-							runscargs = append(runscargs, "-network", "none")
-						}
-						runscargs = append(runscargs, "run", id)
-						fmt.Println("runsc", runscargs, "=>", cmds)
+						runscargs = append(runscargs, "run", "-bundle", workDir, id)
+						slog.Info("runsc", "args", runscargs, "cmd", cmds)
 						cmd := exec.Command("runsc", runscargs...) // #nosec G204
 						cmd.Dir = workDir
-						var outlines []string
+						var errlines []string
 						defer func() {
-							for _, s := range outlines {
-								slog.Error(s)
-							}
 							if cmd.Process != nil {
 								if cmd.ProcessState == nil || !cmd.ProcessState.Exited() {
 									if e := cmd.Process.Kill(); e != nil {
@@ -88,8 +90,7 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 									go func() {
 										lineScanner := bufio.NewScanner(stderr)
 										for lineScanner.Scan() {
-											s := lineScanner.Text()
-											fmt.Println(s)
+											errlines = append(errlines, lineScanner.Text())
 										}
 									}()
 
@@ -98,11 +99,11 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 										case s, ok := <-lineCh:
 											if !ok {
 												if err = ctx.Err(); err == nil {
-													return cmd.Wait()
+													if err = cmd.Wait(); err == nil {
+														return
+													}
 												}
-											}
-											outlines = append(outlines, s)
-											if stdouthandler != nil {
+											} else if stdouthandler != nil {
 												err = stdouthandler(s)
 											}
 										case <-ctx.Done():
@@ -115,6 +116,9 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 						if err != nil {
 							if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
 								slog.Error("runsc", "err", err)
+								for _, s := range errlines {
+									slog.Error("runsc", "stderr", s)
+								}
 							}
 						}
 					}

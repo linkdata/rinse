@@ -77,7 +77,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool)
 			mux.Handle(uri, ss)
 			return
 		}
-		if err = os.MkdirAll(cfg.DataDir, 0775); err == nil { // #nosec G301
+		if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
 			if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
 				if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
 					var runscbin string

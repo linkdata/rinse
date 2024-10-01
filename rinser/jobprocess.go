@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
+	"mime"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -69,33 +72,66 @@ func (job *Job) processDone() {
 var ErrIllegalURLScheme = errors.New("illegal URL scheme")
 var ErrMultipleDocuments = errors.New("multiple documents found")
 var ErrMissingDocument = errors.New("no document found")
+var ErrDocumentTooLarge = errors.New("document too large")
 
 func hasHTTPScheme(s string) bool {
 	return strings.HasPrefix(s, "http:") || strings.HasPrefix(s, "https:")
 }
 
+func (job *Job) limitDocumentSize(resp *http.Response) (src io.Reader, maxUploadSize int64, err error) {
+	src = resp.Body
+	if maxUploadSize = job.MaxUploadSize(); maxUploadSize > 0 {
+		src = io.LimitReader(src, maxUploadSize+1)
+		if resp.ContentLength > 0 && resp.ContentLength > maxUploadSize {
+			err = ErrDocumentTooLarge
+		}
+	}
+	return
+}
+
 func (job *Job) runDownload(ctx context.Context) (err error) {
 	if err = job.transition(JobStarting, JobDownload); err == nil {
 		if hasHTTPScheme(job.Name) {
-			var msgs []string
-			stdouthandler := func(s string) (err error) {
-				msgs = append(msgs, s)
-				return
-			}
-			args := []string{
-				"wget",
-				"--quiet",
-				"--content-disposition",
-				"--no-directories",
-				"--directory-prefix=/var/rinse",
-			}
-			if n := job.MaxUploadSize(); n > 0 {
-				args = append(args, fmt.Sprintf("--quota=%v", job.MaxUploadSize()))
-			}
-			args = append(args, job.Name)
-			if err = job.podrun(ctx, stdouthandler, args...); err != nil {
-				for _, s := range msgs {
-					slog.Error("wget", "msg", s)
+			var req *http.Request
+			if req, err = http.NewRequestWithContext(ctx, http.MethodGet, job.Name, nil); err == nil {
+				var resp *http.Response
+				if resp, err = http.DefaultClient.Do(req); err == nil { // #nosec G107
+					srcName := resp.Request.URL.Path
+					if cd := resp.Header.Get("Content-Disposition"); cd != "" {
+						if _, params, e := mime.ParseMediaType(cd); e == nil {
+							if s, ok := params["filename"]; ok {
+								srcName = s
+							}
+						}
+					}
+					srcName = path.Base(srcName)
+					if filepath.Ext(srcName) == "" {
+						if ct := resp.Header.Get("Content-Type"); ct != "" {
+							if mediatype, _, e := mime.ParseMediaType(ct); e == nil {
+								if exts, e := mime.ExtensionsByType(mediatype); e == nil {
+									srcName += exts[0]
+								}
+							}
+						}
+					}
+
+					var srcFile io.Reader
+					var maxUploadSize int64
+					if srcFile, maxUploadSize, err = job.limitDocumentSize(resp); err == nil {
+						var of *os.File
+						if of, err = os.Create(path.Join(job.Datadir, srcName)); err == nil {
+							defer of.Close()
+							var written int64
+							if written, err = io.Copy(of, srcFile); err == nil {
+								if maxUploadSize < 1 || written <= maxUploadSize {
+									if err = of.Close(); err == nil {
+										return
+									}
+								}
+								err = ErrDocumentTooLarge
+							}
+						}
+					}
 				}
 			}
 		}
