@@ -105,14 +105,15 @@ LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
 RUN apk --no-cache -U upgrade
 
-COPY rinse /usr/bin/rinse
-
 RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname -m) && \
     wget ${GVISOR}/runsc ${GVISOR}/runsc.sha512 && \
     sha512sum -c runsc.sha512 && \
     rm -f *.sha512 && \
     chmod a+rx runsc && \
     mv runsc /usr/bin
+
+COPY rinse /usr/bin/rinse
+RUN chmod 555 /usr/bin/rinse
 
 RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /home/rinse -D rinse
@@ -122,10 +123,12 @@ RUN mkdir /var/rinse && chmod 777 /var/rinse
 RUN mkdir /opt/rinseworker && chmod 555 /opt/rinseworker
 COPY --from=rinseworker / /opt/rinseworker
 
-USER rinse
-COPY config.json /home/rinse/rinseworker/config.json
-USER root
+ENV RINSE_CERTDIR=
+ENV RINSE_LISTEN=
+ENV RINSE_USER=
+ENTRYPOINT /usr/bin/rinse
 
+# CGO_ENABLED=0 go build .
 # podman build .
-# podman run --rm -v /proc:/newproc:ro --security-opt label=type:container_engine_t --cap-add SYS_ADMIN --cap-add NET_ADMIN -it ... /bin/sh
-# runsc -ignore-cgroups --network=none run --bundle=/home/rinse/rinseworker UUID
+# podman run --rm -v /proc:/newproc:ro -p 8080:80 --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse
+# sudo podman run --rm -u=www-data -v /proc:/newproc:ro -p 443:443 -v ~/certs:/etc/certs --env RINSE_CERTDIR=/etc/certs --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse
