@@ -62,7 +62,7 @@ func locateRootDir() (fp string, err error) {
 	return "", ErrWorkerRootDirNotFound
 }
 
-func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, maybePull bool) (rns *Rinse, err error) {
+func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, err error) {
 	var tmpl *template.Template
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {

@@ -126,6 +126,7 @@ COPY --from=rinseworker / /opt/rinseworker
 ENV RINSE_CERTDIR=
 ENV RINSE_LISTEN=
 ENV RINSE_USER=
+ENV RINSE_DATADIR=
 ENTRYPOINT /usr/bin/rinse
 
 # CGO_ENABLED=0 go build . && podman build .
