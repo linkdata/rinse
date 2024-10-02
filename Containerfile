@@ -129,5 +129,7 @@ ENV RINSE_USER=
 ENV RINSE_DATADIR=
 ENTRYPOINT /usr/bin/rinse
 
-# CGO_ENABLED=0 go build . && podman build .
+# CGO_ENABLED=0 go build .
+# CGO_ENABLED=0 go build -tags debug -o rinse-debug .
+# podman build .
 # podman run --rm -p 8080:80 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -it ghcr.io/linkdata/rinse
