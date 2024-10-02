@@ -35,7 +35,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Get tags
-        run: git fetch --tags origin
+        run: git fetch --prune --unshallow
       - name: Show tags
         run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Generate
