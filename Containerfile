@@ -128,7 +128,5 @@ ENV RINSE_LISTEN=
 ENV RINSE_USER=
 ENTRYPOINT /usr/bin/rinse
 
-# CGO_ENABLED=0 go build .
-# podman build .
-# podman run --rm -v /proc:/newproc:ro -p 8080:80 --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse
-# sudo podman run --rm -u=www-data -v /proc:/newproc:ro -p 443:443 -v ~/certs:/etc/certs --env RINSE_CERTDIR=/etc/certs --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse
+# CGO_ENABLED=0 go build . && podman build .
+# podman run --rm -p 8080:80 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -it ghcr.io/linkdata/rinse

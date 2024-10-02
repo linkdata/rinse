@@ -15,7 +15,7 @@ type settings struct {
 }
 
 func (rns *Rinse) settingsFile() string {
-	return path.Join(rns.Config.DataDir, "settings.json")
+	return path.Join(rns.Config.DataDir, "rinse.json")
 }
 
 func (rns *Rinse) saveSettings() (err error) {

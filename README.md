@@ -12,21 +12,35 @@ Provides both a Web UI and a Swagger REST API.
 
 ## Running
 
-`podman run --rm -v /proc:/newproc:ro -p 8080:80 --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse`
+You should start the container in [rootless](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md) mode.
+Inside the container we use [gVisor](https://gvisor.dev/) to further sandbox operations, and
+gVisor requires the container to be started with `--cap-add SYS_ADMIN` and `-v /proc:/newproc:ro`.
 
-If you have `fullchain.pem` and `privkey.pem` at `~/certs`:
+Rinse will run as the container's root user which will translate to the user that started the container,
+so by default it will listen on either port 80 or 443. Since you will be starting the container as a
+non-privileged user, you'll need to forward HTTP requests to it from a non-privileged host port to
+a privileged port inside the container.
 
-`podman run --rm -v /proc:/newproc:ro -p 8443:443 -v ~/certs:/etc/certs --env RINSE_CERTDIR=/etc/certs --cap-add SYS_ADMIN -it ghcr.io/linkdata/rinse`
+If you want the service to remember it's settings between runs, you'll need to mount a volume
+at `/etc/rinse` inside the container.
+
+`podman run --rm -d -p 8080:80 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse ghcr.io/linkdata/rinse`
+
+Running it with HTTPS requires you to provide valid certificates. Rinse will look for
+`fullchain.pem` and `privkey.pem` at `/etc/certs` inside the container, and if found
+start in HTTPS mode.
+
+`podman run --rm -d -p 8443:443 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
 
 ## Process
 
 First, a temporary directory is created for the job. This will be mounted in the 
-[gVisor](https://gvisor.dev/) container as `/var/rinse`. If we were given an URL, 
-we download the document and place it here.
+gVisor container as `/var/rinse`. If we were given an URL, we download the
+document and place it here.
 
 Then, each of these stages run in their own gVisor container, which is destroyed 
 as soon as the stage is complete or fails. When the job is removed, all it's files
-are overwritten before they are deleted from the filesystem.
+are overwritten before they are deleted from the container filesystem.
 
 The original document is renamed to `input` with it's extension preserved and made
 read-only before invoking the next stage.

@@ -44,11 +44,27 @@ func main() {
 		return
 	}
 
+	certDir := *flagCertDir
+	if certDir == "" {
+		if _, err := os.Stat("/etc/certs/fullchain.pem"); err == nil {
+			if _, err := os.Stat("/etc/certs/privkey.pem"); err == nil {
+				certDir = "/etc/certs"
+			}
+		}
+	}
+
+	dataDir := *flagDataDir
+	if dataDir == "" {
+		if fi, err := os.Stat("/etc/rinse"); err == nil && fi.IsDir() {
+			dataDir = "/etc/rinse"
+		}
+	}
+
 	cfg := &webserv.Config{
 		Address:              *flagListen,
-		CertDir:              *flagCertDir,
+		CertDir:              certDir,
 		User:                 *flagUser,
-		DataDir:              *flagDataDir,
+		DataDir:              dataDir,
 		DefaultDataDirSuffix: "rinse",
 		Logger:               slog.Default(),
 	}
