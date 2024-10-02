@@ -22,6 +22,7 @@ const (
 	JobNew JobState = iota
 	JobStarting
 	JobDownload
+	JobExtractMeta
 	JobDetectLanguage
 	JobDocToPdf
 	JobPdfToImages

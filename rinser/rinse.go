@@ -167,7 +167,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
 	if !deadlock.Debug {
 		mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
-		mux.Handle("GET /api/index.html{$}", rns.Jaws.Handler("api.html", rns))
+		mux.Handle("GET /api/index.html", rns.Jaws.Handler("api.html", rns))
 	}
 
 	basePath := ""
@@ -175,6 +175,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}", rns.RESTGETJobsUUID)
 	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/preview", rns.RESTGETJobsUUIDPreview)
 	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/rinsed", rns.RESTGETJobsUUIDRinsed)
+	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/meta", rns.RESTGETJobsUUIDMeta)
 	mux.HandleFunc("POST "+basePath+"/jobs", rns.RESTPOSTJobs)
 	mux.HandleFunc("DELETE "+basePath+"/jobs/{uuid}", rns.RESTDELETEJobsUUID)
 }

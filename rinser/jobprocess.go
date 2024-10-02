@@ -1,7 +1,9 @@
 package rinser
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -28,15 +30,19 @@ func (job *Job) process(ctx context.Context) {
 
 	var err error
 	if err = job.runDownload(ctx); err == nil {
-		var wrkName string
-		if wrkName, err = job.runDocumentName(); err == nil {
-			if err = job.runDetectLanguage(ctx, wrkName); err == nil {
-				if err = job.runDocToPdf(ctx, wrkName); err == nil {
-					if err = job.runPdfToImages(ctx); err == nil {
-						if err = job.runTesseract(ctx); err == nil {
-							if err = job.jobEnding(); err == nil {
-								if err = job.transition(JobEnding, JobFinished); err == nil {
-									return
+		var docName, wrkName string
+		if docName, wrkName, err = job.runDocumentName(); err == nil {
+			if err = job.runExtractMeta(ctx, docName); err == nil {
+				if err = job.renameDoc(docName, wrkName); err == nil {
+					if err = job.runDetectLanguage(ctx, wrkName); err == nil {
+						if err = job.runDocToPdf(ctx, wrkName); err == nil {
+							if err = job.runPdfToImages(ctx); err == nil {
+								if err = job.runTesseract(ctx); err == nil {
+									if err = job.jobEnding(); err == nil {
+										if err = job.transition(JobEnding, JobFinished); err == nil {
+											return
+										}
+									}
 								}
 							}
 						}
@@ -146,8 +152,7 @@ func mustHaveDocument(s string) error {
 	return nil
 }
 
-func (job *Job) runDocumentName() (wrkName string, err error) {
-	var docName string
+func (job *Job) runDocumentName() (docName, wrkName string, err error) {
 	err = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if d.Type().IsRegular() {
@@ -175,10 +180,35 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 			job.mu.Unlock()
 
 			wrkName = "input" + strings.ToLower(ext)
-			src := path.Join(job.Datadir, docName)
-			dst := path.Join(job.Datadir, wrkName)
-			if err = os.Rename(src, dst); err == nil {
-				err = os.Chmod(dst, 0644) // #nosec G302
+		}
+	}
+	return
+}
+
+func (job *Job) renameDoc(docName, wrkName string) (err error) {
+	src := path.Join(job.Datadir, docName)
+	dst := path.Join(job.Datadir, wrkName)
+	if err = os.Rename(src, dst); err == nil {
+		err = os.Chmod(dst, 0644) // #nosec G302
+	}
+	return
+}
+
+func (job *Job) runExtractMeta(ctx context.Context, fn string) (err error) {
+	if err = job.transition(JobDownload, JobExtractMeta); err == nil {
+		var buf bytes.Buffer
+		stdouthandler := func(s string) (err error) {
+			buf.WriteString(s)
+			return
+		}
+		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--json", "/var/rinse/"+fn); e == nil {
+			var obj any
+			if err = json.Unmarshal(buf.Bytes(), &obj); err == nil {
+				fpath := filepath.Clean(path.Join(job.Datadir, job.docName+".json"))
+				var b []byte
+				if b, err = json.MarshalIndent(obj, "", "  "); err == nil {
+					err = os.WriteFile(fpath, b, 0644)
+				}
 			}
 		}
 	}
@@ -186,7 +216,7 @@ func (job *Job) runDocumentName() (wrkName string, err error) {
 }
 
 func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
-	if err = job.transition(JobDownload, JobDetectLanguage); err == nil {
+	if err = job.transition(JobExtractMeta, JobDetectLanguage); err == nil {
 		if job.Lang() == "" {
 			var lang string
 			stdouthandler := func(s string) (err error) {
@@ -321,7 +351,7 @@ func (job *Job) jobEnding() (err error) {
 				if err == nil {
 					if d.Type().IsRegular() {
 						switch filepath.Ext(d.Name()) {
-						case ".png", ".pdf":
+						case ".png", ".pdf", ".json":
 							if fi, e := d.Info(); e == nil {
 								diskuse += fi.Size()
 							}

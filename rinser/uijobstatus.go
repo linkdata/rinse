@@ -19,6 +19,8 @@ func jobStateText(n JobState) (statetxt string) {
 		statetxt = "Starting"
 	case JobDownload:
 		statetxt = "Downloading"
+	case JobExtractMeta:
+		statetxt = "Metadata"
 	case JobDetectLanguage:
 		statetxt = "Detect Language"
 	case JobDocToPdf:
