@@ -30,15 +30,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Get tags
-        run: git fetch --tags origin
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
+      - name: Get tags
+        run: git fetch --tags origin
+      - name: Show tags
+        run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Generate
         run: go generate ./...
-      - name: Show version
+      - name: Show generated version info
         run: cat rinser/version.gen.go
       - name: Build normal executable
         run: go build -v .
