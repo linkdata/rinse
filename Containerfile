@@ -112,8 +112,8 @@ RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname
     chmod a+rx runsc && \
     mv runsc /usr/bin
 
-COPY rinse /usr/bin/rinse
-RUN chmod 555 /usr/bin/rinse
+COPY --chmod=555 rinse /usr/bin/rinse
+COPY --chmod=555 rinse-debug /usr/bin/rinse-debug
 
 RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /home/rinse -D rinse

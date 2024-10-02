@@ -36,8 +36,10 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Generate
         run: go generate ./...
-      - name: Build executable
+      - name: Build normal executable
         run: go build -v .
+      - name: Build debug executable 
+        run: go build -v -tags debug -o rinse-debug .
       - name: Build container image
         id: build_image
         uses: redhat-actions/buildah-build@v2
