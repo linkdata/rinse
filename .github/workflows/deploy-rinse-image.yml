@@ -38,6 +38,8 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Generate
         run: go generate ./...
+      - name: Show version
+        run: cat rinser/version.gen.go
       - name: Build normal executable
         run: go build -v .
       - name: Build debug executable 
