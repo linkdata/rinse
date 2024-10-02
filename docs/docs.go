@@ -382,7 +382,7 @@ const docTemplate = `{
                 },
                 "workdir": {
                     "type": "string",
-                    "example": "/tmp/rinse-12345678"
+                    "example": "/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         }
