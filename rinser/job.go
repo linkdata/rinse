@@ -101,6 +101,15 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 	return
 }
 
+func (job *Job) HasMeta() (yes bool) {
+	if job.State() > JobExtractMeta {
+		if _, e := os.Stat(job.MetaPath()); e == nil {
+			yes = true
+		}
+	}
+	return
+}
+
 func (job *Job) Previewable() (yes bool) {
 	job.mu.Lock()
 	yes = len(job.imgfiles) > 0
@@ -145,6 +154,10 @@ func (job *Job) ResultName() (s string) {
 	s = job.PdfName
 	job.mu.Unlock()
 	return
+}
+
+func (job *Job) MetaPath() string {
+	return path.Join(job.Datadir, job.DocumentName()+".json")
 }
 
 func (job *Job) ResultPath() string {
