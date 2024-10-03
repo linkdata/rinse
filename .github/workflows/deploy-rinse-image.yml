@@ -43,6 +43,10 @@ jobs:
         run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Git branch --show-current
         run: git branch --show-current
+      - name: Git rev-parse
+        run: git rev-parse --abbrev-ref HEAD
+      - name: GH env
+        run: env
       - name: Generate
         run: go generate ./...
       - name: Show generated version info
