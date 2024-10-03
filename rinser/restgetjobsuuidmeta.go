@@ -37,7 +37,7 @@ func (rns *Rinse) RESTGETJobsUUIDMeta(hw http.ResponseWriter, hr *http.Request) 
 				hdr["Content-Length"] = []string{strconv.FormatInt(fi.Size(), 10)}
 				hdr["Content-Type"] = []string{"application/json"}
 				var f *os.File
-				if f, err = os.Open(metapath); err == nil {
+				if f, err = os.Open(metapath); err == nil /* #nosec G304 */ {
 					defer f.Close()
 					if _, err = io.Copy(hw, f); err == nil {
 						return

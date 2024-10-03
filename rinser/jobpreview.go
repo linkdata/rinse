@@ -17,10 +17,10 @@ func (job *Job) Preview(numPages, imgWidth int) (b []byte, err error) {
 
 	job.mu.Lock()
 	numPages = max(1, numPages)
-	numPages = min(len(job.imgfiles), numPages)
+	numPages = min(100, min(len(job.imgfiles), numPages))
 	imgWidth = max(96, imgWidth)
 	imgWidth = min(1920, imgWidth)
-	key := uint64(numPages)<<16 | uint64(imgWidth)
+	key := uint64(numPages)<<16 | uint64(imgWidth) //#nosec G115
 	if numPages > 0 {
 		if b = job.previews[key]; b == nil {
 			for fn := range job.imgfiles {

@@ -33,7 +33,7 @@ var configJsonTmpl = template.Must(template.New("config.tmpl").ParseFS(assetsFS,
 
 func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthandler func(string) error, cmds ...string) (err error) {
 	var f *os.File
-	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil {
+	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil /* #nosec G304 */ {
 		defer f.Close()
 		varRinseDir := path.Join(workDir, "data")
 		isRoot := os.Getuid() == 0
@@ -48,8 +48,8 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 			Uid:         uidgid,
 			Gid:         uidgid,
 		}
-		if err = os.MkdirAll(varRinseDir, 0777); err == nil {
-			if err = os.Chmod(varRinseDir, 0777); err == nil {
+		if err = os.MkdirAll(varRinseDir, 0777); err == nil /* #nosec G301 */ {
+			if err = os.Chmod(varRinseDir, 0777); err == nil /* #nosec G302 */ {
 				if err = configJsonTmpl.ExecuteTemplate(f, "config.tmpl", cfg); err == nil {
 					if err = f.Close(); err == nil {
 						runscargs := []string{"-ignore-cgroups", "-network", "none"}

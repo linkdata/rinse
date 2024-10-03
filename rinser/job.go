@@ -80,9 +80,9 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 		}
 		id := uuid.New()
 		workDir := path.Join(os.TempDir(), "rinse-"+id.String())
-		if err = os.Mkdir(workDir, 0777); err == nil { //#nosec G301
+		if err = os.Mkdir(workDir, 0777); err == nil /* #nosec G301 */ {
 			dataDir := path.Join(workDir, "data")
-			if err = os.Mkdir(dataDir, 0777); err == nil { //#nosec G301
+			if err = os.Mkdir(dataDir, 0777); err == nil /* #nosec G301 */ {
 				job = &Job{
 					Rinse:    rns,
 					Name:     name,

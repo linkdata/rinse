@@ -236,7 +236,7 @@ func getLanguages(rootDir string) (langs []string, err error) {
 
 	id := uuid.New()
 	workDir := path.Join(os.TempDir(), "rinse-"+id.String())
-	if err = os.Mkdir(workDir, 0777); err == nil {
+	if err = os.Mkdir(workDir, 0777); err == nil /* #nosec G301 */ {
 		defer os.RemoveAll(workDir)
 		if err = runsc(context.Background(), rootDir, workDir, id.String(), stdouthandler, "tesseract", "--list-langs"); err == nil {
 			slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })

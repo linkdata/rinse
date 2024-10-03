@@ -102,41 +102,45 @@ func (job *Job) runDownload(ctx context.Context) (err error) {
 			if req, err = http.NewRequestWithContext(ctx, http.MethodGet, job.Name, nil); err == nil {
 				var resp *http.Response
 				if resp, err = http.DefaultClient.Do(req); err == nil { // #nosec G107
-					srcName := resp.Request.URL.Path
-					if cd := resp.Header.Get("Content-Disposition"); cd != "" {
-						if _, params, e := mime.ParseMediaType(cd); e == nil {
-							if s, ok := params["filename"]; ok {
-								srcName = s
-							}
-						}
-					}
-					srcName = path.Base(srcName)
-					if filepath.Ext(srcName) == "" {
-						if ct := resp.Header.Get("Content-Type"); ct != "" {
-							if mediatype, _, e := mime.ParseMediaType(ct); e == nil {
-								if exts, e := mime.ExtensionsByType(mediatype); e == nil {
-									srcName += exts[0]
+					if resp.StatusCode == http.StatusOK {
+						srcName := resp.Request.URL.Path
+						if cd := resp.Header.Get("Content-Disposition"); cd != "" {
+							if _, params, e := mime.ParseMediaType(cd); e == nil {
+								if s, ok := params["filename"]; ok {
+									srcName = s
 								}
 							}
 						}
-					}
-
-					var srcFile io.Reader
-					var maxUploadSize int64
-					if srcFile, maxUploadSize, err = job.limitDocumentSize(resp); err == nil {
-						var of *os.File
-						if of, err = os.Create(path.Join(job.Datadir, srcName)); err == nil {
-							defer of.Close()
-							var written int64
-							if written, err = io.Copy(of, srcFile); err == nil {
-								if maxUploadSize < 1 || written <= maxUploadSize {
-									if err = of.Close(); err == nil {
-										return
+						srcName = path.Base(srcName)
+						if filepath.Ext(srcName) == "" {
+							if ct := resp.Header.Get("Content-Type"); ct != "" {
+								if mediatype, _, e := mime.ParseMediaType(ct); e == nil {
+									if exts, e := mime.ExtensionsByType(mediatype); e == nil {
+										srcName += exts[0]
 									}
 								}
-								err = ErrDocumentTooLarge
 							}
 						}
+
+						var srcFile io.Reader
+						var maxUploadSize int64
+						if srcFile, maxUploadSize, err = job.limitDocumentSize(resp); err == nil {
+							var of *os.File
+							if of, err = os.Create(path.Join(job.Datadir, srcName)); err == nil /* #nosec G304 */ {
+								defer of.Close()
+								var written int64
+								if written, err = io.Copy(of, srcFile); err == nil {
+									if maxUploadSize < 1 || written <= maxUploadSize {
+										if err = of.Close(); err == nil {
+											return
+										}
+									}
+									err = ErrDocumentTooLarge
+								}
+							}
+						}
+					} else {
+						err = errors.New(resp.Status)
 					}
 				}
 			}
@@ -145,14 +149,15 @@ func (job *Job) runDownload(ctx context.Context) (err error) {
 	return
 }
 
-func mustHaveDocument(s string) error {
-	if s == "" {
+func mustHaveDocument(s string, n int64) error {
+	if s == "" || n < 1 {
 		return ErrMissingDocument
 	}
 	return nil
 }
 
 func (job *Job) runDocumentName() (docName, wrkName string, err error) {
+	var docSize int64
 	err = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {
 		if err == nil {
 			if d.Type().IsRegular() {
@@ -164,6 +169,9 @@ func (job *Job) runDocumentName() (docName, wrkName string, err error) {
 					_ = scrub(fpath)
 				} else {
 					docName = d.Name()
+					if fi, e := d.Info(); e == nil {
+						docSize = fi.Size()
+					}
 				}
 			}
 		}
@@ -171,7 +179,7 @@ func (job *Job) runDocumentName() (docName, wrkName string, err error) {
 	})
 
 	if err == nil {
-		if err = mustHaveDocument(docName); err == nil {
+		if err = mustHaveDocument(docName, docSize); err == nil {
 			ext := filepath.Ext(docName)
 
 			job.mu.Lock()
@@ -194,20 +202,20 @@ func (job *Job) renameDoc(docName, wrkName string) (err error) {
 	return
 }
 
-func (job *Job) runExtractMeta(ctx context.Context, fn string) (err error) {
+func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) {
 	if err = job.transition(JobDownload, JobExtractMeta); err == nil {
 		var buf bytes.Buffer
 		stdouthandler := func(s string) (err error) {
 			buf.WriteString(s)
 			return
 		}
-		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--json", "/var/rinse/"+fn); e == nil {
+		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--json", "/var/rinse/"+docName); e == nil {
 			var obj any
 			if err = json.Unmarshal(buf.Bytes(), &obj); err == nil {
 				fpath := filepath.Clean(path.Join(job.Datadir, job.docName+".json"))
 				var b []byte
 				if b, err = json.MarshalIndent(obj, "", "  "); err == nil {
-					err = os.WriteFile(fpath, b, 0644)
+					err = os.WriteFile(fpath, b, 0644) // #nosec G306
 				}
 			}
 		}
@@ -272,7 +280,7 @@ func (job *Job) waitForPdfToImages(ctx context.Context) (err error) {
 func (job *Job) makeOutputTxt() (err error) {
 	var f *os.File
 	fpath := filepath.Clean(path.Join(job.Datadir, "output.txt"))
-	if f, err = os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil { // #nosec G302
+	if f, err = os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644); err == nil /* #nosec G302 */ {
 		defer f.Close()
 		job.mu.Lock()
 		var outputFiles []string
