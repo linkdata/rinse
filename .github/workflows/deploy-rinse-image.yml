@@ -30,12 +30,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      - name: Get tags
-        run: git fetch --prune --unshallow
+#      - name: Get tags
+#        run: git fetch --prune --unshallow
       - name: Show tags
         run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Git branch --show-current
