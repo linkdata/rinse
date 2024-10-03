@@ -37,8 +37,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-#      - name: Get tags
-#        run: git fetch --prune --unshallow
       - name: Show tags
         run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Git branch --show-current
