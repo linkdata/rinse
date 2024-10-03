@@ -40,7 +40,7 @@ jobs:
       - name: Show tags
         run: git describe --tags --match v[0-9]* --abbrev=0
       - name: Show branches by tag
-        run: git branch --no-color --contains tags/${GITHUB_REF_NAME}
+        run: git branch --all --no-color --contains tags/${GITHUB_REF_NAME}
       - name: Git branch --show-current
         run: git branch --show-current
       - name: Git rev-parse --abbrev-ref HEAD
