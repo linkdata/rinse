@@ -31,7 +31,7 @@ func mustJson(obj any) string {
 
 var configJsonTmpl = template.Must(template.New("config.tmpl").ParseFS(assetsFS, "assets/config.tmpl"))
 
-func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthandler func(string) error, cmds ...string) (err error) {
+func runsc(ctx context.Context, rootfsDir, workDir string, id string, outhandler func(string, bool) error, cmds ...string) (err error) {
 	var f *os.File
 	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil /* #nosec G304 */ {
 		defer f.Close()
@@ -74,37 +74,49 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, stdouthand
 						if stdout, err = cmd.StdoutPipe(); err == nil {
 							if stderr, err = cmd.StderrPipe(); err == nil {
 								if err = cmd.Start(); err == nil {
-									lineCh := make(chan string)
+									outCh := make(chan string)
+									errCh := make(chan string)
 									go func() {
-										defer close(lineCh)
+										defer close(outCh)
 										lineScanner := bufio.NewScanner(stdout)
 										for lineScanner.Scan() {
 											s := lineScanner.Text()
 											select {
-											case lineCh <- s:
+											case outCh <- s:
 											case <-ctx.Done():
 												return
 											}
 										}
 									}()
 									go func() {
+										defer close(errCh)
 										lineScanner := bufio.NewScanner(stderr)
 										for lineScanner.Scan() {
 											errlines = append(errlines, lineScanner.Text())
+											s := lineScanner.Text()
+											select {
+											case errCh <- s:
+											case <-ctx.Done():
+												return
+											}
 										}
 									}()
 
 									for err == nil {
 										select {
-										case s, ok := <-lineCh:
+										case s, ok := <-outCh:
 											if !ok {
 												if err = ctx.Err(); err == nil {
 													if err = cmd.Wait(); err == nil {
 														return
 													}
 												}
-											} else if stdouthandler != nil {
-												err = stdouthandler(s)
+											} else if outhandler != nil {
+												err = outhandler(s, true)
+											}
+										case s, ok := <-errCh:
+											if ok && outhandler != nil {
+												err = outhandler(s, false)
 											}
 										case <-ctx.Done():
 											err = ctx.Err()

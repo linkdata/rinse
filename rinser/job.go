@@ -176,7 +176,7 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	return
 }
 
-func (job *Job) runsc(ctx context.Context, stdouthandler func(string) error, cmds ...string) (err error) {
+func (job *Job) runsc(ctx context.Context, stdouthandler func(string, bool) error, cmds ...string) (err error) {
 	return runsc(ctx, job.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
 }
 

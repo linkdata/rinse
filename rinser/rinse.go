@@ -223,12 +223,14 @@ func (rns *Rinse) Close() {
 
 func getLanguages(rootDir string) (langs []string, err error) {
 	var msgs []string
-	stdouthandler := func(line string) error {
-		msgs = append(msgs, line)
-		if strings.IndexByte(line, ' ') == -1 {
-			lang := strings.TrimSpace(line)
-			if _, ok := LanguageCode[lang]; ok {
-				langs = append(langs, lang)
+	stdouthandler := func(line string, isout bool) error {
+		if isout {
+			msgs = append(msgs, line)
+			if strings.IndexByte(line, ' ') == -1 {
+				lang := strings.TrimSpace(line)
+				if _, ok := LanguageCode[lang]; ok {
+					langs = append(langs, lang)
+				}
 			}
 		}
 		return nil

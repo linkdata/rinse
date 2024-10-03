@@ -205,8 +205,10 @@ func (job *Job) renameDoc(docName, wrkName string) (err error) {
 func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) {
 	if err = job.transition(JobDownload, JobExtractMeta); err == nil {
 		var buf bytes.Buffer
-		stdouthandler := func(s string) (err error) {
-			buf.WriteString(s)
+		stdouthandler := func(s string, isout bool) (err error) {
+			if isout {
+				buf.WriteString(s)
+			}
 			return
 		}
 		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--json", "/var/rinse/"+docName); e == nil {
@@ -227,8 +229,8 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 	if err = job.transition(JobExtractMeta, JobDetectLanguage); err == nil {
 		if job.Lang() == "" {
 			var lang string
-			stdouthandler := func(s string) (err error) {
-				if len(s) == 2 {
+			stdouthandler := func(s string, isout bool) (err error) {
+				if isout && len(s) == 2 {
 					if l, ok := LanguageTika[s]; ok {
 						lang = l
 					}
@@ -314,21 +316,23 @@ func (job *Job) runPdfToImages(ctx context.Context) (err error) {
 func (job *Job) runTesseract(ctx context.Context) (err error) {
 	if err = job.transition(JobPdfToImages, JobTesseract); err == nil {
 		var output []string
-		stdouthandler := func(s string) error {
-			defer job.Jaws.Dirty(uiJobStatus{job})
-			job.mu.Lock()
-			defer job.mu.Unlock()
-			output = append(output, s)
-			for fn, seen := range job.imgfiles {
-				if strings.Contains(s, fn) {
-					if seen {
-						if strings.Contains(s, "file not found") {
-							return errors.New(s)
+		stdouthandler := func(s string, isout bool) error {
+			if !isout {
+				defer job.Jaws.Dirty(uiJobStatus{job})
+				job.mu.Lock()
+				defer job.mu.Unlock()
+				output = append(output, s)
+				for fn, seen := range job.imgfiles {
+					if strings.Contains(s, fn) {
+						if seen {
+							if strings.Contains(s, "file not found") {
+								return errors.New(s)
+							}
+							return ErrImageSeenTwice
 						}
-						return ErrImageSeenTwice
+						job.imgfiles[fn] = true
+						break
 					}
-					job.imgfiles[fn] = true
-					break
 				}
 			}
 			return nil
