@@ -113,7 +113,7 @@ RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname
     mv runsc /usr/bin
 
 COPY --chmod=555 rinse /usr/bin/rinse
-COPY --chmod=555 rinse-debug /usr/bin/rinse-debug
+COPY --chmod=555 rinse-devel /usr/bin/rinse-devel
 
 RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /home/rinse -D rinse
@@ -128,8 +128,3 @@ ENV RINSE_LISTEN=
 ENV RINSE_USER=
 ENV RINSE_DATADIR=
 ENTRYPOINT /usr/bin/rinse
-
-# CGO_ENABLED=0 go build .
-# CGO_ENABLED=0 go build -tags debug -o rinse-debug .
-# podman build .
-# podman run --rm -p 8080:80 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -it ghcr.io/linkdata/rinse

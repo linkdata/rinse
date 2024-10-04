@@ -1,4 +1,4 @@
-//go:build !debug && !race
+//go:build !devel && !debug && !race
 
 package main
 

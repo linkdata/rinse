@@ -26,7 +26,7 @@ go.work.sum
 /testdata
 /*.sh
 /rinse
-/rinse-debug
+/rinse-devel
 /rootfs
 *.tar
 rinser/version.gen.go
