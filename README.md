@@ -42,6 +42,9 @@ Then, each of these stages run in their own gVisor container, which is destroyed
 as soon as the stage is complete or fails. When the job is removed, all it's files
 are overwritten before they are deleted from the container filesystem.
 
+- We extract metadata about the document using [Apache Tika](https://tika.apache.org/)
+  and save it with the document file name plus `.json`.
+
 The original document is renamed to `input` with it's extension preserved and made
 read-only before invoking the next stage.
 
