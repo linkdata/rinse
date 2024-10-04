@@ -31,6 +31,11 @@ start in HTTPS mode.
 
 `podman run --read-only --rm -d -p 8443:443 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
 
+## REST API
+
+The container image will by default start `/usr/bin/rinse`, but it also provides a development version you can use by
+overriding the entrypoint with `--entrypoint /usr/bin/rinse-devel`. This version contains the full Swagger UI.
+
 ## Process
 
 First, a temporary directory is created for the job. This will be mounted in the 
