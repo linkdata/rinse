@@ -29,3 +29,4 @@ go.work.sum
 /rinse-debug
 /rootfs
 *.tar
+rinser/version.gen.go
