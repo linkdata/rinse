@@ -14,7 +14,7 @@ Provides both a Web UI and a Swagger REST API.
 
 You should start the container in [rootless](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md) mode
 with a read-only root filesystem. Inside the container we use [gVisor](https://gvisor.dev/) to further sandbox operations, and
-becasue gVisor requires the container to be started with `--cap-add SYS_ADMIN` and `-v /proc:/newproc:ro`, we must add those arguments.
+because gVisor requires the container to be started with `--cap-add SYS_ADMIN` and `-v /proc:/newproc:ro`, we must add those arguments.
 
 Rinse will run as the container's root user which will translate to the user that started the container,
 so by default it will listen on either port 80 or 443. Since you will be starting the container as a
