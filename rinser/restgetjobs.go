@@ -12,5 +12,9 @@ import "net/http"
 //	@Success		200	{array}	Job
 //	@Router			/jobs [get]
 func (rns *Rinse) RESTGETJobs(hw http.ResponseWriter, hr *http.Request) {
-	HTTPJSON(hw, http.StatusOK, rns.JobList())
+	list := rns.JobList()
+	if list == nil {
+		list = []*Job{}
+	}
+	HTTPJSON(hw, http.StatusOK, list)
 }
