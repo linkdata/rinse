@@ -45,7 +45,7 @@ func (rns *Rinse) RESTGETJobsUUIDRinsed(hw http.ResponseWriter, hr *http.Request
 					}
 				}
 			}
-			slog.Error("RESTGETJobsUUIDRinsed", "err", err)
+			slog.Error("RESTGETJobsUUIDRinsed", "job", job.Name, "err", err)
 			SendHTTPError(hw, http.StatusInternalServerError, err)
 		default:
 			HTTPJSON(hw, http.StatusAccepted, job)
