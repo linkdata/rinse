@@ -184,7 +184,7 @@ func (job *Job) runDocumentName() (docName, wrkName string, err error) {
 
 			job.mu.Lock()
 			job.docName = docName
-			job.PdfName = strings.ReplaceAll(strings.TrimSuffix(docName, ext)+"-rinsed.pdf", "\"", "")
+			job.PdfName = strings.ReplaceAll(strings.TrimSuffix(docName, ext)+"-"+strings.TrimPrefix(ext, ".")+"-rinsed.pdf", "\"", "")
 			job.mu.Unlock()
 
 			wrkName = "input" + strings.ToLower(ext)

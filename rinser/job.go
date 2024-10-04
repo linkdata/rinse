@@ -46,7 +46,7 @@ type Job struct {
 	UUID     uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
 	mu       deadlock.Mutex // protects following
 	Error    error          `json:"error,omitempty"`
-	PdfName  string         `json:"pdfname,omitempty" example:"example-rinsed.pdf"` // rinsed PDF file name
+	PdfName  string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
 	Language string         `json:"lang,omitempty" example:"auto"`
 	Done     bool           `json:"done,omitempty" example:"false"`
 	Diskuse  int64          `json:"diskuse,omitempty" example:"1234"`
