@@ -56,7 +56,7 @@ func main() {
 	if dataDir == "" {
 		if fi, err := os.Stat("/etc/rinse"); err == nil && fi.IsDir() {
 			dataDir = "/etc/rinse"
-		} else {
+		} else if os.Getuid() == 0 {
 			dataDir = "/var/rinse"
 		}
 	}

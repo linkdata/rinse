@@ -164,6 +164,7 @@ func (rns *Rinse) runBackgroundTasks() {
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
+	mux.Handle("GET /about/{$}", rns.Jaws.Handler("about.html", rns))
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
 	if !devel {
 		mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))

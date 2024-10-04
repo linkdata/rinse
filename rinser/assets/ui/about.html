@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">{{with .Dot}}
+
+<head>
+	{{template "head.html" $}}
+</head>
+{{template "body_start.html" $}}
+
+<p>The source code to Rinse is on <a href="https://github.com/linkdata/rinse">GitHub</a>. (<a href="https://github.com/linkdata/rinse#MIT-1-ov-file">MIT</a> license)</p>
+
+<p>The container is based on <a href="https://www.alpinelinux.org/">Alpine Linux</a>. (<a href="https://github.com/alpinelinux/alpine-wiki/blob/master/LICENSE">MIT</a> license)</p>
+
+<p>The container uses <a href="https://gvisor.dev/">gVisor</a> to sandbox it's operations. (<a href="https://github.com/google/gvisor#Apache-2.0-1-ov-file">Apache 2.0</a> license)</p>
+
+<p><a href="https://tika.apache.org/">Apache Tika</a> is used for metadata extraction and language detection. (<a href="https://tika.apache.org/license.html">Apache 2.0</a> license)</p>
+
+<p><a href="https://www.libreoffice.org/">LibreOffice</a> is used to convert documents to PDF. (<a href="https://www.libreoffice.org/about-us/licenses">Mozilla Public License Version 2.0</a> license)</p>
+
+<p><a href="https://poppler.freedesktop.org/">pdftoppm</a> is used to render PDF's. (<a href="https://pkgs.alpinelinux.org/package/edge/main/x86/poppler-utils">GPLv2</a> license)</p>
+
+<p><a href="https://tesseract-ocr.github.io/">Tesseract</a> is used to OCR and create the rinsed PDF. (<a href="https://github.com/tesseract-ocr/tesseract/tree/main#Apache-2.0-1-ov-file">Apache 2.0</a> license)</p>
+
+{{template "body_end.html" $}}
+{{end}}</html>
