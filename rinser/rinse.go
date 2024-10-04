@@ -64,7 +64,7 @@ func locateRootDir() (fp string, err error) {
 	return "", ErrWorkerRootDirNotFound
 }
 
-func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, err error) {
+func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rns *Rinse, err error) {
 	var tmpl *template.Template
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
@@ -101,7 +101,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws) (rns *Rinse, er
 									jobs:          make([]*Job, 0),
 									Languages:     langs,
 								}
-								rns.addRoutes(mux)
+								rns.addRoutes(mux, devel)
 								if e := rns.loadSettings(); e != nil {
 									slog.Error("loadSettings", "file", rns.settingsFile(), "err", e)
 								}
@@ -161,11 +161,11 @@ func (rns *Rinse) runBackgroundTasks() {
 	}
 }
 
-func (rns *Rinse) addRoutes(mux *http.ServeMux) {
+func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
 	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
-	if !deadlock.Debug {
+	if !devel {
 		mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
 		mux.Handle("GET /api/index.html", rns.Jaws.Handler("api.html", rns))
 	}

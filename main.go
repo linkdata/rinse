@@ -56,6 +56,8 @@ func main() {
 	if dataDir == "" {
 		if fi, err := os.Stat("/etc/rinse"); err == nil && fi.IsDir() {
 			dataDir = "/etc/rinse"
+		} else {
+			dataDir = "/var/rinse"
 		}
 	}
 
@@ -79,13 +81,21 @@ func main() {
 	if err == nil {
 		defer l.Close()
 		var rns *rinser.Rinse
-		if rns, err = rinser.New(cfg, http.DefaultServeMux, jw); err == nil {
+		if rns, err = rinser.New(cfg, http.DefaultServeMux, jw, RinseDevel); err == nil {
 			defer rns.Close()
 
 			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
 				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
 				http.ServeFileFS(w, r, docsFS, path.Join("docs", fpath))
 			})
+
+			if port := os.Getenv("RINSE_PORT"); port != "" {
+				s := cfg.ListenURL
+				if idx := strings.LastIndexByte(s, ':'); idx > 6 {
+					s = s[:idx]
+				}
+				cfg.ListenURL = s + ":" + strings.TrimPrefix(port, ":")
+			}
 
 			maybeSwagger(cfg.ListenURL)
 

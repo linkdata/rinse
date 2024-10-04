@@ -2,5 +2,7 @@
 
 package main
 
+const RinseDevel = false
+
 func maybeSwagger(listenUrl string) {
 }

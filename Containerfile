@@ -123,6 +123,7 @@ RUN mkdir /var/rinse && chmod 777 /var/rinse
 RUN mkdir /opt/rinseworker && chmod 555 /opt/rinseworker
 COPY --from=rinseworker / /opt/rinseworker
 
+ENV RINSE_PORT=
 ENV RINSE_CERTDIR=
 ENV RINSE_LISTEN=
 ENV RINSE_USER=

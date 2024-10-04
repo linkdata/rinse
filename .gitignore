@@ -23,10 +23,8 @@ go.work.sum
 
 # env file
 .env
-/testdata
-/*.sh
+
 /rinse
 /rinse-devel
 /rootfs
-*.tar
 rinser/version.gen.go

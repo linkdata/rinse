@@ -11,6 +11,8 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+const RinseDevel = true
+
 func maybeSwagger(listenUrl string) {
 	docs.SwaggerInfo.Version = strings.TrimPrefix(rinser.PkgVersion, "v")
 	docs.SwaggerInfo.Host = listenUrl
