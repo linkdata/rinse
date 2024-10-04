@@ -96,7 +96,7 @@ func (rns *Rinse) RESTGETJobsUUIDPreview(w http.ResponseWriter, r *http.Request)
 						}
 					}
 				}
-				slog.Error("handleGetPreview", "job", job.Name, "err", err)
+				slog.Error("RESTGETJobsUUIDPreview", "job", job.Name, "err", err)
 				SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
