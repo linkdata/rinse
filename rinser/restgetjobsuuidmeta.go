@@ -44,7 +44,7 @@ func (rns *Rinse) RESTGETJobsUUIDMeta(hw http.ResponseWriter, hr *http.Request) 
 					}
 				}
 			}
-			slog.Error("RESTGETJobsUUIDMeta", "err", err)
+			slog.Error("RESTGETJobsUUIDMeta", "job", job.Name, "err", err)
 			SendHTTPError(hw, http.StatusInternalServerError, err)
 		} else {
 			HTTPJSON(hw, http.StatusAccepted, job)
