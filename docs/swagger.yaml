@@ -39,7 +39,7 @@ definitions:
         type: integer
       pdfname:
         description: rinsed PDF file name
-        example: example-rinsed.pdf
+        example: example-docx-rinsed.pdf
         type: string
       uuid:
         example: 550e8400-e29b-41d4-a716-446655440000

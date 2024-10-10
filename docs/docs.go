@@ -429,7 +429,7 @@ const docTemplate = `{
                 "pdfname": {
                     "description": "rinsed PDF file name",
                     "type": "string",
-                    "example": "example-rinsed.pdf"
+                    "example": "example-docx-rinsed.pdf"
                 },
                 "uuid": {
                     "type": "string",
