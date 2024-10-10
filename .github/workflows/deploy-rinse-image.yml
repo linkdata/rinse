@@ -1,5 +1,6 @@
 name: Build, create and publish the main container image
 
+on: workflow_dispatch
 on:
   push:
     tags:
@@ -54,7 +55,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: ${{ steps.build_image.outputs.image }}:${{ github.sha }}
+          image-ref: localhost/${{ steps.build_image.outputs.image }}:${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
