@@ -105,13 +105,14 @@ LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
 RUN apk --no-cache -U upgrade
 
-RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname -m) && \
-    wget ${GVISOR}/runsc ${GVISOR}/runsc.sha512 && \
-    sha512sum -c runsc.sha512 && \
-    rm -f *.sha512 && \
-    chmod a+rx runsc && \
-    mv runsc /usr/bin
+#RUN GVISOR=https://storage.googleapis.com/gvisor/releases/release/latest/$(uname -m) && \
+#    wget ${GVISOR}/runsc ${GVISOR}/runsc.sha512 && \
+#    sha512sum -c runsc.sha512 && \
+#    rm -f *.sha512 && \
+#    chmod a+rx runsc && \
+#    mv runsc /usr/bin
 
+COPY --chmod=555 runsc /usr/bin/runsc
 COPY --chmod=555 rinse /usr/bin/rinse
 COPY --chmod=555 rinse-devel /usr/bin/rinse-devel
 
