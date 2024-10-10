@@ -52,15 +52,6 @@ jobs:
           containerfiles: |
             ./Containerfile
           oci: true
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'          
       - name: Push image to ghcr.io
         id: push_image
         uses: redhat-actions/push-to-registry@v2
@@ -72,3 +63,12 @@ jobs:
           password: ${{ env.REGISTRY_PASSWORD }}
           extra-args: |
             --disable-content-trust
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'          
