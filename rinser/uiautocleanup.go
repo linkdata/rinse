@@ -10,11 +10,14 @@ import (
 type uiAutoCleanup struct{ *Rinse }
 
 func (u uiAutoCleanup) Text() string {
-	if n := u.AutoCleanup(); n < 1 {
+	n := u.CleanupSec()
+
+	if n < 0 {
 		return "never"
-	} else {
-		return prettyDuration(time.Minute * time.Duration(n))
+	} else if n == 0 {
+		return "immediately"
 	}
+	return prettyDuration(time.Second * time.Duration(n))
 }
 
 // JawsGetHtml implements jaws.HtmlGetter.
@@ -24,13 +27,13 @@ func (u uiAutoCleanup) JawsGetHtml(rq *jaws.Element) template.HTML {
 
 // JawsGetFloat implements jaws.FloatSetter.
 func (u uiAutoCleanup) JawsGetFloat(e *jaws.Element) float64 {
-	return float64(u.AutoCleanup())
+	return float64(u.CleanupSec())
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
 func (u uiAutoCleanup) JawsSetFloat(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
-	u.autoCleanup = int(v)
+	u.cleanupSec = int(v)
 	u.mu.Unlock()
 	return u.saveSettings()
 }

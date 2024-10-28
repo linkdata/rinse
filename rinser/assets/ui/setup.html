@@ -17,7 +17,7 @@
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">Remove jobs after</div>
-		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="0" max="1440" step="1"`}}</span>
+		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="-1" max="1440" step="1"`}}</span>
 		{{$.Span .UiAutoCleanup `class="input-group-text"`}}
 	</div>
 

@@ -60,7 +60,7 @@ func (job *Job) process(ctx context.Context) {
 	job.Error = err
 	job.state = JobFailed
 	job.mu.Unlock()
-	job.Jaws.Dirty(uiJobStatus{job})
+	job.Rinse.Jaws.Dirty(uiJobStatus{job})
 }
 
 func (job *Job) processDone() {
@@ -318,7 +318,7 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 		var output []string
 		stdouthandler := func(s string, isout bool) error {
 			if !isout {
-				defer job.Jaws.Dirty(uiJobStatus{job})
+				defer job.Rinse.Jaws.Dirty(uiJobStatus{job})
 				job.mu.Lock()
 				defer job.mu.Unlock()
 				output = append(output, s)
@@ -377,7 +377,7 @@ func (job *Job) jobEnding() (err error) {
 			job.mu.Lock()
 			job.Diskuse = diskuse
 			job.mu.Unlock()
-			job.Jaws.Dirty(job, uiJobStatus{job})
+			job.Rinse.Jaws.Dirty(job, uiJobStatus{job})
 		}
 	}
 	return

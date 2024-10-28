@@ -9,7 +9,10 @@ import (
 type uiMaxSize struct{ *Rinse }
 
 func (u uiMaxSize) Text() string {
-	if n := u.MaxUploadSize(); n < 1 {
+	u.mu.Lock()
+	n := int64(u.maxSizeMB) * 1024 * 1024
+	u.mu.Unlock()
+	if n < 1 {
 		return "unlimited"
 	} else {
 		return prettyByteSize(n)
@@ -22,14 +25,17 @@ func (u uiMaxSize) JawsGetHtml(rq *jaws.Element) template.HTML {
 }
 
 // JawsGetFloat implements jaws.FloatSetter.
-func (u uiMaxSize) JawsGetFloat(e *jaws.Element) float64 {
-	return float64(u.MaxUploadSize() / 1024 / 1024)
+func (u uiMaxSize) JawsGetFloat(e *jaws.Element) (v float64) {
+	u.mu.Lock()
+	v = float64(u.maxSizeMB)
+	u.mu.Unlock()
+	return
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
 func (u uiMaxSize) JawsSetFloat(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
-	u.maxUploadSize = int64(v) * 1024 * 1024
+	u.maxSizeMB = int(v)
 	u.mu.Unlock()
 	return u.saveSettings()
 }

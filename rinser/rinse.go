@@ -40,9 +40,9 @@ type Rinse struct {
 	Languages     []string
 	mu            deadlock.Mutex // protects following
 	closed        bool
-	maxUploadSize int64
-	autoCleanup   int
-	maxRuntime    int
+	maxSizeMB     int
+	cleanupSec    int
+	maxTimeSec    int
 	maxConcurrent int
 	jobs          []*Job
 }
@@ -94,9 +94,9 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									RunscBin:      runscbin,
 									RootDir:       rootDir,
 									FaviconURI:    faviconuri,
-									maxUploadSize: 1024 * 1024 * 1024, // 1Gb
-									autoCleanup:   60 * 24,            // 1 day
-									maxRuntime:    60 * 60,            // 1 hour
+									maxSizeMB:     1024 * 1024 * 1024, // 1Gb
+									cleanupSec:    60 * 24,            // 1 day
+									maxTimeSec:    60 * 60,            // 1 hour
 									maxConcurrent: 2,
 									jobs:          make([]*Job, 0),
 									Languages:     langs,
@@ -120,7 +120,6 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 func (rns *Rinse) runTasks() (todo []*Job) {
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
-	deadline := time.Minute * time.Duration(rns.autoCleanup)
 	running := 0
 	var nextJob *Job
 	for _, job := range rns.jobs {
@@ -130,7 +129,7 @@ func (rns *Rinse) runTasks() (todo []*Job) {
 				nextJob = job
 			}
 		case JobFailed, JobFinished:
-			if rns.autoCleanup > 0 && time.Since(job.stopped) > deadline {
+			if job.CleanupSec >= 0 && time.Since(job.stopped) > time.Duration(job.CleanupSec)*time.Second {
 				todo = append(todo, job)
 			}
 		default:
@@ -138,7 +137,7 @@ func (rns *Rinse) runTasks() (todo []*Job) {
 		}
 	}
 	if nextJob != nil && running < rns.maxConcurrent {
-		if err := nextJob.Start(time.Duration(rns.maxRuntime) * time.Second); err != nil {
+		if err := nextJob.Start(); err != nil {
 			slog.Error("startjob", "job", nextJob.Name, "err", err)
 		}
 	}
@@ -181,23 +180,16 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.HandleFunc("DELETE "+basePath+"/jobs/{uuid}", rns.RESTDELETEJobsUUID)
 }
 
-func (rns *Rinse) MaxUploadSize() (n int64) {
+func (rns *Rinse) CleanupSec() (n int) {
 	rns.mu.Lock()
-	n = rns.maxUploadSize
+	n = rns.cleanupSec
 	rns.mu.Unlock()
 	return
 }
 
-func (rns *Rinse) AutoCleanup() (n int) {
+func (rns *Rinse) MaxTimeSec() (n int) {
 	rns.mu.Lock()
-	n = rns.autoCleanup
-	rns.mu.Unlock()
-	return
-}
-
-func (rns *Rinse) MaxRuntime() (n int) {
-	rns.mu.Lock()
-	n = rns.maxRuntime
+	n = rns.maxTimeSec
 	rns.mu.Unlock()
 	return
 }
@@ -260,10 +252,6 @@ func (rns *Rinse) PkgVersion() string {
 	return PkgVersion
 }
 
-func (rns *Rinse) NewJob(name, lang string) (job *Job, err error) {
-	return NewJob(rns, name, lang)
-}
-
 func (rns *Rinse) nextJobLocked() (nextJob *Job) {
 	running := 0
 	for _, job := range rns.jobs {
@@ -291,7 +279,7 @@ func (rns *Rinse) nextJob() (nextJob *Job) {
 
 func (rns *Rinse) MaybeStartJob() (err error) {
 	if job := rns.nextJob(); job != nil {
-		err = job.Start(time.Duration(rns.MaxRuntime()) * time.Second)
+		err = job.Start()
 	}
 	return
 }
@@ -310,7 +298,7 @@ func (rns *Rinse) AddJob(job *Job) (err error) {
 		err = nil
 		rns.jobs = append(rns.jobs, job)
 		if nextJob := rns.nextJobLocked(); nextJob != nil {
-			_ = nextJob.Start(time.Duration(rns.maxRuntime) * time.Second)
+			_ = nextJob.Start()
 		}
 		rns.Jaws.Dirty(rns)
 	}

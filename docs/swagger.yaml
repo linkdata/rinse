@@ -1,9 +1,18 @@
 definitions:
   rinser.AddJobURL:
     properties:
+      cleanupsec:
+        example: 600
+        type: integer
       lang:
         example: auto
         type: string
+      maxsizemb:
+        example: 2048
+        type: integer
+      maxtimesec:
+        example: 600
+        type: integer
       url:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
         type: string
@@ -17,6 +26,9 @@ definitions:
     type: object
   rinser.Job:
     properties:
+      cleanupsec:
+        example: 600
+        type: integer
       created:
         example: "2024-01-01T12:00:00+00:00"
         format: dateTime
@@ -31,6 +43,12 @@ definitions:
       lang:
         example: auto
         type: string
+      maxsizemb:
+        example: 2048
+        type: integer
+      maxtimesec:
+        example: 600
+        type: integer
       name:
         example: example.docx
         type: string
@@ -92,6 +110,18 @@ paths:
         in: query
         name: lang
         type: string
+      - description: "2048"
+        in: query
+        name: maxsizemb
+        type: integer
+      - description: "600"
+        in: query
+        name: maxtimesec
+        type: integer
+      - description: "600"
+        in: query
+        name: cleanupsec
+        type: integer
       produces:
       - application/json
       responses:

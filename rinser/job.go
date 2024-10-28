@@ -32,34 +32,32 @@ const (
 	JobFailed
 )
 
-type AddJobURL struct {
-	URL  string `json:"url" example:"https://getsamplefiles.com/download/pdf/sample-1.pdf"`
-	Lang string `json:"lang" example:"auto"`
-}
-
 type Job struct {
-	*Rinse   `json:"-"`
-	Workdir  string         `json:"workdir" example:"/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"`
-	Datadir  string         `json:"-"`
-	Name     string         `json:"name" example:"example.docx"`
-	Created  time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
-	UUID     uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
-	mu       deadlock.Mutex // protects following
-	Error    error          `json:"error,omitempty"`
-	PdfName  string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
-	Language string         `json:"lang,omitempty" example:"auto"`
-	Done     bool           `json:"done,omitempty" example:"false"`
-	Diskuse  int64          `json:"diskuse,omitempty" example:"1234"`
-	Pages    int            `json:"pages,omitempty" example:"1"`
-	started  time.Time
-	stopped  time.Time
-	docName  string // document file name, once known
-	state    JobState
-	imgfiles map[string]bool
-	cancelFn context.CancelFunc
-	closed   bool
-	errstate JobState
-	previews map[uint64][]byte
+	Rinse      *Rinse         `json:"-"`
+	Workdir    string         `json:"workdir" example:"/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"`
+	Datadir    string         `json:"-"`
+	Name       string         `json:"name" example:"example.docx"`
+	Created    time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
+	UUID       uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
+	MaxSizeMB  int            `json:"maxsizemb" example:"2048"`
+	MaxTimeSec int            `json:"maxtimesec" example:"600"`
+	CleanupSec int            `json:"cleanupsec" example:"600"`
+	mu         deadlock.Mutex // protects following
+	Error      error          `json:"error,omitempty"`
+	PdfName    string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
+	Language   string         `json:"lang,omitempty" example:"auto"`
+	Done       bool           `json:"done,omitempty" example:"false"`
+	Diskuse    int64          `json:"diskuse,omitempty" example:"1234"`
+	Pages      int            `json:"pages,omitempty" example:"1"`
+	started    time.Time
+	stopped    time.Time
+	docName    string // document file name, once known
+	state      JobState
+	imgfiles   map[string]bool
+	cancelFn   context.CancelFunc
+	closed     bool
+	errstate   JobState
+	previews   map[uint64][]byte
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -73,7 +71,7 @@ func checkLangString(lang string) error {
 	return nil
 }
 
-func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
+func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		if lang == "auto" {
 			lang = ""
@@ -84,16 +82,19 @@ func NewJob(rns *Rinse, name, lang string) (job *Job, err error) {
 			dataDir := path.Join(workDir, "data")
 			if err = os.Mkdir(dataDir, 0777); err == nil /* #nosec G301 */ {
 				job = &Job{
-					Rinse:    rns,
-					Name:     name,
-					Language: lang,
-					Workdir:  workDir,
-					Datadir:  dataDir,
-					Created:  time.Now(),
-					UUID:     id,
-					state:    JobNew,
-					imgfiles: make(map[string]bool),
-					previews: make(map[uint64][]byte),
+					Rinse:      rns,
+					Name:       name,
+					Language:   lang,
+					Workdir:    workDir,
+					Datadir:    dataDir,
+					Created:    time.Now(),
+					UUID:       id,
+					MaxSizeMB:  maxsizemb,
+					MaxTimeSec: maxtimesec,
+					CleanupSec: cleanupsec,
+					state:      JobNew,
+					imgfiles:   make(map[string]bool),
+					previews:   make(map[uint64][]byte),
 				}
 			}
 		}
@@ -117,9 +118,14 @@ func (job *Job) Previewable() (yes bool) {
 	return
 }
 
-func (job *Job) Start(maxTime time.Duration) (err error) {
+func (job *Job) MaxUploadSize() (n int64) {
+	n = int64(job.MaxSizeMB) * 1024 * 1024
+	return
+}
+
+func (job *Job) Start() (err error) {
 	if err = job.transition(JobNew, JobStarting); err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), maxTime)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(job.MaxTimeSec)*time.Second)
 		job.mu.Lock()
 		job.cancelFn = cancel
 		job.mu.Unlock()
@@ -177,7 +183,7 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 }
 
 func (job *Job) runsc(ctx context.Context, stdouthandler func(string, bool) error, cmds ...string) (err error) {
-	return runsc(ctx, job.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
+	return runsc(ctx, job.Rinse.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
 }
 
 func (job *Job) removeAll() {
@@ -224,5 +230,5 @@ func (job *Job) refreshDiskuse() {
 		}
 	}
 	job.mu.Unlock()
-	job.Jaws.Dirty(job, uiJobStatus{job})
+	job.Rinse.Jaws.Dirty(job, uiJobStatus{job})
 }

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 )
 
 // RESTPOSTJobs godoc
@@ -22,6 +23,9 @@ import (
 //	@Param			addjoburl	body		AddJobURL	false	"Add job by URL"
 //	@Param			file		formData	file		false	"this is a test file"
 //	@Param			lang		query		string		false	"eng"
+//	@Param			maxsizemb	query		int			false	"2048"
+//	@Param			maxtimesec	query		int			false	"600"
+//	@Param			cleanupsec	query		int			false	"600"
 //	@Success		200			{object}	Job
 //	@Failure		400			{object}	HTTPError
 //	@Failure		404			{object}	HTTPError
@@ -29,6 +33,30 @@ import (
 //	@Failure		500			{object}	HTTPError
 //	@Router			/jobs [post]
 func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
+	rns.mu.Lock()
+	maxSizeMB := rns.maxSizeMB
+	maxTimeSec := rns.maxTimeSec
+	cleanupSec := rns.cleanupSec
+	rns.mu.Unlock()
+
+	if s := hr.URL.Query().Get("maxsizemb"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			maxSizeMB = v
+		}
+	}
+
+	if s := hr.URL.Query().Get("maxtimesec"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			maxTimeSec = v
+		}
+	}
+
+	if s := hr.URL.Query().Get("cleanupsec"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			cleanupSec = v
+		}
+	}
+
 	ct, _, err := mime.ParseMediaType(hr.Header.Get("Content-Type"))
 	if err == nil {
 		switch ct {
@@ -37,13 +65,13 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 			if err == nil {
 				srcName := filepath.Base(info.Filename)
 				srcFile := srcFormFile.(io.ReadCloser)
-				if maxUploadSize := rns.MaxUploadSize(); maxUploadSize > 0 {
+				if maxUploadSize := int64(maxSizeMB) * 1024 * 1024; maxUploadSize > 0 {
 					srcFile = http.MaxBytesReader(hw, srcFile, maxUploadSize)
 				}
 				defer srcFile.Close()
 				srcLang := hr.URL.Query().Get("lang")
 				var job *Job
-				if job, err = NewJob(rns, srcName, srcLang); err == nil {
+				if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec); err == nil {
 					dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 					var dstFile *os.File
 					if dstFile, err = os.Create(dstName); err == nil {
@@ -64,10 +92,14 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 			}
 		case "application/json":
 			if err = mustNotBeContentEncoded(hr); err == nil {
-				var addJobUrl AddJobURL
+				addJobUrl := AddJobURL{
+					MaxSizeMB:  maxSizeMB,
+					MaxTimeSec: maxTimeSec,
+					CleanupSec: cleanupSec,
+				}
 				if err = ctxShouldBindJSON(hr, &addJobUrl); err == nil {
 					var job *Job
-					if job, err = NewJob(rns, addJobUrl.URL, addJobUrl.Lang); err == nil {
+					if job, err = NewJob(rns, addJobUrl.URL, addJobUrl.Lang, addJobUrl.MaxSizeMB, addJobUrl.MaxTimeSec, addJobUrl.CleanupSec); err == nil {
 						if err = rns.AddJob(job); err == nil {
 							HTTPJSON(hw, http.StatusOK, job)
 							return

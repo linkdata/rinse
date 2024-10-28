@@ -2,7 +2,6 @@ package rinser
 
 import (
 	"html/template"
-	"time"
 
 	"github.com/linkdata/jaws"
 )
@@ -13,9 +12,9 @@ type uiJobButton struct{ *Job }
 func (ui uiJobButton) JawsClick(e *jaws.Element, name string) (err error) {
 	if name == "jobact" {
 		if ui.State() == JobNew {
-			return ui.Start(time.Duration(ui.MaxRuntime()) * time.Second)
+			return ui.Start()
 		}
-		ui.RemoveJob(ui.Job)
+		ui.Rinse.RemoveJob(ui.Job)
 		return nil
 	}
 	return jaws.ErrEventUnhandled

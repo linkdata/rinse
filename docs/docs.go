@@ -73,6 +73,24 @@ const docTemplate = `{
                         "description": "eng",
                         "name": "lang",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "2048",
+                        "name": "maxsizemb",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "600",
+                        "name": "maxtimesec",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "600",
+                        "name": "cleanupsec",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -376,9 +394,21 @@ const docTemplate = `{
         "rinser.AddJobURL": {
             "type": "object",
             "properties": {
+                "cleanupsec": {
+                    "type": "integer",
+                    "example": 600
+                },
                 "lang": {
                     "type": "string",
                     "example": "auto"
+                },
+                "maxsizemb": {
+                    "type": "integer",
+                    "example": 2048
+                },
+                "maxtimesec": {
+                    "type": "integer",
+                    "example": 600
                 },
                 "url": {
                     "type": "string",
@@ -400,6 +430,10 @@ const docTemplate = `{
         "rinser.Job": {
             "type": "object",
             "properties": {
+                "cleanupsec": {
+                    "type": "integer",
+                    "example": 600
+                },
                 "created": {
                     "type": "string",
                     "format": "dateTime",
@@ -417,6 +451,14 @@ const docTemplate = `{
                 "lang": {
                     "type": "string",
                     "example": "auto"
+                },
+                "maxsizemb": {
+                    "type": "integer",
+                    "example": 2048
+                },
+                "maxtimesec": {
+                    "type": "integer",
+                    "example": 600
                 },
                 "name": {
                     "type": "string",

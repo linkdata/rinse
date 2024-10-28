@@ -10,7 +10,7 @@ import (
 type uiMaxRuntime struct{ *Rinse }
 
 func (u uiMaxRuntime) Text() string {
-	if n := u.MaxRuntime(); n < 1 {
+	if n := u.MaxTimeSec(); n < 1 {
 		return "unlimited"
 	} else {
 		return prettyDuration(time.Second * time.Duration(n))
@@ -24,13 +24,13 @@ func (u uiMaxRuntime) JawsGetHtml(rq *jaws.Element) template.HTML {
 
 // JawsGetFloat implements jaws.FloatSetter.
 func (u uiMaxRuntime) JawsGetFloat(e *jaws.Element) float64 {
-	return float64(u.MaxRuntime())
+	return float64(u.MaxTimeSec())
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
 func (u uiMaxRuntime) JawsSetFloat(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
-	u.maxRuntime = int(v)
+	u.maxTimeSec = int(v)
 	u.mu.Unlock()
 	return u.saveSettings()
 }
