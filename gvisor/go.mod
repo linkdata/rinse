@@ -18,10 +18,10 @@ require (
 	github.com/vishvananda/netlink v1.1.1-0.20211118161826-650dca95af54 // indirect
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090 // indirect
-	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/mod v0.21.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/time v0.7.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
-	gvisor.dev/gvisor v0.0.0-20241009022347-94b16c128c1c // indirect
+	gvisor.dev/gvisor v0.0.0-20241025195102-da180c563af0 // indirect
 )
