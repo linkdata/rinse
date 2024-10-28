@@ -7,6 +7,8 @@
 {{template "body_start.html" $}}
 
 <form autocomplete="off">
+	<p class="text-danger">Please consider the implications when changing these job defaults.</p>
+
 	<div class="input-group mb-3">
 		<div class="input-group-text">Max upload size</div>
 		<span class="form-control">{{$.Range .UiMaxSize `class="form-range align-bottom" min="0" max="2048" step="1"`}}</span>
