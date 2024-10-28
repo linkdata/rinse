@@ -97,6 +97,12 @@ const docTemplate = `{
                         "description": "true",
                         "name": "cleanupgotten",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "false",
+                        "name": "private",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -420,6 +426,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 3600
                 },
+                "private": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "url": {
                     "type": "string",
                     "example": "https://getsamplefiles.com/download/pdf/sample-1.pdf"
@@ -490,6 +500,10 @@ const docTemplate = `{
                     "description": "rinsed PDF file name",
                     "type": "string",
                     "example": "example-docx-rinsed.pdf"
+                },
+                "private": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "uuid": {
                     "type": "string",

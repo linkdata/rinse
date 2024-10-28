@@ -314,7 +314,11 @@ func (rns *Rinse) RemoveJob(job *Job) {
 func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
 	var sortedJobs []*Job
 	rns.mu.Lock()
-	sortedJobs = append(sortedJobs, rns.jobs...)
+	for _, job := range rns.jobs {
+		if !job.Private {
+			sortedJobs = append(sortedJobs, job)
+		}
+	}
 	rns.mu.Unlock()
 	slices.SortFunc(sortedJobs, func(a, b *Job) int { return b.Created.Compare(a.Created) })
 	for _, job := range sortedJobs {

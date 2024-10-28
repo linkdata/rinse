@@ -64,7 +64,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 			}
 			defer srcFile.Close()
 
-			if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten); err == nil {
+			if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, false); err == nil {
 				dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 				var dstFile *os.File
 				if dstFile, err = os.Create(dstName); err == nil {
@@ -78,7 +78,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 	} else if srcUrl != "" {
 		var u *url.URL
 		if u, err = url.Parse(srcUrl); err == nil {
-			job, err = NewJob(rns, u.String(), srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten)
+			job, err = NewJob(rns, u.String(), srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, false)
 		}
 	}
 

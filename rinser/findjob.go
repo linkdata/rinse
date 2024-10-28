@@ -24,7 +24,11 @@ func (rns *Rinse) FindJob(s string) *Job {
 
 func (rns *Rinse) JobList() (jobs []*Job) {
 	rns.mu.Lock()
-	jobs = append(jobs, rns.jobs...)
+	for _, job := range rns.jobs {
+		if !job.Private {
+			jobs = append(jobs, job)
+		}
+	}
 	rns.mu.Unlock()
 	return
 }

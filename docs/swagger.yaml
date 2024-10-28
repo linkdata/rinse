@@ -16,6 +16,9 @@ definitions:
       maxtimesec:
         example: 3600
         type: integer
+      private:
+        example: false
+        type: boolean
       url:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
         type: string
@@ -68,6 +71,9 @@ definitions:
         description: rinsed PDF file name
         example: example-docx-rinsed.pdf
         type: string
+      private:
+        example: false
+        type: boolean
       uuid:
         example: 550e8400-e29b-41d4-a716-446655440000
         format: uuid
@@ -134,6 +140,10 @@ paths:
       - description: "true"
         in: query
         name: cleanupgotten
+        type: boolean
+      - description: "false"
+        in: query
+        name: private
         type: boolean
       produces:
       - application/json

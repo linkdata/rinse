@@ -27,6 +27,7 @@ import (
 //	@Param			maxtimesec		query		int			false	"600"
 //	@Param			cleanupsec		query		int			false	"600"
 //	@Param			cleanupgotten	query		bool		false	"true"
+//	@Param			private			query		bool		false	"false"
 //	@Success		200				{object}	Job
 //	@Failure		400				{object}	HTTPError
 //	@Failure		404				{object}	HTTPError
@@ -39,6 +40,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 	maxTimeSec := rns.maxTimeSec
 	cleanupSec := rns.cleanupSec
 	cleanupGotten := rns.cleanupGotten
+	private := false
 	rns.mu.Unlock()
 
 	if s := hr.URL.Query().Get("maxsizemb"); s != "" {
@@ -65,6 +67,12 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 		}
 	}
 
+	if s := hr.URL.Query().Get("private"); s != "" {
+		if v, err := strconv.ParseBool(s); err == nil {
+			private = v
+		}
+	}
+
 	ct, _, err := mime.ParseMediaType(hr.Header.Get("Content-Type"))
 	if err == nil {
 		switch ct {
@@ -79,7 +87,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 				defer srcFile.Close()
 				srcLang := hr.URL.Query().Get("lang")
 				var job *Job
-				if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten); err == nil {
+				if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, private); err == nil {
 					dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 					var dstFile *os.File
 					if dstFile, err = os.Create(dstName); err == nil {
@@ -105,10 +113,13 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 					MaxTimeSec:    maxTimeSec,
 					CleanupSec:    cleanupSec,
 					CleanupGotten: cleanupGotten,
+					Private:       private,
 				}
 				if err = ctxShouldBindJSON(hr, &addJobUrl); err == nil {
 					var job *Job
-					if job, err = NewJob(rns, addJobUrl.URL, addJobUrl.Lang, addJobUrl.MaxSizeMB, addJobUrl.MaxTimeSec, addJobUrl.CleanupSec, addJobUrl.CleanupGotten); err == nil {
+					if job, err = NewJob(rns, addJobUrl.URL, addJobUrl.Lang,
+						addJobUrl.MaxSizeMB, addJobUrl.MaxTimeSec, addJobUrl.CleanupSec,
+						addJobUrl.CleanupGotten, addJobUrl.Private); err == nil {
 						if err = rns.AddJob(job); err == nil {
 							HTTPJSON(hw, http.StatusOK, job)
 							return

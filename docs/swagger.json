@@ -89,6 +89,12 @@
                         "description": "true",
                         "name": "cleanupgotten",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "false",
+                        "name": "private",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -412,6 +418,10 @@
                     "type": "integer",
                     "example": 3600
                 },
+                "private": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "url": {
                     "type": "string",
                     "example": "https://getsamplefiles.com/download/pdf/sample-1.pdf"
@@ -482,6 +492,10 @@
                     "description": "rinsed PDF file name",
                     "type": "string",
                     "example": "example-docx-rinsed.pdf"
+                },
+                "private": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "uuid": {
                     "type": "string",

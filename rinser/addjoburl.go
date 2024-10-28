@@ -7,4 +7,5 @@ type AddJobURL struct {
 	MaxTimeSec    int    `json:"maxtimesec" example:"3600"`
 	CleanupSec    int    `json:"cleanupsec" example:"86400"`
 	CleanupGotten bool   `json:"cleanupgotten" example:"true"`
+	Private       bool   `json:"private" example:"false"`
 }
