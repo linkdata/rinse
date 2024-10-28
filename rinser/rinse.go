@@ -44,6 +44,7 @@ type Rinse struct {
 	cleanupSec    int
 	maxTimeSec    int
 	maxConcurrent int
+	cleanupGotten bool
 	jobs          []*Job
 }
 
@@ -89,17 +90,13 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 							var langs []string
 							if langs, err = getLanguages(rootDir); err == nil {
 								rns = &Rinse{
-									Config:        cfg,
-									Jaws:          jw,
-									RunscBin:      runscbin,
-									RootDir:       rootDir,
-									FaviconURI:    faviconuri,
-									maxSizeMB:     1024 * 1024 * 1024, // 1Gb
-									cleanupSec:    60 * 24,            // 1 day
-									maxTimeSec:    60 * 60,            // 1 hour
-									maxConcurrent: 2,
-									jobs:          make([]*Job, 0),
-									Languages:     langs,
+									Config:     cfg,
+									Jaws:       jw,
+									RunscBin:   runscbin,
+									RootDir:    rootDir,
+									FaviconURI: faviconuri,
+									jobs:       make([]*Job, 0),
+									Languages:  langs,
 								}
 								rns.addRoutes(mux, devel)
 								if e := rns.loadSettings(); e != nil {
@@ -129,7 +126,7 @@ func (rns *Rinse) runTasks() (todo []*Job) {
 				nextJob = job
 			}
 		case JobFailed, JobFinished:
-			if job.CleanupSec >= 0 && time.Since(job.stopped) > time.Duration(job.CleanupSec)*time.Second {
+			if job.CleanupSec >= 0 && time.Since(job.Stopped()) > time.Duration(job.CleanupSec)*time.Second {
 				todo = append(todo, job)
 			}
 		default:

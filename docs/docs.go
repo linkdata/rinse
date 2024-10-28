@@ -91,6 +91,12 @@ const docTemplate = `{
                         "description": "600",
                         "name": "cleanupsec",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "true",
+                        "name": "cleanupgotten",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -394,9 +400,13 @@ const docTemplate = `{
         "rinser.AddJobURL": {
             "type": "object",
             "properties": {
+                "cleanupgotten": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "cleanupsec": {
                     "type": "integer",
-                    "example": 600
+                    "example": 86400
                 },
                 "lang": {
                     "type": "string",
@@ -408,7 +418,7 @@ const docTemplate = `{
                 },
                 "maxtimesec": {
                     "type": "integer",
-                    "example": 600
+                    "example": 3600
                 },
                 "url": {
                     "type": "string",
@@ -430,6 +440,10 @@ const docTemplate = `{
         "rinser.Job": {
             "type": "object",
             "properties": {
+                "cleanupgotten": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "cleanupsec": {
                     "type": "integer",
                     "example": 600
@@ -446,6 +460,10 @@ const docTemplate = `{
                 "done": {
                     "type": "boolean",
                     "example": false
+                },
+                "downloads": {
+                    "description": "` + "`" + `json:\"downloads,omitempty\" example:\"0\"` + "`" + `",
+                    "type": "integer"
                 },
                 "error": {},
                 "lang": {

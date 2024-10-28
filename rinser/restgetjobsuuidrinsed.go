@@ -41,6 +41,7 @@ func (rns *Rinse) RESTGETJobsUUIDRinsed(hw http.ResponseWriter, hr *http.Request
 				if f, err = os.Open(job.ResultPath()); err == nil {
 					defer f.Close()
 					if _, err = io.Copy(hw, f); err == nil {
+						job.downloaded()
 						return
 					}
 				}

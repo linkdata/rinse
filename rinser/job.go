@@ -33,31 +33,33 @@ const (
 )
 
 type Job struct {
-	Rinse      *Rinse         `json:"-"`
-	Workdir    string         `json:"workdir" example:"/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"`
-	Datadir    string         `json:"-"`
-	Name       string         `json:"name" example:"example.docx"`
-	Created    time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
-	UUID       uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
-	MaxSizeMB  int            `json:"maxsizemb" example:"2048"`
-	MaxTimeSec int            `json:"maxtimesec" example:"600"`
-	CleanupSec int            `json:"cleanupsec" example:"600"`
-	mu         deadlock.Mutex // protects following
-	Error      error          `json:"error,omitempty"`
-	PdfName    string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
-	Language   string         `json:"lang,omitempty" example:"auto"`
-	Done       bool           `json:"done,omitempty" example:"false"`
-	Diskuse    int64          `json:"diskuse,omitempty" example:"1234"`
-	Pages      int            `json:"pages,omitempty" example:"1"`
-	started    time.Time
-	stopped    time.Time
-	docName    string // document file name, once known
-	state      JobState
-	imgfiles   map[string]bool
-	cancelFn   context.CancelFunc
-	closed     bool
-	errstate   JobState
-	previews   map[uint64][]byte
+	Rinse         *Rinse         `json:"-"`
+	Workdir       string         `json:"workdir" example:"/tmp/rinse-550e8400-e29b-41d4-a716-446655440000"`
+	Datadir       string         `json:"-"`
+	Name          string         `json:"name" example:"example.docx"`
+	Created       time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
+	UUID          uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
+	MaxSizeMB     int            `json:"maxsizemb" example:"2048"`
+	MaxTimeSec    int            `json:"maxtimesec" example:"600"`
+	CleanupSec    int            `json:"cleanupsec" example:"600"`
+	CleanupGotten bool           `json:"cleanupgotten" example:"true"`
+	mu            deadlock.Mutex // protects following
+	Error         error          `json:"error,omitempty"`
+	PdfName       string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
+	Language      string         `json:"lang,omitempty" example:"auto"`
+	Done          bool           `json:"done,omitempty" example:"false"`
+	Diskuse       int64          `json:"diskuse,omitempty" example:"1234"`
+	Pages         int            `json:"pages,omitempty" example:"1"`
+	Downloads     int            // `json:"downloads,omitempty" example:"0"`
+	started       time.Time
+	stopped       time.Time
+	docName       string // document file name, once known
+	state         JobState
+	imgfiles      map[string]bool
+	cancelFn      context.CancelFunc
+	closed        bool
+	errstate      JobState
+	previews      map[uint64][]byte
 }
 
 var ErrIllegalLanguage = errors.New("illegal language string")
@@ -71,7 +73,7 @@ func checkLangString(lang string) error {
 	return nil
 }
 
-func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int) (job *Job, err error) {
+func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int, cleanupgotten bool) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		if lang == "auto" {
 			lang = ""
@@ -82,19 +84,20 @@ func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int
 			dataDir := path.Join(workDir, "data")
 			if err = os.Mkdir(dataDir, 0777); err == nil /* #nosec G301 */ {
 				job = &Job{
-					Rinse:      rns,
-					Name:       name,
-					Language:   lang,
-					Workdir:    workDir,
-					Datadir:    dataDir,
-					Created:    time.Now(),
-					UUID:       id,
-					MaxSizeMB:  maxsizemb,
-					MaxTimeSec: maxtimesec,
-					CleanupSec: cleanupsec,
-					state:      JobNew,
-					imgfiles:   make(map[string]bool),
-					previews:   make(map[uint64][]byte),
+					Rinse:         rns,
+					Name:          name,
+					Language:      lang,
+					Workdir:       workDir,
+					Datadir:       dataDir,
+					Created:       time.Now(),
+					UUID:          id,
+					MaxSizeMB:     maxsizemb,
+					MaxTimeSec:    maxtimesec,
+					CleanupSec:    cleanupsec,
+					CleanupGotten: cleanupgotten,
+					state:         JobNew,
+					imgfiles:      make(map[string]bool),
+					previews:      make(map[uint64][]byte),
 				}
 			}
 		}
@@ -144,6 +147,13 @@ func (job *Job) State() (state JobState) {
 func (job *Job) Lang() (s string) {
 	job.mu.Lock()
 	s = job.Language
+	job.mu.Unlock()
+	return
+}
+
+func (job *Job) Stopped() (t time.Time) {
+	job.mu.Lock()
+	t = job.stopped
 	job.mu.Unlock()
 	return
 }
@@ -231,4 +241,13 @@ func (job *Job) refreshDiskuse() {
 	}
 	job.mu.Unlock()
 	job.Rinse.Jaws.Dirty(job, uiJobStatus{job})
+}
+
+func (job *Job) downloaded() {
+	job.mu.Lock()
+	job.Downloads++
+	job.mu.Unlock()
+	if job.CleanupGotten {
+		job.Rinse.RemoveJob(job)
+	}
 }

@@ -1,8 +1,11 @@
 definitions:
   rinser.AddJobURL:
     properties:
+      cleanupgotten:
+        example: true
+        type: boolean
       cleanupsec:
-        example: 600
+        example: 86400
         type: integer
       lang:
         example: auto
@@ -11,7 +14,7 @@ definitions:
         example: 2048
         type: integer
       maxtimesec:
-        example: 600
+        example: 3600
         type: integer
       url:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
@@ -26,6 +29,9 @@ definitions:
     type: object
   rinser.Job:
     properties:
+      cleanupgotten:
+        example: true
+        type: boolean
       cleanupsec:
         example: 600
         type: integer
@@ -39,6 +45,9 @@ definitions:
       done:
         example: false
         type: boolean
+      downloads:
+        description: '`json:"downloads,omitempty" example:"0"`'
+        type: integer
       error: {}
       lang:
         example: auto
@@ -122,6 +131,10 @@ paths:
         in: query
         name: cleanupsec
         type: integer
+      - description: "true"
+        in: query
+        name: cleanupgotten
+        type: boolean
       produces:
       - application/json
       responses:

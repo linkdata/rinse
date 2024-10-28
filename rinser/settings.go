@@ -12,6 +12,7 @@ type settings struct {
 	CleanupSec    int
 	MaxTimeSec    int
 	MaxConcurrent int
+	CleanupGotten bool
 }
 
 func (rns *Rinse) settingsFile() string {
@@ -25,6 +26,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		CleanupSec:    rns.cleanupSec,
 		MaxTimeSec:    rns.maxTimeSec,
 		MaxConcurrent: rns.maxConcurrent,
+		CleanupGotten: rns.cleanupGotten,
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -35,19 +37,25 @@ func (rns *Rinse) saveSettings() (err error) {
 }
 
 func (rns *Rinse) loadSettings() (err error) {
+	x := settings{
+		MaxSizeMB:     2048,
+		CleanupSec:    86400,
+		MaxTimeSec:    3600,
+		MaxConcurrent: 2,
+		CleanupGotten: true,
+	}
 	var b []byte
 	if b, err = os.ReadFile(rns.settingsFile()); err == nil {
-		var x settings
-		if err = json.Unmarshal(b, &x); err == nil {
-			rns.mu.Lock()
-			defer rns.mu.Unlock()
-			rns.maxSizeMB = max(2048, x.MaxSizeMB)
-			rns.cleanupSec = max(0, x.CleanupSec)
-			rns.maxTimeSec = max(0, x.MaxTimeSec)
-			rns.maxConcurrent = max(1, x.MaxConcurrent)
-		}
+		err = json.Unmarshal(b, &x)
 	} else if errors.Is(err, os.ErrNotExist) {
 		err = nil
 	}
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	rns.maxSizeMB = min(2048, max(0, x.MaxSizeMB))
+	rns.cleanupSec = max(0, x.CleanupSec)
+	rns.maxTimeSec = max(0, x.MaxTimeSec)
+	rns.maxConcurrent = max(1, x.MaxConcurrent)
+	rns.cleanupGotten = x.CleanupGotten
 	return
 }

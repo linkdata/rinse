@@ -10,15 +10,21 @@
 	<p class="text-danger">Please consider the implications when changing these job defaults.</p>
 
 	<div class="input-group mb-3">
-		<div class="input-group-text">Max upload size</div>
-		<span class="form-control">{{$.Range .UiMaxSize `class="form-range align-bottom" min="0" max="2048" step="1"`}}</span>
-		{{$.Span .UiMaxSize `class="input-group-text"`}}
+		<div class="input-group-text">
+			{{$.Checkbox .UiCleanupGotten `class="form-check-input mt-0 me-1"`}}Remove jobs once downloaded
+		</div>
 	</div>
 
 	<div class="input-group mb-3">
-		<div class="input-group-text">Remove jobs after</div>
-		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="-1" max="1440" step="1"`}}</span>
+		<div class="input-group-text">Always remove jobs after</div>
+		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="0" max="86400" step="60"`}}</span>
 		{{$.Span .UiAutoCleanup `class="input-group-text"`}}
+	</div>
+
+	<div class="input-group mb-3">
+		<div class="input-group-text">Max upload size</div>
+		<span class="form-control">{{$.Range .UiMaxSize `class="form-range align-bottom" min="0" max="2048" step="1"`}}</span>
+		{{$.Span .UiMaxSize `class="input-group-text"`}}
 	</div>
 
 	<div class="input-group mb-3">
