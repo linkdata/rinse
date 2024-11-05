@@ -16,7 +16,7 @@ type settings struct {
 	OAuth2        OAuth2Settings
 }
 
-func (rns *Rinse) settingsFile() string {
+func (rns *Rinse) SettingsFile() string {
 	return path.Join(rns.Config.DataDir, "rinse.json")
 }
 
@@ -33,7 +33,7 @@ func (rns *Rinse) saveSettings() (err error) {
 	rns.mu.Unlock()
 	var b []byte
 	if b, err = json.MarshalIndent(x, "", " "); err == nil {
-		err = os.WriteFile(rns.settingsFile(), b, 0664) // #nosec G306
+		err = os.WriteFile(rns.SettingsFile(), b, 0664) // #nosec G306
 	}
 	return
 }
@@ -47,7 +47,7 @@ func (rns *Rinse) loadSettings() (err error) {
 		CleanupGotten: true,
 	}
 	var b []byte
-	if b, err = os.ReadFile(rns.settingsFile()); err == nil {
+	if b, err = os.ReadFile(rns.SettingsFile()); err == nil {
 		err = json.Unmarshal(b, &x)
 	} else if errors.Is(err, os.ErrNotExist) {
 		err = nil

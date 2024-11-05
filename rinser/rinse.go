@@ -104,7 +104,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								}
 								rns.addRoutes(mux, devel)
 								if e := rns.loadSettings(); e != nil {
-									slog.Error("loadSettings", "file", rns.settingsFile(), "err", e)
+									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
 								}
 								rns.SetOAuth2(nil)
 								go rns.runBackgroundTasks()
