@@ -13,6 +13,7 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/linkdata/deadlock"
 	"golang.org/x/oauth2"
 )
 
@@ -52,9 +53,11 @@ func (settings *OAuth2Settings) Config(hostPort string) (cfg *oauth2.Config) {
 		case "80", "8080":
 			scheme = "http"
 		default:
-			host = "localhost:" + portstr
-			if !strings.Contains(portstr, "443") {
-				scheme = "http"
+			if deadlock.Debug {
+				host = "localhost:" + portstr
+				if !strings.Contains(portstr, "443") {
+					scheme = "http"
+				}
 			}
 		}
 		cfg = &oauth2.Config{
