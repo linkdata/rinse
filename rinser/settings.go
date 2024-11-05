@@ -13,6 +13,7 @@ type settings struct {
 	MaxTimeSec    int
 	MaxConcurrent int
 	CleanupGotten bool
+	OAuth2        OAuth2Settings
 }
 
 func (rns *Rinse) settingsFile() string {
@@ -27,6 +28,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		MaxTimeSec:    rns.maxTimeSec,
 		MaxConcurrent: rns.maxConcurrent,
 		CleanupGotten: rns.cleanupGotten,
+		OAuth2:        rns.OAuth2Settings,
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -57,5 +59,6 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.maxTimeSec = max(0, x.MaxTimeSec)
 	rns.maxConcurrent = max(1, x.MaxConcurrent)
 	rns.cleanupGotten = x.CleanupGotten
+	rns.OAuth2Settings = x.OAuth2
 	return
 }

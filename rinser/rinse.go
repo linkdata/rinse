@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -20,6 +21,7 @@ import (
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/jaws/staticserve"
 	"github.com/linkdata/webserv"
+	"golang.org/x/oauth2"
 )
 
 //go:embed assets
@@ -32,13 +34,15 @@ var ErrDuplicateUUID = errors.New("duplicate UUID")
 const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
-	Config        *webserv.Config
-	Jaws          *jaws.Jaws
-	RunscBin      string
-	RootDir       string
-	FaviconURI    string
-	Languages     []string
-	mu            deadlock.Mutex // protects following
+	Config     *webserv.Config
+	Jaws       *jaws.Jaws
+	RunscBin   string
+	RootDir    string
+	FaviconURI string
+	Languages  []string
+	mu         deadlock.Mutex // protects following
+	OAuth2Settings
+	oauth2Config  *oauth2.Config
 	closed        bool
 	maxSizeMB     int
 	cleanupSec    int
@@ -102,6 +106,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								if e := rns.loadSettings(); e != nil {
 									slog.Error("loadSettings", "file", rns.settingsFile(), "err", e)
 								}
+								rns.SetOAuth2(nil)
 								go rns.runBackgroundTasks()
 							}
 						}
@@ -112,6 +117,21 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	}
 
 	return
+}
+
+func (rns *Rinse) SetOAuth2(newSettings *OAuth2Settings) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	if newSettings != nil {
+		rns.OAuth2Settings = *newSettings
+	}
+	if rns.OAuth2Settings.Valid() {
+		if u, err := url.Parse(rns.Config.ListenURL); err == nil {
+			rns.oauth2Config = rns.OAuth2Settings.Config(u.Host)
+		}
+	} else {
+		rns.oauth2Config = nil
+	}
 }
 
 func (rns *Rinse) runTasks() (todo []*Job) {
@@ -158,23 +178,28 @@ func (rns *Rinse) runBackgroundTasks() {
 }
 
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
-	mux.Handle("GET /{$}", rns.Jaws.Handler("index.html", rns))
-	mux.Handle("GET /setup/{$}", rns.Jaws.Handler("setup.html", rns))
-	mux.Handle("GET /about/{$}", rns.Jaws.Handler("about.html", rns))
-	mux.HandleFunc("POST /submit", func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) })
+	mux.HandleFunc("GET /login", rns.HandleLogin)
+	mux.HandleFunc("GET /logout", rns.HandleLogout)
+	mux.HandleFunc("/auth-response", rns.HandleAuthResponse)
+
+	mux.Handle("GET /{$}", rns.Authed(rns.Jaws.Handler("index.html", rns)))
+	mux.Handle("GET /setup/{$}", rns.Authed(rns.Jaws.Handler("setup.html", rns)))
+	mux.Handle("GET /about/{$}", rns.Authed(rns.Jaws.Handler("about.html", rns)))
+	mux.Handle("POST /submit", rns.AuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
+
 	if !devel {
-		mux.Handle("GET /api/{$}", rns.Jaws.Handler("api.html", rns))
-		mux.Handle("GET /api/index.html", rns.Jaws.Handler("api.html", rns))
+		mux.Handle("GET /api/{$}", rns.Authed(rns.Jaws.Handler("api.html", rns)))
+		mux.Handle("GET /api/index.html", rns.Authed(rns.Jaws.Handler("api.html", rns)))
 	}
 
 	basePath := ""
-	mux.HandleFunc("GET "+basePath+"/jobs", rns.RESTGETJobs)
-	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}", rns.RESTGETJobsUUID)
-	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/preview", rns.RESTGETJobsUUIDPreview)
-	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/rinsed", rns.RESTGETJobsUUIDRinsed)
-	mux.HandleFunc("GET "+basePath+"/jobs/{uuid}/meta", rns.RESTGETJobsUUIDMeta)
-	mux.HandleFunc("POST "+basePath+"/jobs", rns.RESTPOSTJobs)
-	mux.HandleFunc("DELETE "+basePath+"/jobs/{uuid}", rns.RESTDELETEJobsUUID)
+	mux.Handle("GET "+basePath+"/jobs", rns.AuthFn(rns.RESTGETJobs))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTGETJobsUUID))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/preview", rns.AuthFn(rns.RESTGETJobsUUIDPreview))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/rinsed", rns.AuthFn(rns.RESTGETJobsUUIDRinsed))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/meta", rns.AuthFn(rns.RESTGETJobsUUIDMeta))
+	mux.Handle("POST "+basePath+"/jobs", rns.AuthFn(rns.RESTPOSTJobs))
+	mux.Handle("DELETE "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTDELETEJobsUUID))
 }
 
 func (rns *Rinse) CleanupSec() (n int) {
