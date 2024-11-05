@@ -152,6 +152,7 @@ func (rns *Rinse) HandleLogout(hw http.ResponseWriter, hr *http.Request) {
 			http.SetCookie(hw, cookie)
 		}
 		sess.Clear()
+		rns.Jaws.Dirty(rns.UiUser())
 	}
 	hw.Header().Add("Location", oauth2referer(hr))
 	hw.WriteHeader(http.StatusFound)
@@ -207,7 +208,8 @@ func (rns *Rinse) HandleAuthResponse(hw http.ResponseWriter, hr *http.Request) {
 										location = s
 									}
 									sess.Set(oauth2ReferrerKey, nil)
-									slog.Info("login", "user", mailaddr)
+									slog.Info("login", "user", mailaddr, "sess", sess.ID())
+									rns.Jaws.Dirty(rns.UiUser())
 								}
 							}
 						}
@@ -221,6 +223,7 @@ func (rns *Rinse) HandleAuthResponse(hw http.ResponseWriter, hr *http.Request) {
 				sess.Clear()
 				slog.Error("HandleAuthResponse", "err", err)
 				hw.WriteHeader(http.StatusBadRequest)
+				rns.Jaws.Dirty(rns.UiUser())
 				return
 			}
 		}
