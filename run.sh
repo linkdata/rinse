@@ -1,6 +1,8 @@
 #!/bin/sh
 RINSE_PORT=8080
+mkdir -p /tmp/rinse && chmod 777 /tmp/rinse
 podman run --rm --read-only --replace --name rinse \
-	--cap-add SYS_ADMIN -v /proc:/newproc:ro \
-	--env RINSE_PORT=$RINSE_PORT -p $RINSE_PORT:80 \
+	 -v /proc:/newproc:ro \
+	 -v /tmp/rinse:/etc/rinse \
+	--env RINSE_PORT=$RINSE_PORT -p $RINSE_PORT:8080 \
 	--entrypoint /usr/bin/rinse-devel -it localhost/rinse

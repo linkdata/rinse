@@ -14,22 +14,17 @@ Provides both a Web UI and a Swagger REST API.
 
 You should start the container in [rootless](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md) mode
 with a read-only root filesystem. Inside the container we use [gVisor](https://gvisor.dev/) to further sandbox operations, and
-because gVisor requires the container to be started with `--cap-add SYS_ADMIN` and `-v /proc:/newproc:ro`, we must add those arguments.
-
-Rinse will run as the container's root user which will translate to the user that started the container,
-so by default it will listen on either port 80 or 443. Since you will be starting the container as a
-non-privileged user, you'll need to forward HTTP requests to it from a non-privileged host port to
-a privileged port inside the container.
+because gVisor requires the container to be started with `-v /proc:/newproc:ro`, we must add that argument.
 
 If you want the service to remember it's settings between runs, you'll need to mount a volume at `/etc/rinse` inside the container.
 
-`podman run --read-only --rm -d -p 8080:80 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse ghcr.io/linkdata/rinse`
+`podman run --read-only --rm -d -p 8080:8080 -v /proc:/newproc:ro -v $HOME:/etc/rinse ghcr.io/linkdata/rinse`
 
 Running it with HTTPS requires you to provide valid certificates. Rinse will look for
 `fullchain.pem` and `privkey.pem` at `/etc/certs` inside the container, and if found
 start in HTTPS mode.
 
-`podman run --read-only --rm -d -p 8443:443 --cap-add SYS_ADMIN -v /proc:/newproc:ro -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
+`podman run --read-only --rm -d -p 8443:8443 -v /proc:/newproc:ro -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
 
 ## REST API
 
