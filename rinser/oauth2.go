@@ -48,8 +48,8 @@ func (settings *OAuth2Settings) Config(hostPort string) (cfg *oauth2.Config) {
 		scheme := "https"
 		host := settings.RedirectHost
 		switch portstr {
-		case "443":
-		case "80":
+		case "443", "8443":
+		case "80", "8080":
 			scheme = "http"
 		default:
 			host = "localhost:" + portstr
