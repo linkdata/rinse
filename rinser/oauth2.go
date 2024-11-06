@@ -49,16 +49,11 @@ func (settings *OAuth2Settings) Config(hostPort string) (cfg *oauth2.Config) {
 		scheme := "https"
 		host := settings.RedirectHost
 		switch portstr {
-		case "443", "8443":
 		case "80", "8080":
 			scheme = "http"
-		default:
-			if deadlock.Debug {
-				host = "localhost:" + portstr
-				if !strings.Contains(portstr, "443") {
-					scheme = "http"
-				}
-			}
+		}
+		if deadlock.Debug {
+			host = "localhost:" + portstr
 		}
 		cfg = &oauth2.Config{
 			ClientID:     settings.ClientID,
@@ -211,7 +206,7 @@ func (rns *Rinse) HandleAuthResponse(hw http.ResponseWriter, hr *http.Request) {
 										location = s
 									}
 									sess.Set(oauth2ReferrerKey, nil)
-									slog.Info("login", "user", mailaddr, "sess", sess.ID())
+									slog.Info("login", "user", mailaddr, "sess", sess.CookieValue())
 									rns.Jaws.Dirty(rns.UiUser())
 								}
 							}

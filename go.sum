@@ -24,6 +24,8 @@ github.com/linkdata/deadlock v0.5.2 h1:clEEeRsMJCrEm5SuBI3v2l3sdCSP74p0ii+C1rR9n
 github.com/linkdata/deadlock v0.5.2/go.mod h1:M3Td2tmYASdLm6xblKGlFvfu8SI+nPjrB7mDeFDEz/k=
 github.com/linkdata/jaws v0.79.0 h1:Shx6zTLqXXlzhf8Xu8tROfMVBP/qLzUaqIjVFpt3KYc=
 github.com/linkdata/jaws v0.79.0/go.mod h1:gg4p8eQSw8u3JMmTlE5XzZ0hxDkZn+uRMC91CMGopUM=
+github.com/linkdata/jaws v0.80.0 h1:G4XdOuHuVZMNh0qJ6qChRWrsNifUtNn3XwB7iqnG+Jk=
+github.com/linkdata/jaws v0.80.0/go.mod h1:gg4p8eQSw8u3JMmTlE5XzZ0hxDkZn+uRMC91CMGopUM=
 github.com/linkdata/webserv v0.9.5 h1:5oXCnWbVSC+SxUXvmxkpcgWYfNe+hfm/lWUmeUUxlqU=
 github.com/linkdata/webserv v0.9.5/go.mod h1:t925mW7aIgkoIJcRxQV4qyCmIQB41920MlFfocx9reQ=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
