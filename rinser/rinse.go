@@ -19,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/jawsboot"
 	"github.com/linkdata/jaws/staticserve"
 	"github.com/linkdata/webserv"
 	"golang.org/x/oauth2"
@@ -74,40 +75,37 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
 		jw.AddTemplateLookuper(tmpl)
-		var extraFiles []string
-		addStaticFiles := func(filename string, ss *staticserve.StaticServe) (err error) {
-			uri := path.Join("/static", ss.Name)
-			if strings.HasSuffix(filename, "favicon.png") {
-				faviconuri = uri
-			}
-			extraFiles = append(extraFiles, uri)
-			mux.Handle(uri, ss)
-			return
-		}
-		if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
-			if err = staticserve.WalkDir(assetsFS, "assets/static", addStaticFiles); err == nil {
-				if err = jw.GenerateHeadHTML(extraFiles...); err == nil {
-					var runscbin string
-					if runscbin, err = exec.LookPath("runsc"); err == nil {
-						var rootDir string
-						if rootDir, err = locateRootDir(); err == nil {
-							var langs []string
-							if langs, err = getLanguages(rootDir); err == nil {
-								rns = &Rinse{
-									Config:     cfg,
-									Jaws:       jw,
-									RunscBin:   runscbin,
-									RootDir:    rootDir,
-									FaviconURI: faviconuri,
-									jobs:       make([]*Job, 0),
-									Languages:  langs,
+
+		if err = jawsboot.Setup(jw, mux.Handle); err == nil {
+			var favicondata []byte
+			if favicondata, err = assetsFS.ReadFile("assets/static/images/favicon.png"); err == nil {
+				var faviconss *staticserve.StaticServe
+				if faviconss, err = staticserve.New("favicon.png", favicondata); err == nil {
+					faviconuri = path.Join("/static/images", faviconss.Name)
+					mux.Handle(faviconuri, faviconss)
+					if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
+						var runscbin string
+						if runscbin, err = exec.LookPath("runsc"); err == nil {
+							var rootDir string
+							if rootDir, err = locateRootDir(); err == nil {
+								var langs []string
+								if langs, err = getLanguages(rootDir); err == nil {
+									rns = &Rinse{
+										Config:     cfg,
+										Jaws:       jw,
+										RunscBin:   runscbin,
+										RootDir:    rootDir,
+										FaviconURI: faviconuri,
+										jobs:       make([]*Job, 0),
+										Languages:  langs,
+									}
+									rns.addRoutes(mux, devel)
+									if e := rns.loadSettings(); e != nil {
+										slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
+									}
+									rns.SetOAuth2(nil)
+									go rns.runBackgroundTasks()
 								}
-								rns.addRoutes(mux, devel)
-								if e := rns.loadSettings(); e != nil {
-									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
-								}
-								rns.SetOAuth2(nil)
-								go rns.runBackgroundTasks()
 							}
 						}
 					}
