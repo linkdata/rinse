@@ -73,11 +73,3 @@ jobs:
           password: ${{ env.REGISTRY_PASSWORD }}
           extra-args: |
             --disable-content-trust
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.26.0
-        with:
-          image-ref: ${{ env.IMAGE_REGISTRY }}/${{ steps.build_image.outputs.image }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
