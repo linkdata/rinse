@@ -7,7 +7,7 @@ import (
 type uiUser struct{}
 
 func (ui uiUser) JawsGetString(e *jaws.Element) string {
-	if usr, ok := e.Session().Get("user").(string); ok {
+	if usr, ok := e.Session().Get("email").(string); ok {
 		return usr
 	}
 	return ""
