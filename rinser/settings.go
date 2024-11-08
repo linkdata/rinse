@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path"
+
+	"github.com/linkdata/jawsauth"
 )
 
 type settings struct {
@@ -13,7 +15,7 @@ type settings struct {
 	MaxTimeSec    int
 	MaxConcurrent int
 	CleanupGotten bool
-	OAuth2        OAuth2Settings
+	OAuth2        jawsauth.Config
 }
 
 func (rns *Rinse) SettingsFile() string {

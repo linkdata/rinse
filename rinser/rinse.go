@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -21,36 +20,36 @@ import (
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/jaws/jawsboot"
 	"github.com/linkdata/jaws/staticserve"
+	"github.com/linkdata/jawsauth"
 	"github.com/linkdata/webserv"
-	"golang.org/x/oauth2"
 )
 
 //go:embed assets
 var assetsFS embed.FS
 
-//go:generate go run github.com/cparta/makeversion/cmd/mkver@v1.7.0 -name rinser -out version.gen.go -release
+//go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name rinser -out version.gen.go
 
 var ErrDuplicateUUID = errors.New("duplicate UUID")
 
 const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
-	Config     *webserv.Config
-	Jaws       *jaws.Jaws
-	RunscBin   string
-	RootDir    string
-	FaviconURI string
-	Languages  []string
-	mu         deadlock.Mutex // protects following
-	OAuth2Settings
-	oauth2Config  *oauth2.Config
-	closed        bool
-	maxSizeMB     int
-	cleanupSec    int
-	maxTimeSec    int
-	maxConcurrent int
-	cleanupGotten bool
-	jobs          []*Job
+	Config         *webserv.Config
+	Jaws           *jaws.Jaws
+	JawsAuth       *jawsauth.Server
+	RunscBin       string
+	RootDir        string
+	FaviconURI     string
+	Languages      []string
+	mu             deadlock.Mutex // protects following
+	OAuth2Settings jawsauth.Config
+	closed         bool
+	maxSizeMB      int
+	cleanupSec     int
+	maxTimeSec     int
+	maxConcurrent  int
+	cleanupGotten  bool
+	jobs           []*Job
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -90,6 +89,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 							if rootDir, err = locateRootDir(); err == nil {
 								var langs []string
 								if langs, err = getLanguages(rootDir); err == nil {
+
 									rns = &Rinse{
 										Config:     cfg,
 										Jaws:       jw,
@@ -99,11 +99,17 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 										jobs:       make([]*Job, 0),
 										Languages:  langs,
 									}
-									rns.addRoutes(mux, devel)
 									if e := rns.loadSettings(); e != nil {
 										slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
 									}
-									rns.SetOAuth2(nil)
+									var overrideUrl string
+									if deadlock.Debug {
+										overrideUrl = cfg.ListenURL
+									}
+									if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err != nil {
+										slog.Error("oauth", "err", err, "file", rns.SettingsFile())
+									}
+									rns.addRoutes(mux, devel)
 									go rns.runBackgroundTasks()
 								}
 							}
@@ -115,21 +121,6 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	}
 
 	return
-}
-
-func (rns *Rinse) SetOAuth2(newSettings *OAuth2Settings) {
-	rns.mu.Lock()
-	defer rns.mu.Unlock()
-	if newSettings != nil {
-		rns.OAuth2Settings = *newSettings
-	}
-	if rns.OAuth2Settings.Valid() {
-		if u, err := url.Parse(rns.Config.ListenURL); err == nil {
-			rns.oauth2Config = rns.OAuth2Settings.Config(u.Host)
-		}
-	} else {
-		rns.oauth2Config = nil
-	}
 }
 
 func (rns *Rinse) runTasks() (todo []*Job) {
@@ -175,19 +166,19 @@ func (rns *Rinse) runBackgroundTasks() {
 	}
 }
 
-func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
-	mux.HandleFunc("GET /login", rns.HandleLogin)
-	mux.HandleFunc("GET /logout", rns.HandleLogout)
-	mux.HandleFunc("/auth-response", rns.HandleAuthResponse)
+func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
+	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+}
 
-	mux.Handle("GET /{$}", rns.Authed(rns.Jaws.Handler("index.html", rns)))
-	mux.Handle("GET /setup/{$}", rns.Authed(rns.Jaws.Handler("setup.html", rns)))
-	mux.Handle("GET /about/{$}", rns.Authed(rns.Jaws.Handler("about.html", rns)))
+func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
+	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
+	mux.Handle("GET /setup/{$}", rns.JawsAuth.Handler("setup.html", rns))
+	mux.Handle("GET /about/{$}", rns.JawsAuth.Handler("about.html", rns))
 	mux.Handle("POST /submit", rns.AuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
 
 	if !devel {
-		mux.Handle("GET /api/{$}", rns.Authed(rns.Jaws.Handler("api.html", rns)))
-		mux.Handle("GET /api/index.html", rns.Authed(rns.Jaws.Handler("api.html", rns)))
+		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))
+		mux.Handle("GET /api/index.html", rns.JawsAuth.Handler("api.html", rns))
 	}
 
 	basePath := ""

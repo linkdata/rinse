@@ -6,6 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/deadlock v0.5.2
 	github.com/linkdata/jaws v0.80.0
+	github.com/linkdata/jawsauth v0.2.0
 	github.com/linkdata/webserv v0.9.5
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
@@ -25,7 +26,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/oauth2 v0.23.0
+	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
