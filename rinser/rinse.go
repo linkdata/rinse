@@ -27,7 +27,7 @@ import (
 //go:embed assets
 var assetsFS embed.FS
 
-//go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name rinser -out version.gen.go
+//go:generate go run github.com/cparta/makeversion/v2/cmd/mkver@latest -name rinser -out version.gen.go
 
 var ErrDuplicateUUID = errors.New("duplicate UUID")
 
