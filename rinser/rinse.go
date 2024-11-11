@@ -74,8 +74,8 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
 		jw.AddTemplateLookuper(tmpl)
-		if err = jawsboot.Setup(jw, mux.Handle); err == nil {
-			if faviconuri, err = staticserve.HandleFS(assetsFS, "assets", "static/images/favicon.png", mux.Handle); err == nil {
+		if faviconuri, err = staticserve.HandleFS(assetsFS, "assets", "static/images/favicon.png", mux.Handle); err == nil {
+			if err = jawsboot.Setup(jw, mux.Handle, faviconuri); err == nil {
 				if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
 					var runscbin string
 					if runscbin, err = exec.LookPath("runsc"); err == nil {
