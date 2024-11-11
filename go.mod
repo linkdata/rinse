@@ -6,13 +6,15 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/deadlock v0.5.2
 	github.com/linkdata/jaws v0.83.0
-	github.com/linkdata/jawsauth v0.2.0
+	github.com/linkdata/jawsauth v0.5.0
 	github.com/linkdata/webserv v0.9.5
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.3
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
 	golang.org/x/image v0.20.0
 )
+
+// replace github.com/linkdata/jawsauth => ../jawsauth
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
