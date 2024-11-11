@@ -74,44 +74,37 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
 		jw.AddTemplateLookuper(tmpl)
-
 		if err = jawsboot.Setup(jw, mux.Handle); err == nil {
-			var favicondata []byte
-			if favicondata, err = assetsFS.ReadFile("assets/static/images/favicon.png"); err == nil {
-				var faviconss *staticserve.StaticServe
-				if faviconss, err = staticserve.New("favicon.png", favicondata); err == nil {
-					faviconuri = path.Join("/static/images", faviconss.Name)
-					mux.Handle(faviconuri, faviconss)
-					if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
-						var runscbin string
-						if runscbin, err = exec.LookPath("runsc"); err == nil {
-							var rootDir string
-							if rootDir, err = locateRootDir(); err == nil {
-								var langs []string
-								if langs, err = getLanguages(rootDir); err == nil {
+			if faviconuri, err = staticserve.HandleFS(assetsFS, "assets", "static/images/favicon.png", mux.Handle); err == nil {
+				if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
+					var runscbin string
+					if runscbin, err = exec.LookPath("runsc"); err == nil {
+						var rootDir string
+						if rootDir, err = locateRootDir(); err == nil {
+							var langs []string
+							if langs, err = getLanguages(rootDir); err == nil {
 
-									rns = &Rinse{
-										Config:     cfg,
-										Jaws:       jw,
-										RunscBin:   runscbin,
-										RootDir:    rootDir,
-										FaviconURI: faviconuri,
-										jobs:       make([]*Job, 0),
-										Languages:  langs,
-									}
-									if e := rns.loadSettings(); e != nil {
-										slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
-									}
-									var overrideUrl string
-									if deadlock.Debug {
-										overrideUrl = cfg.ListenURL
-									}
-									if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err != nil {
-										slog.Error("oauth", "err", err, "file", rns.SettingsFile())
-									}
-									rns.addRoutes(mux, devel)
-									go rns.runBackgroundTasks()
+								rns = &Rinse{
+									Config:     cfg,
+									Jaws:       jw,
+									RunscBin:   runscbin,
+									RootDir:    rootDir,
+									FaviconURI: faviconuri,
+									jobs:       make([]*Job, 0),
+									Languages:  langs,
 								}
+								if e := rns.loadSettings(); e != nil {
+									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
+								}
+								var overrideUrl string
+								if deadlock.Debug {
+									overrideUrl = cfg.ListenURL
+								}
+								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err != nil {
+									slog.Error("oauth", "err", err, "file", rns.SettingsFile())
+								}
+								rns.addRoutes(mux, devel)
+								go rns.runBackgroundTasks()
 							}
 						}
 					}
