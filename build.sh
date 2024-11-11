@@ -12,4 +12,4 @@ podman build -t localhost/rinse .
 mkdir -p rootfs
 podman unshare ./copyrootfs.sh
 rm rinse rinse-devel runsc
-trivy image localhost/rinse || true
+trivy image --download-db-only && trivy image --download-java-db-only && trivy image localhost/rinse
