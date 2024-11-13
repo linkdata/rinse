@@ -44,6 +44,7 @@ type Job struct {
 	CleanupSec    int            `json:"cleanupsec" example:"600"`
 	CleanupGotten bool           `json:"cleanupgotten" example:"true"`
 	Private       bool           `json:"private" example:"false"`
+	Email         string         `json:"email,omitempty" example:"user@example.com"`
 	mu            deadlock.Mutex // protects following
 	Error         error          `json:"error,omitempty"`
 	PdfName       string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
@@ -74,7 +75,7 @@ func checkLangString(lang string) error {
 	return nil
 }
 
-func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int, cleanupgotten, private bool) (job *Job, err error) {
+func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int, cleanupgotten, private bool, email string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		if lang == "auto" {
 			lang = ""
@@ -97,6 +98,7 @@ func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int
 					CleanupSec:    cleanupsec,
 					CleanupGotten: cleanupgotten,
 					Private:       private,
+					Email:         email,
 					state:         JobNew,
 					imgfiles:      make(map[string]bool),
 					previews:      make(map[uint64][]byte),

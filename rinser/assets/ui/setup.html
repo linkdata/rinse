@@ -6,10 +6,12 @@
 </head>
 {{template "body_start.html" $}}
 
+<p>The settings file is at <code>{{.SettingsFile}}</code></p>
+
+{{if (.IsAdmin $.Initial)}}
+
 <form autocomplete="off">
 	<p class="text-danger">Please consider the implications when changing these job defaults.</p>
-
-	<p>The settings file is at <code>{{.SettingsFile}}</code></p>
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">
@@ -22,6 +24,14 @@
 		{{$.Text .UiProxy `class="form-control"`}}
 		{{$.Div .UiExternalIP `class="input-group-text"`}}
 	</div>
+
+	{{if .OAuth2Settings.RedirectURL}}{{with .UiAdmins}}
+	<div class="input-group mb-3">
+		<div class="input-group-text">Administrators</div>
+		{{$.Text . `class="form-control"`}}
+		{{$.Button "Apply" `class="btn btn-outline-secondary"` .}}
+	</div>
+	{{end}}{{end}}
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">Always remove jobs after</div>
@@ -47,6 +57,9 @@
 		{{$.Span .UiMaxConcurrent `class="input-group-text"`}}
 	</div>
 </form>
+{{else}}
+<p class="text-danger">You are not an administrator.</p>
+{{end}}
 
 {{template "body_end.html" $}}
 {{end}}</html>

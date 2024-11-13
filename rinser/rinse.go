@@ -53,6 +53,7 @@ type Rinse struct {
 	jobs           []*Job
 	proxyUrl       string
 	externalIP     template.HTML
+	admins         map[string]struct{}
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -94,6 +95,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									FaviconURI: faviconuri,
 									jobs:       make([]*Job, 0),
 									Languages:  langs,
+									admins:     make(map[string]struct{}),
 								}
 								if e := rns.loadSettings(); e != nil {
 									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
@@ -184,6 +186,16 @@ func (rns *Rinse) runBackgroundTasks() {
 
 func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+}
+
+func (rns *Rinse) IsAdmin(hr *http.Request) (yes bool) {
+	if email, ok := rns.Jaws.GetSession(hr).Get(rns.JawsAuth.SessionEmailKey).(string); ok {
+		rns.mu.Lock()
+		defer rns.mu.Unlock()
+		_, yes = rns.admins[strings.TrimSpace(email)]
+		yes = yes || len(rns.admins) == 0
+	}
+	return
 }
 
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {

@@ -73,6 +73,11 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 		}
 	}
 
+	var email string
+	if sess := rns.Jaws.GetSession(hr); sess != nil {
+		email, _ = sess.Get(rns.JawsAuth.SessionEmailKey).(string)
+	}
+
 	ct, _, err := mime.ParseMediaType(hr.Header.Get("Content-Type"))
 	if err == nil {
 		switch ct {
@@ -87,7 +92,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 				defer srcFile.Close()
 				srcLang := hr.URL.Query().Get("lang")
 				var job *Job
-				if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, private); err == nil {
+				if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, private, email); err == nil {
 					dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 					var dstFile *os.File
 					if dstFile, err = os.Create(dstName); err == nil {
@@ -119,7 +124,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 					var job *Job
 					if job, err = NewJob(rns, addJobUrl.URL, addJobUrl.Lang,
 						addJobUrl.MaxSizeMB, addJobUrl.MaxTimeSec, addJobUrl.CleanupSec,
-						addJobUrl.CleanupGotten, addJobUrl.Private); err == nil {
+						addJobUrl.CleanupGotten, addJobUrl.Private, email); err == nil {
 						if err = rns.AddJob(job); err == nil {
 							HTTPJSON(hw, http.StatusOK, job)
 							return

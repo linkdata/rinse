@@ -17,6 +17,7 @@ type settings struct {
 	CleanupGotten bool
 	OAuth2        jawsauth.Config
 	ProxyURL      string
+	Admins        []string
 }
 
 func (rns *Rinse) SettingsFile() string {
@@ -33,6 +34,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		CleanupGotten: rns.cleanupGotten,
 		OAuth2:        rns.OAuth2Settings,
 		ProxyURL:      rns.proxyUrl,
+		Admins:        rns.getAdminsLocked(),
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -65,5 +67,6 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.cleanupGotten = x.CleanupGotten
 	rns.OAuth2Settings = x.OAuth2
 	rns.proxyUrl = x.ProxyURL
+	rns.setAdminsLocked(x.Admins)
 	return
 }
