@@ -52,6 +52,7 @@ type Rinse struct {
 	cleanupGotten  bool
 	jobs           []*Job
 	proxyUrl       string
+	externalIP     template.HTML
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
