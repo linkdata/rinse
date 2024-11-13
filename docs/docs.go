@@ -475,6 +475,10 @@ const docTemplate = `{
                     "description": "` + "`" + `json:\"downloads,omitempty\" example:\"0\"` + "`" + `",
                     "type": "integer"
                 },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
                 "error": {},
                 "lang": {
                     "type": "string",
