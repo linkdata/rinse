@@ -12,7 +12,7 @@ Restart=on-failure
 ExecStartPre=!find /etc/letsencrypt/live/ -name '*.pem' -execdir cp -Lf {} /home/rinse/ \; -execdir chown rinse /home/rinse/{} \;
 ExecStartPre=/bin/rm -f /home/rinse/rinse.pid /home/rinse/rinse.ctr-id
 ExecStartPre=/usr/bin/podman pull ghcr.io/linkdata/rinse:latest
-ExecStart=/usr/bin/podman run --read-only --cgroup-manager=cgroupfs --conmon-pidfile /home/rinse/rinse.pid --cidfile /home/rinse/rinse.ctr-id -d --replace --name rinse -p 127.0.0.1:8443:8443 -v /proc:/newproc:ro -v /home/rinse:/etc/rinse -v /home/rinse:/etc/certs ghcr.io/linkdata/rinse
+ExecStart=/usr/bin/podman run --read-only --cap-drop=ALL --cap-add=CAP_SYS_CHROOT --cgroup-manager=cgroupfs --conmon-pidfile /home/rinse/rinse.pid --cidfile /home/rinse/rinse.ctr-id -d --replace --name rinse -p 127.0.0.1:8443:8443  -v /home/rinse:/etc/rinse -v /home/rinse:/etc/certs ghcr.io/linkdata/rinse
 ExecStartPost=/bin/sleep 1
 ExecStop=/usr/bin/podman stop --ignore --cidfile /home/rinse/rinse.ctr-id -t 10
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile /home/rinse/rinse.ctr-id
