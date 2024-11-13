@@ -16,6 +16,7 @@ type settings struct {
 	MaxConcurrent int
 	CleanupGotten bool
 	OAuth2        jawsauth.Config
+	ProxyURL      string
 }
 
 func (rns *Rinse) SettingsFile() string {
@@ -31,6 +32,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		MaxConcurrent: rns.maxConcurrent,
 		CleanupGotten: rns.cleanupGotten,
 		OAuth2:        rns.OAuth2Settings,
+		ProxyURL:      rns.proxyUrl,
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -62,5 +64,6 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.maxConcurrent = max(1, x.MaxConcurrent)
 	rns.cleanupGotten = x.CleanupGotten
 	rns.OAuth2Settings = x.OAuth2
+	rns.proxyUrl = x.ProxyURL
 	return
 }

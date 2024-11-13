@@ -18,6 +18,11 @@
 	</div>
 
 	<div class="input-group mb-3">
+		<div class="input-group-text">Proxy for downloads</div>
+		{{$.Text .UiProxy `class="form-control"`}}
+	</div>
+
+	<div class="input-group mb-3">
 		<div class="input-group-text">Always remove jobs after</div>
 		<span class="form-control">{{$.Range .UiAutoCleanup `class="form-range align-bottom" min="0" max="86400" step="60"`}}</span>
 		{{$.Span .UiAutoCleanup `class="input-group-text"`}}

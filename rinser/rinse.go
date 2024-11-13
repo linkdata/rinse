@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -50,6 +51,7 @@ type Rinse struct {
 	maxConcurrent  int
 	cleanupGotten  bool
 	jobs           []*Job
+	proxyUrl       string
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -114,6 +116,26 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 	}
 
 	return
+}
+
+func (rns *Rinse) getClient() *http.Client {
+	rns.mu.Lock()
+	proxyUrl := rns.proxyUrl
+	rns.mu.Unlock()
+	if proxyUrl != "" {
+		if u, err := url.Parse(proxyUrl); err == nil {
+			if u.Scheme != "" && u.Host != "" {
+				return &http.Client{
+					Transport: &http.Transport{
+						Proxy: func(r *http.Request) (*url.URL, error) {
+							return u, nil
+						},
+					},
+				}
+			}
+		}
+	}
+	return http.DefaultClient
 }
 
 func (rns *Rinse) runTasks() (todo []*Job) {

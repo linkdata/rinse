@@ -101,7 +101,7 @@ func (job *Job) runDownload(ctx context.Context) (err error) {
 			var req *http.Request
 			if req, err = http.NewRequestWithContext(ctx, http.MethodGet, job.Name, nil); err == nil {
 				var resp *http.Response
-				if resp, err = http.DefaultClient.Do(req); err == nil { // #nosec G107
+				if resp, err = job.Rinse.getClient().Do(req); err == nil { // #nosec G107
 					if resp.StatusCode == http.StatusOK {
 						srcName := resp.Request.URL.Path
 						if cd := resp.Header.Get("Content-Disposition"); cd != "" {
