@@ -86,7 +86,6 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 						if rootDir, err = locateRootDir(); err == nil {
 							var langs []string
 							if langs, err = getLanguages(rootDir); err == nil {
-
 								rns = &Rinse{
 									Config:     cfg,
 									Jaws:       jw,
@@ -108,6 +107,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								}
 								rns.addRoutes(mux, devel)
 								go rns.runBackgroundTasks()
+								go rns.UpdateExternalIP()
 							}
 						}
 					}
