@@ -73,10 +73,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 		}
 	}
 
-	var email string
-	if sess := rns.Jaws.GetSession(hr); sess != nil {
-		email, _ = sess.Get(rns.JawsAuth.SessionEmailKey).(string)
-	}
+	email := rns.GetEmail(hr)
 
 	ct, _, err := mime.ParseMediaType(hr.Header.Get("Content-Type"))
 	if err == nil {

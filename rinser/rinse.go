@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -188,14 +189,53 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
-func (rns *Rinse) IsAdmin(hr *http.Request) (yes bool) {
+func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
 	if email, ok := rns.Jaws.GetSession(hr).Get(rns.JawsAuth.SessionEmailKey).(string); ok {
-		rns.mu.Lock()
-		defer rns.mu.Unlock()
-		_, yes = rns.admins[strings.TrimSpace(email)]
-		yes = yes || len(rns.admins) == 0
+		s = strings.TrimSpace(email)
 	}
 	return
+}
+
+func (rns *Rinse) IsAdmin(email string) (yes bool) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	_, yes = rns.admins[email]
+	yes = yes || len(rns.admins) == 0
+	return
+}
+
+func (rns *Rinse) IsAdminRequest(hr *http.Request) (yes bool) {
+	return rns.IsAdmin(rns.GetEmail(hr))
+}
+
+func (rns *Rinse) getAdminsLocked() (v []string) {
+	for k := range rns.admins {
+		v = append(v, k)
+	}
+	sort.Strings(v)
+	return
+}
+
+func (rns *Rinse) getAdmins() (v []string) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	return rns.getAdminsLocked()
+}
+
+func (rns *Rinse) setAdminsLocked(v []string) {
+	sort.Strings(v)
+	clear(rns.admins)
+	for _, s := range v {
+		if s = strings.TrimSpace(s); s != "" {
+			rns.admins[s] = struct{}{}
+		}
+	}
+}
+
+func (rns *Rinse) setAdmins(v []string) {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	rns.setAdminsLocked(v)
 }
 
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
@@ -354,14 +394,7 @@ func (rns *Rinse) RemoveJob(job *Job) {
 
 // JawsContains implements jaws.Container.
 func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
-	var sortedJobs []*Job
-	rns.mu.Lock()
-	for _, job := range rns.jobs {
-		if !job.Private {
-			sortedJobs = append(sortedJobs, job)
-		}
-	}
-	rns.mu.Unlock()
+	sortedJobs := rns.JobList(rns.GetEmail(e.Initial()))
 	slices.SortFunc(sortedJobs, func(a, b *Job) int { return b.Created.Compare(a.Created) })
 	for _, job := range sortedJobs {
 		contents = append(contents, jaws.NewTemplate("job.html", job))

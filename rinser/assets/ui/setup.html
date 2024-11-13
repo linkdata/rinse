@@ -8,7 +8,7 @@
 
 <p>The settings file is at <code>{{.SettingsFile}}</code></p>
 
-{{if (.IsAdmin $.Initial)}}
+{{if (.IsAdminRequest $.Initial)}}
 
 <form autocomplete="off">
 	<p class="text-danger">Please consider the implications when changing these job defaults.</p>
@@ -25,13 +25,22 @@
 		{{$.Div .UiExternalIP `class="input-group-text"`}}
 	</div>
 
-	{{if .OAuth2Settings.RedirectURL}}{{with .UiAdmins}}
+	{{if .OAuth2Settings.RedirectURL}}
+	{{with .UiAdmins}}
 	<div class="input-group mb-3">
 		<div class="input-group-text">Administrators</div>
 		{{$.Text . `class="form-control"`}}
 		{{$.Button "Apply" `class="btn btn-outline-secondary"` .}}
 	</div>
-	{{end}}{{end}}
+	{{end}}
+	{{with .UiImpersonate}}
+	<div class="input-group mb-3">
+		<div class="input-group-text">Impersonate</div>
+		{{$.Text . `class="form-control"`}}
+		{{$.Button "Apply" `class="btn btn-outline-secondary"` .}}
+	</div>
+	{{end}}
+	{{end}}
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">Always remove jobs after</div>

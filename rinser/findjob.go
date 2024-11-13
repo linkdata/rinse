@@ -1,6 +1,8 @@
 package rinser
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 func (rns *Rinse) findJobUuid(u uuid.UUID) *Job {
 	rns.mu.Lock()
@@ -22,10 +24,11 @@ func (rns *Rinse) FindJob(s string) *Job {
 	return nil
 }
 
-func (rns *Rinse) JobList() (jobs []*Job) {
+func (rns *Rinse) JobList(email string) (jobs []*Job) {
+	isadmin := rns.IsAdmin(email)
 	rns.mu.Lock()
 	for _, job := range rns.jobs {
-		if !job.Private {
+		if isadmin || (!job.Private && job.Email == email) {
 			jobs = append(jobs, job)
 		}
 	}

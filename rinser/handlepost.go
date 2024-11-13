@@ -53,10 +53,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 	cleanupGotten := rns.cleanupGotten
 	rns.mu.Unlock()
 
-	var email string
-	if sess := rns.Jaws.GetSession(r); sess != nil {
-		email, _ = sess.Get(rns.JawsAuth.SessionEmailKey).(string)
-	}
+	email := rns.GetEmail(r)
 
 	var job *Job
 	if err == nil && info != nil {
