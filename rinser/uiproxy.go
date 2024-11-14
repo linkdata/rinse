@@ -1,6 +1,8 @@
 package rinser
 
 import (
+	"net/url"
+
 	"github.com/linkdata/jaws"
 )
 
@@ -12,11 +14,23 @@ type uiProxy struct {
 type uiProxyButton struct{ *uiProxy }
 
 func (ui uiProxyButton) JawsClick(e *jaws.Element, name string) (err error) {
-	ui.mu.Lock()
-	ui.proxyUrl = ui.String.Get()
-	ui.mu.Unlock()
-	go ui.UpdateExternalIP()
-	return ui.saveSettings()
+	urlStr := ui.String.Get()
+	if urlStr != "" {
+		var u *url.URL
+		if u, err = url.Parse(urlStr); err == nil {
+			if u.Scheme != "socks5h" {
+				e.Alert("warning", "Proxy scheme is not <code>socks5h</code>")
+			}
+		}
+	}
+	if err == nil {
+		ui.mu.Lock()
+		ui.proxyUrl = urlStr
+		ui.mu.Unlock()
+		go ui.UpdateExternalIP()
+		err = ui.saveSettings()
+	}
+	return
 }
 
 func (u *uiProxy) Address() jaws.StringSetter {
