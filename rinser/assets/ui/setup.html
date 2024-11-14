@@ -8,7 +8,8 @@
 
 <p>The settings file is at <code>{{.SettingsFile}}</code></p>
 
-{{if (.IsAdminRequest $.Initial)}}
+
+{{if $.Auth.IsAdmin}}
 
 <form autocomplete="off">
 	<p class="text-danger">Please consider the implications when changing these job defaults.</p>

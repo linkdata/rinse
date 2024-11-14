@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
@@ -54,7 +53,7 @@ type Rinse struct {
 	jobs           []*Job
 	proxyUrl       string
 	externalIP     template.HTML
-	admins         map[string]struct{}
+	admins         []string // admins from settings
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -96,7 +95,6 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									FaviconURI: faviconuri,
 									jobs:       make([]*Job, 0),
 									Languages:  langs,
-									admins:     make(map[string]struct{}),
 								}
 								if e := rns.loadSettings(); e != nil {
 									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
@@ -108,6 +106,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err != nil {
 									slog.Error("oauth", "err", err, "file", rns.SettingsFile())
 								}
+								rns.setAdmins(rns.admins)
 								rns.addRoutes(mux, devel)
 								go rns.runBackgroundTasks()
 								go rns.UpdateExternalIP()
@@ -197,45 +196,16 @@ func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
 }
 
 func (rns *Rinse) IsAdmin(email string) (yes bool) {
-	rns.mu.Lock()
-	defer rns.mu.Unlock()
-	_, yes = rns.admins[email]
-	yes = yes || len(rns.admins) == 0
-	return
-}
-
-func (rns *Rinse) IsAdminRequest(hr *http.Request) (yes bool) {
-	return rns.IsAdmin(rns.GetEmail(hr))
-}
-
-func (rns *Rinse) getAdminsLocked() (v []string) {
-	for k := range rns.admins {
-		v = append(v, k)
-	}
-	sort.Strings(v)
-	return
+	return rns.JawsAuth.IsAdmin(email)
 }
 
 func (rns *Rinse) getAdmins() (v []string) {
-	rns.mu.Lock()
-	defer rns.mu.Unlock()
-	return rns.getAdminsLocked()
-}
-
-func (rns *Rinse) setAdminsLocked(v []string) {
-	sort.Strings(v)
-	clear(rns.admins)
-	for _, s := range v {
-		if s = strings.TrimSpace(s); s != "" {
-			rns.admins[s] = struct{}{}
-		}
-	}
+	v = rns.JawsAuth.GetAdmins()
+	return
 }
 
 func (rns *Rinse) setAdmins(v []string) {
-	rns.mu.Lock()
-	defer rns.mu.Unlock()
-	rns.setAdminsLocked(v)
+	rns.JawsAuth.SetAdmins(v)
 }
 
 func (rns *Rinse) ProxyURL() string {
@@ -246,7 +216,7 @@ func (rns *Rinse) ProxyURL() string {
 
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
-	mux.Handle("GET /setup/{$}", rns.JawsAuth.Handler("setup.html", rns))
+	mux.Handle("GET /setup/{$}", rns.JawsAuth.HandlerAdmin("setup.html", rns))
 	mux.Handle("GET /about/{$}", rns.JawsAuth.Handler("about.html", rns))
 	mux.Handle("POST /submit", rns.AuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
 

@@ -34,7 +34,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		CleanupGotten: rns.cleanupGotten,
 		OAuth2:        rns.OAuth2Settings,
 		ProxyURL:      rns.proxyUrl,
-		Admins:        rns.getAdminsLocked(),
+		Admins:        rns.getAdmins(),
 	}
 	rns.mu.Unlock()
 	var b []byte
@@ -67,6 +67,6 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.cleanupGotten = x.CleanupGotten
 	rns.OAuth2Settings = x.OAuth2
 	rns.proxyUrl = x.ProxyURL
-	rns.setAdminsLocked(x.Admins)
+	rns.admins = x.Admins
 	return
 }

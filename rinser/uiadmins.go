@@ -21,7 +21,9 @@ func (u *uiAdmins) JawsClick(e *jaws.Element, name string) (err error) {
 			}
 		}
 	}
-	adminlist = append(adminlist, u.GetEmail(e.Initial()))
+	if len(adminlist) > 0 {
+		adminlist = append(adminlist, u.GetEmail(e.Initial()))
+	}
 	u.setAdmins(adminlist)
 	u.v = strings.Join(u.getAdmins(), ", ")
 	e.Dirty(u)
