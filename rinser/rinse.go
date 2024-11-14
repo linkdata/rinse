@@ -238,6 +238,12 @@ func (rns *Rinse) setAdmins(v []string) {
 	rns.setAdminsLocked(v)
 }
 
+func (rns *Rinse) ProxyURL() string {
+	rns.mu.Lock()
+	defer rns.mu.Unlock()
+	return rns.proxyUrl
+}
+
 func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.JawsAuth.Handler("setup.html", rns))

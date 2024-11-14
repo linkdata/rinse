@@ -6,6 +6,15 @@
 </head>
 {{template "body_start.html" $}}
 
+<div class="mb-3">
+	{{if .ProxyURL}}
+		Using the proxy <code>{{.ProxyURL}}</code>,
+	{{else}}
+		No proxy configured,
+	{{end}}
+	external IP is {{$.Span .UiExternalIP}}.
+</div>
+
 <form class="row align-items-center mb-3" autocomplete="off" action="/submit" method="post" enctype="multipart/form-data">
 	<div class="col">
 		<input class="form-control" type="file" name="{{.FormFileKey}}" id="{{.FormFileKey}}">
