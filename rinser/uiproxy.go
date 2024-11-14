@@ -1,36 +1,36 @@
 package rinser
 
 import (
-	"net/url"
-
 	"github.com/linkdata/jaws"
 )
 
-type uiProxy struct{ *Rinse }
-
-// JawsGetString implements jaws.StringSetter.
-func (u uiProxy) JawsGetString(e *jaws.Element) (s string) {
-	u.mu.Lock()
-	s = u.proxyUrl
-	u.mu.Unlock()
-	return
+type uiProxy struct {
+	*Rinse
+	jaws.String
 }
 
-// JawsSetString implements jaws.StringSetter.
-func (ui uiProxy) JawsSetString(e *jaws.Element, v string) (err error) {
+type uiProxyButton struct{ *uiProxy }
+
+func (ui uiProxyButton) JawsClick(e *jaws.Element, name string) (err error) {
 	ui.mu.Lock()
-	ui.proxyUrl = v
+	ui.proxyUrl = ui.String.Get()
 	ui.mu.Unlock()
-	var u *url.URL
-	if u, err = url.Parse(v); err == nil {
-		if u.Scheme != "" && u.Host != "" {
-			go ui.UpdateExternalIP()
-			err = ui.saveSettings()
-		}
-	}
-	return
+	go ui.UpdateExternalIP()
+	return ui.saveSettings()
 }
 
-func (rns *Rinse) UiProxy() jaws.StringSetter {
-	return uiProxy{rns}
+func (u *uiProxy) Address() jaws.StringSetter {
+	return &u.String
+}
+
+func (u *uiProxy) ExternalIP() jaws.HtmlGetter {
+	return u.UiExternalIP()
+}
+
+func (u *uiProxy) Button() jaws.ClickHandler {
+	return uiProxyButton{u}
+}
+
+func (rns *Rinse) UiProxy() *uiProxy {
+	return &uiProxy{Rinse: rns, String: jaws.String{Value: rns.ProxyURL()}}
 }

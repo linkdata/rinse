@@ -19,11 +19,12 @@
 		</div>
 	</div>
 
-	<div class="input-group mb-3">
+	<div class="input-group mb-3">{{with .UiProxy}}
 		<div class="input-group-text">Proxy for downloads</div>
-		{{$.Text .UiProxy `class="form-control" placeholder="socks5h://host.example.com" `}}
-		{{$.Div .UiExternalIP `class="input-group-text"`}}
-	</div>
+		{{$.Text .Address `class="form-control" placeholder="socks5h://host.example.com" `}}
+		{{$.Div .ExternalIP `class="input-group-text"`}}
+		{{$.Button "Apply" `class="btn btn-outline-secondary"` .Button}}
+	{{end}}</div>
 
 	{{if .OAuth2Settings.RedirectURL}}
 	{{with .UiAdmins}}

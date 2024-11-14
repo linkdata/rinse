@@ -32,7 +32,7 @@ func (rns *Rinse) UpdateExternalIP() {
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
 	if err != nil {
-		publicip = fmt.Sprintf(`<span class="text-danger">%s</span>`, html.EscapeString(err.Error()))
+		publicip = fmt.Sprintf(`<span class="text-danger" data-toggle="tooltip" title="%s">unknown</span>`, html.EscapeString(err.Error()))
 	}
 	rns.externalIP = template.HTML(publicip) //#nosec G203
 	rns.Jaws.Dirty(rns.UiExternalIP())
