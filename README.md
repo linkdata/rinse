@@ -14,7 +14,8 @@ Provides both a Web UI and a Swagger REST API.
 
 You should start the container in [rootless](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md) mode
 with a read-only root filesystem. Inside the container we use [gVisor](https://gvisor.dev/) to further sandbox operations, and
-because gVisor requires the container to be started with `--cap-add=CAP_SYS_CHROOT`, we must add that argument.
+because gVisor requires the container to be started with `--cap-add=CAP_SYS_CHROOT`, we must add that argument. If you're using SELinux,
+podman will also need the `--security-opt label=type:container_engine_t` argument.
 
 If you want the service to remember it's settings between runs, you'll need to mount a volume at `/etc/rinse` inside the container.
 
