@@ -3,6 +3,7 @@ package rinser
 import (
 	"html/template"
 
+	"github.com/linkdata/bytecount"
 	"github.com/linkdata/jaws"
 )
 
@@ -15,7 +16,7 @@ func (u uiMaxSize) Text() string {
 	if n < 1 {
 		return "unlimited"
 	} else {
-		return prettyByteSize(n)
+		return bytecount.Sprint(float64(n))
 	}
 }
 

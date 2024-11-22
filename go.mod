@@ -4,6 +4,7 @@ go 1.23.2
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/linkdata/bytecount v1.0.0
 	github.com/linkdata/deadlock v0.5.2
 	github.com/linkdata/jaws v0.86.0
 	github.com/linkdata/jawsauth v0.6.1

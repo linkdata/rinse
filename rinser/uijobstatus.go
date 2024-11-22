@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"strconv"
 
+	"github.com/linkdata/bytecount"
 	"github.com/linkdata/jaws"
 )
 
@@ -79,7 +80,7 @@ func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	}
 
 	statetxt = html.EscapeString(statetxt)
-	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, statetxt, prettyByteSize(diskuse))
+	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, statetxt, bytecount.N(diskuse))
 	return template.HTML(s) // #nosec G203
 }
 
