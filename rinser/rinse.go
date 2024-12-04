@@ -103,13 +103,20 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								if deadlock.Debug {
 									overrideUrl = cfg.ListenURL
 								}
-								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err != nil {
-									slog.Error("oauth", "err", err, "file", rns.SettingsFile())
+								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
+									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
+										slog.Info("login", "email", sess.Get(rns.JawsAuth.SessionEmailKey), "ip", sess.IP())
+									}
+									rns.JawsAuth.LogoutEvent = func(sess *jaws.Session, hr *http.Request) {
+										slog.Info("logout", "email", sess.Get(rns.JawsAuth.SessionEmailKey), "ip", sess.IP())
+									}
+									rns.setAdmins(rns.admins)
+									rns.addRoutes(mux, devel)
+									go rns.runBackgroundTasks()
+									go rns.UpdateExternalIP()
+									return
 								}
-								rns.setAdmins(rns.admins)
-								rns.addRoutes(mux, devel)
-								go rns.runBackgroundTasks()
-								go rns.UpdateExternalIP()
+								slog.Error("oauth", "err", err, "file", rns.SettingsFile())
 							}
 						}
 					}
@@ -117,7 +124,6 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 			}
 		}
 	}
-
 	return
 }
 
