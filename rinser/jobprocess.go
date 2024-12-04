@@ -205,9 +205,12 @@ func (job *Job) renameDoc(docName, wrkName string) (err error) {
 func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) {
 	if err = job.transition(JobDownload, JobExtractMeta); err == nil {
 		var buf bytes.Buffer
+		var errlines []string
 		stdouthandler := func(s string, isout bool) (err error) {
 			if isout {
 				buf.WriteString(s)
+			} else {
+				errlines = append(errlines, s)
 			}
 			return
 		}
@@ -220,6 +223,9 @@ func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) 
 					err = os.WriteFile(fpath, b, 0644) // #nosec G306
 				}
 			}
+		}
+		for _, s := range errlines {
+			slog.Error("metaextract", "job", job.Name, "stderr", s)
 		}
 	}
 	return
