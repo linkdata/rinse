@@ -1,11 +1,13 @@
 FROM alpine:latest AS rinseworker
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
+ARG TIKAVERSION=3.0.0
 
 RUN apk --no-cache -U upgrade && apk --no-cache add \
+    gpg \
     msttcorefonts-installer \
     fontconfig \
     poppler-utils \
-    openjdk8 \
+    openjdk11 \
     libreoffice \
     ttf-cantarell \
     ttf-dejavu \
@@ -86,9 +88,14 @@ RUN apk --no-cache -U upgrade && apk --no-cache add \
     tesseract-ocr-data-ukr \
     tesseract-ocr-data-vie
 
-RUN update-ms-fonts
-RUN wget -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/2.9.2/tika-app-2.9.2.jar
-    
+RUN update-ms-fonts && fc-cache -f
+
+RUN wget -O /tmp/KEYS https://www.apache.org/dist/tika/KEYS && \
+    gpg --import /tmp/KEYS && \
+    wget -O /tmp/tika.jar.asc https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar.asc && \
+    wget -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar && \
+    gpg --verify /tmp/tika.jar.asc /usr/local/bin/tika.jar
+
 COPY tesseract_opencl_profile_devices.dat /
 
 RUN addgroup -g 1000 rinse && \
