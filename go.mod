@@ -12,7 +12,7 @@ require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
-	golang.org/x/image v0.22.0
+	golang.org/x/image v0.23.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
