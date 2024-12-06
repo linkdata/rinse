@@ -137,6 +137,9 @@ func (job *Job) Start() (err error) {
 		job.cancelFn = cancel
 		job.mu.Unlock()
 		go job.process(ctx)
+		if l := job.Rinse.Config.Logger; l != nil {
+			job.Rinse.Config.Logger.Info("job started", "job", job.Name, "email", job.Email)
+		}
 	}
 	return
 }

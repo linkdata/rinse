@@ -105,10 +105,20 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								}
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
 									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
-										slog.Info("login", "email", sess.Get(rns.JawsAuth.SessionEmailKey), "ip", sess.IP())
+										var adminstr string
+										email := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
+										if rns.JawsAuth.IsAdmin(email) {
+											adminstr = "admin "
+										}
+										slog.Info(adminstr+"login", "email", email)
 									}
 									rns.JawsAuth.LogoutEvent = func(sess *jaws.Session, hr *http.Request) {
-										slog.Info("logout", "email", sess.Get(rns.JawsAuth.SessionEmailKey), "ip", sess.IP())
+										var adminstr string
+										email := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
+										if rns.JawsAuth.IsAdmin(email) {
+											adminstr = "admin "
+										}
+										slog.Info(adminstr+"logout", "email", email)
 									}
 									rns.setAdmins(rns.admins)
 									rns.addRoutes(mux, devel)
