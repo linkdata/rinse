@@ -63,4 +63,4 @@ read-only before invoking the next stage.
 
 - Finally the `output.pdf` file is renamed to the original filename
   (without extension) with `-rinsed.pdf` appended.
-  
+
