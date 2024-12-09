@@ -1,9 +1,12 @@
 package rinser
 
 import (
+	"bytes"
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -204,6 +207,49 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
+func (rns *Rinse) EriFn(hw http.ResponseWriter, hr *http.Request) {
+	username := hr.PathValue("user")
+	password := hr.PathValue("pwd")
+	keycloak_url := "http://localhost:8081/realms/rinse/protocol/openid-connect/token"
+	map_body := map[string]string{
+		"client_id":     "rinse-client-id",
+		"grant_type":    "password",
+		"client_secret": "eG43OQNj1yUnjBtSYQWmq9xhbprUUOHi",
+		"scope":         "openid",
+		"username":      username,
+		"password":      password,
+	}
+	json_body, err := json.Marshal(map_body)
+	if err != nil {
+		msg := fmt.Errorf("json ERR: %s", err)
+		SendHTTPError(hw, http.StatusInternalServerError, msg)
+	}
+
+	req, err := http.NewRequest("POST", keycloak_url, bytes.NewReader(json_body))
+	if err != nil {
+		msg := fmt.Errorf("req ERR: %s", err)
+		SendHTTPError(hw, http.StatusInternalServerError, msg)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		msg := fmt.Errorf("client ERR: %s", err)
+		SendHTTPError(hw, http.StatusInternalServerError, msg)
+	}
+
+	if res.StatusCode == 200 {
+		HTTPJSON(hw, http.StatusOK, "Alles Gut")
+	} else {
+		HTTPJSON(hw, res.StatusCode, "UH-OH")
+	}
+
+}
+
 func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
 	if email, ok := rns.Jaws.GetSession(hr).Get(rns.JawsAuth.SessionEmailKey).(string); ok {
 		s = strings.TrimSpace(email)
@@ -240,6 +286,8 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))
 		mux.Handle("GET /api/index.html", rns.JawsAuth.Handler("api.html", rns))
 	}
+	mux.Handle("GET /dev/{user}/{pwd}", http.HandlerFunc(rns.EriFn))
+	mux.Handle("GET /wth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { HTTPJSON(w, http.StatusTeapot, "smthidk") }))
 
 	basePath := ""
 	mux.Handle("GET "+basePath+"/jobs", rns.AuthFn(rns.RESTGETJobs))
