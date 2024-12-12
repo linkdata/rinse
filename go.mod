@@ -3,11 +3,13 @@ module github.com/linkdata/rinse
 go 1.23.2
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
 	github.com/linkdata/deadlock v0.5.2
 	github.com/linkdata/jaws v0.100.0
-	github.com/linkdata/jawsauth v0.6.1
+	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.7
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.4

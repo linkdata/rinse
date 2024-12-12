@@ -36,25 +36,27 @@ var ErrDuplicateUUID = errors.New("duplicate UUID")
 const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
-	Config         *webserv.Config
-	Jaws           *jaws.Jaws
-	JawsAuth       *jawsauth.Server
-	RunscBin       string
-	RootDir        string
-	FaviconURI     string
-	Languages      []string
-	mu             deadlock.Mutex // protects following
-	OAuth2Settings jawsauth.Config
-	closed         bool
-	maxSizeMB      int
-	cleanupSec     int
-	maxTimeSec     int
-	maxConcurrent  int
-	cleanupGotten  bool
-	jobs           []*Job
-	proxyUrl       string
-	externalIP     template.HTML
-	admins         []string // admins from settings
+	Config            *webserv.Config
+	Jaws              *jaws.Jaws
+	JawsAuth          *jawsauth.Server
+	RunscBin          string
+	RootDir           string
+	FaviconURI        string
+	Languages         []string
+	mu                deadlock.Mutex // protects following
+	OAuth2Settings    jawsauth.Config
+	closed            bool
+	maxSizeMB         int
+	cleanupSec        int
+	maxTimeSec        int
+	maxConcurrent     int
+	cleanupGotten     bool
+	jobs              []*Job
+	proxyUrl          string
+	externalIP        template.HTML
+	endpointJWTPubKey string          // endpoint for getting JWT public key used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
+	PublicJWTKeys     KeycloakPubKeys //TODO more generalised, ie.PublicJWTKeys
+	admins            []string        // admins from settings
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -103,15 +105,21 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								var overrideUrl string
 								if deadlock.Debug {
 									overrideUrl = cfg.ListenURL
-								} /*
-									 // DEBUG
-										rns.OAuth2Settings.RedirectURL = "https://application.example.com/oauth2/callback"
-										rns.OAuth2Settings.AuthURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/authorize"
-										rns.OAuth2Settings.TokenURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/token"
-										rns.OAuth2Settings.UserInfoURL = "https://graph.microsoft.com/v1.0/me?$select=displayName,mail"
-										rns.OAuth2Settings.ClientID = "randomid"
-										rns.OAuth2Settings.ClientSecret = "hahanosecret"
-										rns.OAuth2Settings.Scopes = []string{"user.read"}*/
+								}
+								// DEBUG
+								/*
+									rns.OAuth2Settings.RedirectURL = "https://application.example.com/oauth2/callback"
+									rns.OAuth2Settings.AuthURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/authorize"
+									rns.OAuth2Settings.TokenURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/token"
+									rns.OAuth2Settings.UserInfoURL = "https://graph.microsoft.com/v1.0/me?$select=displayName,mail"
+									rns.OAuth2Settings.ClientID = "randomid"
+									rns.OAuth2Settings.ClientSecret = "hahanosecret"
+									rns.OAuth2Settings.Scopes = []string{"user.read"}*/
+								rns.endpointJWTPubKey = "http://192.168.50.124:8081/realms/rinse/protocol/openid-connect/certs" //TODO actually get this from somewhere
+								rns.PublicJWTKeys, err = GetKeycloakSigningPubKeys(rns.endpointJWTPubKey)
+								if err != nil {
+									slog.Error("getting jwt public keys", "err", err)
+								}
 
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
 									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
@@ -210,21 +218,17 @@ func (rns *Rinse) runBackgroundTasks() {
 	}
 }
 
-func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
+func (rns *Rinse) AskForAuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
-func (rns *Rinse) EriAuthFnWrap(fn http.HandlerFunc) http.Handler {
+func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rns.EriAuthFn(w, r, fn)
+		rns.CheckAuth(w, r, fn)
 	})
 }
 
-func (rns *Rinse) WhyDoesItMatter(fn http.HandlerFunc) http.Handler {
-	return fn
-}
-
-func (rns *Rinse) EriAuthFn(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) http.Handler {
+func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
 
 	/*
 	   - kolla om det finns JWT i header, använd den
@@ -232,18 +236,21 @@ func (rns *Rinse) EriAuthFn(w http.ResponseWriter, r *http.Request, fn http.Hand
 	   - om inte det, redirecta till login så man kna hämta en
 	*/
 
-	jwt, err := GetJWTFromHeader(r) //TODO
-	slog.Warn("[DEBUG]", "header", r.Header)
+	jwt, err := GetJWTFromHeader(r)
 	if err != nil {
 		log.Fatal(err)
 	}
-	inHeader := jwt != ""
+	inHeader := jwt != "" //TODO
 
-	inSession := true //TODO
+	inSession := false //TODO
 	if inHeader || inSession {
-		return fn
+		fn(w, r)
+		slog.Warn("[DEBUG] fn")
+	} else {
+		new_fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+		new_fn.ServeHTTP(w, r)
+		slog.Warn("[DEBUG] new_fn")
 	}
-	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
 func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
@@ -276,30 +283,28 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.JawsAuth.HandlerAdmin("setup.html", rns))
 	mux.Handle("GET /about/{$}", rns.JawsAuth.Handler("about.html", rns))
-	mux.Handle("POST /submit", rns.AuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
+	mux.Handle("POST /submit", rns.AskForAuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
 
 	if !devel {
 		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))
 		mux.Handle("GET /api/index.html", rns.JawsAuth.Handler("api.html", rns))
 	}
-	slog.Warn("hello?")
-	mux.Handle("GET /dev/jobs3", rns.WhyDoesItMatter(rns.RESTGETJobs))
 	mux.Handle("GET /dev/jobs2", http.HandlerFunc(rns.RESTGETJobs))
-	mux.Handle("GET /dev/jobs", rns.EriAuthFnWrap(rns.RESTGETJobs))
-	mux.Handle("POST /dev/jobs", rns.EriAuthFnWrap(rns.RESTPOSTJobs))
-	mux.Handle("GET /dev/jobs/{uuid}", rns.EriAuthFnWrap(rns.RESTGETJobsUUID))
+	mux.Handle("GET /dev/jobs", rns.AuthFn(rns.RESTGETJobs))
+	mux.Handle("POST /dev/jobs", rns.AuthFn(rns.RESTPOSTJobs))
+	mux.Handle("GET /dev/jobs/{uuid}", rns.AuthFn(rns.RESTGETJobsUUID))
 	wth := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { HTTPJSON(w, http.StatusTeapot, "smthidk") })
 	mux.Handle("GET /dev/wth", wth)
-	mux.Handle("GET /wth", rns.AuthFn(wth))
+	mux.Handle("GET /wth", rns.AskForAuthFn(wth))
 
 	basePath := ""
-	mux.Handle("GET "+basePath+"/jobs", rns.AuthFn(rns.RESTGETJobs))
-	mux.Handle("GET "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTGETJobsUUID))
-	mux.Handle("GET "+basePath+"/jobs/{uuid}/preview", rns.AuthFn(rns.RESTGETJobsUUIDPreview))
-	mux.Handle("GET "+basePath+"/jobs/{uuid}/rinsed", rns.AuthFn(rns.RESTGETJobsUUIDRinsed))
-	mux.Handle("GET "+basePath+"/jobs/{uuid}/meta", rns.AuthFn(rns.RESTGETJobsUUIDMeta))
-	mux.Handle("POST "+basePath+"/jobs", rns.AuthFn(rns.RESTPOSTJobs))
-	mux.Handle("DELETE "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTDELETEJobsUUID))
+	mux.Handle("GET "+basePath+"/jobs", rns.AskForAuthFn(rns.RESTGETJobs))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}", rns.AskForAuthFn(rns.RESTGETJobsUUID))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/preview", rns.AskForAuthFn(rns.RESTGETJobsUUIDPreview))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/rinsed", rns.AskForAuthFn(rns.RESTGETJobsUUIDRinsed))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/meta", rns.AskForAuthFn(rns.RESTGETJobsUUIDMeta))
+	mux.Handle("POST "+basePath+"/jobs", rns.AskForAuthFn(rns.RESTPOSTJobs))
+	mux.Handle("DELETE "+basePath+"/jobs/{uuid}", rns.AskForAuthFn(rns.RESTDELETEJobsUUID))
 }
 
 func (rns *Rinse) CleanupSec() (n int) {
