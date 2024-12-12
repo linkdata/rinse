@@ -1,13 +1,11 @@
 package rinser
 
 import (
-	"bytes"
 	"context"
 	"embed"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -105,7 +103,16 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								var overrideUrl string
 								if deadlock.Debug {
 									overrideUrl = cfg.ListenURL
-								}
+								} /*
+									 // DEBUG
+										rns.OAuth2Settings.RedirectURL = "https://application.example.com/oauth2/callback"
+										rns.OAuth2Settings.AuthURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/authorize"
+										rns.OAuth2Settings.TokenURL = "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/oauth2/v2.0/token"
+										rns.OAuth2Settings.UserInfoURL = "https://graph.microsoft.com/v1.0/me?$select=displayName,mail"
+										rns.OAuth2Settings.ClientID = "randomid"
+										rns.OAuth2Settings.ClientSecret = "hahanosecret"
+										rns.OAuth2Settings.Scopes = []string{"user.read"}*/
+
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
 									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
 										var adminstr string
@@ -207,47 +214,36 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
-func (rns *Rinse) EriFn(hw http.ResponseWriter, hr *http.Request) {
-	username := hr.PathValue("user")
-	password := hr.PathValue("pwd")
-	keycloak_url := "http://localhost:8081/realms/rinse/protocol/openid-connect/token"
-	map_body := map[string]string{
-		"client_id":     "rinse-client-id",
-		"grant_type":    "password",
-		"client_secret": "eG43OQNj1yUnjBtSYQWmq9xhbprUUOHi",
-		"scope":         "openid",
-		"username":      username,
-		"password":      password,
-	}
-	json_body, err := json.Marshal(map_body)
+func (rns *Rinse) EriAuthFnWrap(fn http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rns.EriAuthFn(w, r, fn)
+	})
+}
+
+func (rns *Rinse) WhyDoesItMatter(fn http.HandlerFunc) http.Handler {
+	return fn
+}
+
+func (rns *Rinse) EriAuthFn(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) http.Handler {
+
+	/*
+	   - kolla om det finns JWT i header, använd den
+	   - om den inte finns, kolla om man kan hämta en från jaws sessionen
+	   - om inte det, redirecta till login så man kna hämta en
+	*/
+
+	jwt, err := GetJWTFromHeader(r) //TODO
+	slog.Warn("[DEBUG]", "header", r.Header)
 	if err != nil {
-		msg := fmt.Errorf("json ERR: %s", err)
-		SendHTTPError(hw, http.StatusInternalServerError, msg)
+		log.Fatal(err)
 	}
+	inHeader := jwt != ""
 
-	req, err := http.NewRequest("POST", keycloak_url, bytes.NewReader(json_body))
-	if err != nil {
-		msg := fmt.Errorf("req ERR: %s", err)
-		SendHTTPError(hw, http.StatusInternalServerError, msg)
+	inSession := true //TODO
+	if inHeader || inSession {
+		return fn
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		msg := fmt.Errorf("client ERR: %s", err)
-		SendHTTPError(hw, http.StatusInternalServerError, msg)
-	}
-
-	if res.StatusCode == 200 {
-		HTTPJSON(hw, http.StatusOK, "Alles Gut")
-	} else {
-		HTTPJSON(hw, res.StatusCode, "UH-OH")
-	}
-
+	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
 func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
@@ -286,8 +282,15 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))
 		mux.Handle("GET /api/index.html", rns.JawsAuth.Handler("api.html", rns))
 	}
-	mux.Handle("GET /dev/{user}/{pwd}", http.HandlerFunc(rns.EriFn))
-	mux.Handle("GET /wth", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { HTTPJSON(w, http.StatusTeapot, "smthidk") }))
+	slog.Warn("hello?")
+	mux.Handle("GET /dev/jobs3", rns.WhyDoesItMatter(rns.RESTGETJobs))
+	mux.Handle("GET /dev/jobs2", http.HandlerFunc(rns.RESTGETJobs))
+	mux.Handle("GET /dev/jobs", rns.EriAuthFnWrap(rns.RESTGETJobs))
+	mux.Handle("POST /dev/jobs", rns.EriAuthFnWrap(rns.RESTPOSTJobs))
+	mux.Handle("GET /dev/jobs/{uuid}", rns.EriAuthFnWrap(rns.RESTGETJobsUUID))
+	wth := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { HTTPJSON(w, http.StatusTeapot, "smthidk") })
+	mux.Handle("GET /dev/wth", wth)
+	mux.Handle("GET /wth", rns.AuthFn(wth))
 
 	basePath := ""
 	mux.Handle("GET "+basePath+"/jobs", rns.AuthFn(rns.RESTGETJobs))
