@@ -43,7 +43,8 @@ func extractHeaderPayloadSignature(jwt string) (header, payload, signature strin
 	return
 }
 
-// Verify a JWT given a JWT string and a list of JWKs
+// Verify whether a JSON Web Token is valid.
+// Takes the token in form of a string and a set of JSON Web Keys (public keys/certs) as input.
 func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	if len(certs) == 0 {
 		return false, ErrNoJWKAvailable
