@@ -31,19 +31,25 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 		err       error
 	)
 
+	/*
+		If no token is found in header, check whether there is a valid token in session
+		If token found but not valid, return error respose
+		If no token found in neither header nor session,
+	*/
 	token, err := GetJWTFromHeader(r)
 	if err == nil {
-		// TODO is there an Err that's ok when verifying JWT? typ de som är jWK specifica..
 		inHeader, err = jwt.VerifyJWT(token, rns.JWTPublicKeys)
-		if err != nil {
+		slog.Warn("inHeader?", inHeader)
+		if err == nil {
 			// rns.JawsAuth.SessionTokenKey = token //TODO test this
+		} else {
 			SendHTTPError(w, http.StatusBadRequest, err)
 		}
 	} else if err != jwt.ErrNoJWTFoundInHeader {
-		SendHTTPError(w, http.StatusBadRequest, err)
+		inSession, _ = rns.FoundValidJWTInSession()
+		slog.Warn("InSession?", inSession)
 	}
 
-	inSession = false //TODO
 	if inHeader || inSession {
 		fn(w, r)
 		slog.Warn("[DEBUG] fn")
@@ -79,9 +85,7 @@ func GetJWTFromHeader(r *http.Request) (string, error) {
 	return jwtStr, nil
 }
 
-/*
-func (rns *Rinse) FoundJWTInSession(r *http.Request) (string, error) {
-	sess := rns.Jaws.GetSession(r)
-	sess.Get()
+func (rns *Rinse) FoundValidJWTInSession() (bool, error) {
+	token := rns.JawsAuth.SessionTokenKey
+	return jwt.VerifyJWT(token, rns.JWTPublicKeys)
 }
-*/
