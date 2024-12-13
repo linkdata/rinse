@@ -252,16 +252,6 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 		mux.Handle("GET /api/index.html", rns.JawsAuth.Handler("api.html", rns))
 	}
 
-	//DEBUG
-	mux.Handle("GET /dev/jobs2", http.HandlerFunc(rns.RESTGETJobs))
-	mux.Handle("GET /dev/jobs", rns.AuthFn(rns.RESTGETJobs))
-	mux.Handle("POST /dev/jobs", rns.AuthFn(rns.RESTPOSTJobs))
-	mux.Handle("GET /dev/jobs/{uuid}", rns.AuthFn(rns.RESTGETJobsUUID))
-	wth := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { HTTPJSON(w, http.StatusTeapot, "smthidk") })
-	mux.Handle("GET /dev/wth", wth)
-	mux.Handle("GET /wth", rns.AskForAuthFn(wth))
-	//--
-
 	basePath := ""
 	mux.Handle("GET "+basePath+"/jobs", rns.AuthFn(rns.RESTGETJobs))
 	mux.Handle("GET "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTGETJobsUUID))
