@@ -17,23 +17,15 @@ var (
 	ErrFailedToParseCertFn = func(kid string, err error) error { return fmt.Errorf("error decoding certificate %q: %w", kid, err) }
 )
 
-type JSONWebKeySet map[string]JSONWebKey
-
-// Json Web Key set (JWK)
-// see https://www.keycloak.org/docs-api/21.1.2/javadocs/constant-values.html
 type JSONWebKey struct {
 	KeyId        string   `json:"kid"`
 	KeyType      string   `json:"kty"`
 	Algorithm    string   `json:"alg"`
 	PublicKeyUse string   `json:"use"`
-	Modulus      string   `json:"n"`
-	Exponent     string   `json:"e"`
 	X509Cert     []string `json:"x5c"`
 }
 
-func (p JSONWebKey) String() string {
-	return fmt.Sprintf("\n{\nkid: %s\nalg: %s\nx5c: %s\n}\n", p.KeyId, p.Algorithm, p.X509Cert)
-}
+type JSONWebKeySet map[string]JSONWebKey
 
 func GetJSONKeyWebSet(endpoint string) (jwks JSONWebKeySet, err error) {
 	var resp *http.Response
