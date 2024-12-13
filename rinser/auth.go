@@ -22,6 +22,7 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 }
 
 // Checks for JWT in header or session, if no valid JWT is found, redirects to login
+// If JWT is found in header but is invalid, error response is return to caller.
 func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
 	/*
 		If no token is found in header, check whether there is a valid token in session
@@ -41,6 +42,7 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 			rns.JawsAuth.SessionTokenKey = token
 		} else {
 			SendHTTPError(w, http.StatusBadRequest, err)
+			return
 		}
 	} else {
 		inSession, _ = rns.FoundValidJWTInSession()
