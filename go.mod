@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
 	github.com/linkdata/deadlock v0.5.2
-	github.com/linkdata/jaws v0.100.0
+	github.com/linkdata/jaws v0.102.0
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.7
 	github.com/swaggo/http-swagger v1.3.4
@@ -16,6 +16,7 @@ require (
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
+// replace github.com/linkdata/jaws => ../jaws
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect

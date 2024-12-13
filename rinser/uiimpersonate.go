@@ -16,12 +16,12 @@ func (u *uiImpersonate) JawsClick(e *jaws.Element, name string) (err error) {
 	return
 }
 
-func (u *uiImpersonate) JawsSetString(e *jaws.Element, v string) (err error) {
+func (u *uiImpersonate) JawsSet(e *jaws.Element, v string) (err error) {
 	u.v = v
 	return
 }
 
-func (u *uiImpersonate) JawsGetString(e *jaws.Element) string {
+func (u *uiImpersonate) JawsGet(e *jaws.Element) string {
 	return u.v
 }
 

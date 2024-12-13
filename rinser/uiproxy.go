@@ -2,19 +2,20 @@ package rinser
 
 import (
 	"net/url"
+	"sync"
 
 	"github.com/linkdata/jaws"
 )
 
 type uiProxy struct {
 	*Rinse
-	jaws.String
+	jaws.Binder[string]
 }
 
 type uiProxyButton struct{ *uiProxy }
 
 func (ui uiProxyButton) JawsClick(e *jaws.Element, name string) (err error) {
-	urlStr := ui.String.Get()
+	urlStr := ui.Binder.JawsGet(e)
 	if urlStr != "" {
 		var u *url.URL
 		if u, err = url.Parse(urlStr); err == nil {
@@ -33,8 +34,8 @@ func (ui uiProxyButton) JawsClick(e *jaws.Element, name string) (err error) {
 	return
 }
 
-func (u *uiProxy) Address() jaws.StringSetter {
-	return &u.String
+func (u *uiProxy) Address() any {
+	return u.Binder
 }
 
 func (u *uiProxy) ExternalIP() jaws.HtmlGetter {
@@ -46,5 +47,7 @@ func (u *uiProxy) Button() jaws.ClickHandler {
 }
 
 func (rns *Rinse) UiProxy() *uiProxy {
-	return &uiProxy{Rinse: rns, String: jaws.String{Value: rns.ProxyURL()}}
+	address := rns.ProxyURL()
+	var mu sync.Mutex
+	return &uiProxy{Rinse: rns, Binder: jaws.Bind(&mu, &address)}
 }

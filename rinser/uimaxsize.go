@@ -26,7 +26,7 @@ func (u uiMaxSize) JawsGetHtml(rq *jaws.Element) template.HTML {
 }
 
 // JawsGetFloat implements jaws.FloatSetter.
-func (u uiMaxSize) JawsGetFloat(e *jaws.Element) (v float64) {
+func (u uiMaxSize) JawsGet(e *jaws.Element) (v float64) {
 	u.mu.Lock()
 	v = float64(u.maxSizeMB)
 	u.mu.Unlock()
@@ -34,7 +34,7 @@ func (u uiMaxSize) JawsGetFloat(e *jaws.Element) (v float64) {
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
-func (u uiMaxSize) JawsSetFloat(e *jaws.Element, v float64) (err error) {
+func (u uiMaxSize) JawsSet(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
 	u.maxSizeMB = int(v)
 	u.mu.Unlock()

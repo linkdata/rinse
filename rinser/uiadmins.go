@@ -30,12 +30,12 @@ func (u *uiAdmins) JawsClick(e *jaws.Element, name string) (err error) {
 	return u.saveSettings()
 }
 
-func (u *uiAdmins) JawsSetString(e *jaws.Element, v string) (err error) {
+func (u *uiAdmins) JawsSet(e *jaws.Element, v string) (err error) {
 	u.v = v
 	return
 }
 
-func (u *uiAdmins) JawsGetString(e *jaws.Element) string {
+func (u *uiAdmins) JawsGet(e *jaws.Element) string {
 	return u.v
 }
 

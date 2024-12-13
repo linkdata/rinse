@@ -26,12 +26,12 @@ func (u uiAutoCleanup) JawsGetHtml(rq *jaws.Element) template.HTML {
 }
 
 // JawsGetFloat implements jaws.FloatSetter.
-func (u uiAutoCleanup) JawsGetFloat(e *jaws.Element) float64 {
+func (u uiAutoCleanup) JawsGet(e *jaws.Element) float64 {
 	return float64(u.CleanupSec())
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
-func (u uiAutoCleanup) JawsSetFloat(e *jaws.Element, v float64) (err error) {
+func (u uiAutoCleanup) JawsSet(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
 	u.cleanupSec = int(v)
 	u.mu.Unlock()

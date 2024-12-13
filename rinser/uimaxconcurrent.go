@@ -19,12 +19,12 @@ func (u uiMaxConcurrent) JawsGetHtml(rq *jaws.Element) template.HTML {
 }
 
 // JawsGetFloat implements jaws.FloatSetter.
-func (u uiMaxConcurrent) JawsGetFloat(e *jaws.Element) float64 {
+func (u uiMaxConcurrent) JawsGet(e *jaws.Element) float64 {
 	return float64(u.MaxConcurrent())
 }
 
 // JawsSetFloat implements jaws.FloatSetter.
-func (u uiMaxConcurrent) JawsSetFloat(e *jaws.Element, v float64) (err error) {
+func (u uiMaxConcurrent) JawsSet(e *jaws.Element, v float64) (err error) {
 	u.mu.Lock()
 	if n := int(v); n > 0 {
 		u.maxConcurrent = n
