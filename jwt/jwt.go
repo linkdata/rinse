@@ -8,6 +8,8 @@ import (
 	gojwt "github.com/golang-jwt/jwt/v5"
 )
 
+var ErrInvalidJWTForm = fmt.Errorf("auth token not in JWT format")
+
 type JWTHeader struct {
 	Algorithm string `json:"alg"`
 	Type      string `json:"typ"`

@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+var (
+	ErrNoJWKAvailable      = fmt.Errorf("no JWKs (certs or public keys) available")
+	ErrNoMatchingJWKFound  = fmt.Errorf("no JWK with mathing KeyId found")
+	ErrUnknownKeyType      = fmt.Errorf("JWK key of unknown type")
+	ErrFailedToParseCertFn = func(kid string, err error) error { return fmt.Errorf("error decoding certificate %q: %w", kid, err) }
+)
+
 type JSONWebKeySet map[string]JSONWebKey
 
 // Json Web Key set (JWK)
