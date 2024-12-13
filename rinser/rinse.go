@@ -117,7 +117,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									rns.OAuth2Settings.ClientSecret = "hahanosecret"
 									rns.OAuth2Settings.Scopes = []string{"user.read"}*/
 								rns.endpointJWTPubKey = "http://192.168.50.124:8081/realms/rinse/protocol/openid-connect/certs" //TODO actually get this from somewhere
-								rns.PublicJWTKeys, err = jwt.GetKeycloakJWKs(rns.endpointJWTPubKey)
+								rns.PublicJWTKeys, err = jwt.GetJSONKeyWebSet(rns.endpointJWTPubKey)
 								if err != nil {
 									slog.Error("getting jwt public keys", "err", err)
 								}
@@ -237,7 +237,7 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 	   - om inte det, redirecta till login så man kna hämta en
 	*/
 
-	jwtStr, err := jwt.GetJWTFromHeader(r)
+	jwtStr, err := GetJWTFromHeader(r)
 	if err != nil {
 		log.Fatal(err)
 	}
