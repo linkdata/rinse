@@ -31,17 +31,28 @@ func decodeJWTStringToBytes(str string) (b []byte) {
 	return
 }
 
+func extractHeaderPayloadSignature(jwt string) (header, payload, signature string, err error) {
+	jwtSplit := strings.Split(string(jwt), ".")
+	if len(jwtSplit) != 3 {
+		err = ErrInvalidJWTForm
+		return
+	}
+	header = jwtSplit[0]
+	payload = jwtSplit[1]
+	signature = jwtSplit[2]
+	return
+}
+
 // Verify a JWT given a JWT string and a list of JWKs
 func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	if len(certs) == 0 {
 		return false, ErrNoJWKAvailable
 	}
 
-	tokenSplit := strings.Split(string(jwt), ".")
-	h64 := tokenSplit[0]
-	p64 := tokenSplit[1]
-	s64 := tokenSplit[2]
-
+	h64, p64, s64, err := extractHeaderPayloadSignature(jwt)
+	if err != nil {
+		return false, err
+	}
 	var header JWTHeader
 	json.Unmarshal(decodeJWTStringToBytes(h64), &header)
 

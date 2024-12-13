@@ -8,6 +8,54 @@ import (
 	"github.com/linkdata/rinse/jwt"
 )
 
+func (rns *Rinse) AskForAuthFn(fn http.HandlerFunc) http.Handler {
+	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+}
+
+func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rns.CheckAuth(w, r, fn)
+	})
+}
+
+func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
+
+	/*
+	   - kolla om det finns JWT i header, använd den
+	   - om den inte finns, kolla om man kan hämta en från jaws sessionen
+	   - om inte det, redirecta till login så man kna hämta en
+	*/
+	var (
+		inHeader  bool
+		inSession bool
+		err       error
+	)
+
+	token, err := GetJWTFromHeader(r)
+	if err == nil {
+		// TODO is there an Err that's ok when verifying JWT? typ de som är jWK specifica..
+		inHeader, err = jwt.VerifyJWT(token, rns.JWTPublicKeys)
+		if err != nil {
+			// rns.JawsAuth.SessionTokenKey = token //TODO test this
+			SendHTTPError(w, http.StatusBadRequest, err)
+		}
+	} else if err != jwt.ErrNoJWTFoundInHeader {
+		SendHTTPError(w, http.StatusBadRequest, err)
+	}
+
+	inSession = false //TODO
+	if inHeader || inSession {
+		fn(w, r)
+		slog.Warn("[DEBUG] fn")
+	} else {
+		// TODO DEBUG/DEV
+		HTTPJSON(w, http.StatusTeapot, "REDIRECTING")
+		//new_fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+		//new_fn.ServeHTTP(w, r)
+		slog.Warn("[DEBUG] new_fn")
+	}
+}
+
 // Parses Authorization header and matches pattern {string}.{string}.{string}
 // to find the potential JWT. So if the header looks like e.g. 'Authorization':'Bearer {JWT}'
 // only the actual JWT is returned.

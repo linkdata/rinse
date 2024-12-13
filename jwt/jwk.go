@@ -79,10 +79,10 @@ func ParseX09AsPublicKey(key, kid string) (any, *time.Time, error) {
 	)
 
 	if b, err = base64.StdEncoding.DecodeString(key); err != nil {
-		return nil, nil, fmt.Errorf("error decoding certificate %q: %w", kid, err)
+		return nil, nil, ErrFailedToParseCertFn(kid, err)
 	}
 	if cert, err = x509.ParseCertificate(b); err != nil {
-		return nil, nil, fmt.Errorf("error parsing certificate %q: %w", kid, err)
+		return nil, nil, ErrFailedToParseCertFn(kid, err)
 	}
 	return cert.PublicKey, &cert.NotAfter, nil
 }

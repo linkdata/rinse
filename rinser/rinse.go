@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"html/template"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -55,9 +54,9 @@ type Rinse struct {
 	jobs              []*Job
 	proxyUrl          string
 	externalIP        template.HTML
-	endpointJWTPubKey string            // endpoint for getting JWT public key used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
-	PublicJWTKeys     jwt.JSONWebKeySet //TODO more generalised, ie.PublicJWTKeys
-	admins            []string          // admins from settings
+	endpointJWTPubKey string // endpoint for getting JWT public key used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
+	JWTPublicKeys     jwt.JSONWebKeySet
+	admins            []string // admins from settings
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -116,8 +115,8 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									rns.OAuth2Settings.ClientID = "randomid"
 									rns.OAuth2Settings.ClientSecret = "hahanosecret"
 									rns.OAuth2Settings.Scopes = []string{"user.read"}*/
-								rns.endpointJWTPubKey = "http://192.168.50.124:8081/realms/rinse/protocol/openid-connect/certs" //TODO actually get this from somewhere
-								rns.PublicJWTKeys, err = jwt.GetJSONKeyWebSet(rns.endpointJWTPubKey)
+								rns.endpointJWTPubKey = "http://192.168.203.212:8081/realms/rinse/protocol/openid-connect/certs" //TODO actually get this from somewhere
+								rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointJWTPubKey)
 								if err != nil {
 									slog.Error("getting jwt public keys", "err", err)
 								}
@@ -216,41 +215,6 @@ func (rns *Rinse) runBackgroundTasks() {
 		for _, job := range rns.runTasks() {
 			rns.RemoveJob(job)
 		}
-	}
-}
-
-func (rns *Rinse) AskForAuthFn(fn http.HandlerFunc) http.Handler {
-	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
-}
-
-func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rns.CheckAuth(w, r, fn)
-	})
-}
-
-func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
-
-	/*
-	   - kolla om det finns JWT i header, använd den
-	   - om den inte finns, kolla om man kan hämta en från jaws sessionen
-	   - om inte det, redirecta till login så man kna hämta en
-	*/
-
-	jwtStr, err := GetJWTFromHeader(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-	inHeader := jwtStr != "" //TODO
-
-	inSession := false //TODO
-	if inHeader || inSession {
-		fn(w, r)
-		slog.Warn("[DEBUG] fn")
-	} else {
-		new_fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
-		new_fn.ServeHTTP(w, r)
-		slog.Warn("[DEBUG] new_fn")
 	}
 }
 
