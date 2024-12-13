@@ -3,23 +3,25 @@ package jwt
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	gojwt "github.com/golang-jwt/jwt/v5"
 )
 
 var ErrInvalidJWTForm = fmt.Errorf("auth token not in JWT format")
+var ErrJWTExpired = fmt.Errorf("jwt has expired")
 
 type JWTHeader struct {
-	Algorithm string `json:"alg"`
-	Type      string `json:"typ"`
 	Kid       string `json:"kid"`
+	Algorithm string `json:"alg"`
+	//Type      string `json:"typ"` //unsure what this should be used for
 }
 
 type JWTPayload struct {
-	Issuer string `json:"iss"`
-	Type   string `json:"typ"`
-	// TODO add on more here
+	Expires int64 `json:"exp"` // UNIX timestamp
+	// Issuer  string `json:"iss"`	//TODO check ie if the issuer is an approved one?
 }
 
 // decodeJWTStringToBytes decodes a JWT specific base64url encoding,
@@ -56,10 +58,21 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// check that JWT not expired
+	var payload JWTPayload
+	json.Unmarshal(decodeJWTStringToBytes(p64), &payload)
+	expirationDate := time.Unix(payload.Expires, 0)
+	now := time.Now()
+	slog.Warn("[DEBUG]", "now", now.String(), "exp", expirationDate.String())
+	expired := expirationDate.Before(now)
+	if expired {
+		return false, fmt.Errorf("%w: %s", ErrJWTExpired, expirationDate.String())
+	}
+
+	// check header for signing algorithm
 	var header JWTHeader
 	json.Unmarshal(decodeJWTStringToBytes(h64), &header)
-
-	//TODO check payload, ie is the issuer an approved one
 	kid := header.Kid
 	method := gojwt.GetSigningMethod(header.Algorithm)
 

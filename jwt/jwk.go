@@ -18,11 +18,9 @@ var (
 )
 
 type JSONWebKey struct {
-	KeyId        string   `json:"kid"`
-	KeyType      string   `json:"kty"`
-	Algorithm    string   `json:"alg"`
-	PublicKeyUse string   `json:"use"`
-	X509Cert     []string `json:"x5c"`
+	KeyId          string   `json:"kid"`
+	X509Thumbprint string   `json:"x5t"` //TODO can this be used for smth?
+	X509Cert       []string `json:"x5c"`
 }
 
 type JSONWebKeySet map[string]JSONWebKey
