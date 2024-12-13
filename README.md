@@ -27,6 +27,27 @@ start in HTTPS mode.
 
 `podman run --read-only --cap-drop=ALL --cap-add=CAP_SYS_CHROOT --rm -d -p 8443:8443 -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
 
+### *Using config file*
+ `rinse` will look for a config file named `rinse.json` in its data directory (datadir) to use when configuring its settings. The default path for datadir is `/etc/rinse` for regular users and `/var/rinse/` for root users, so the default config file path is `/etc/rinse/rinse.json`.
+
+In this config file the following may be added:
+|Settings||||
+| -- | -- | -- | -- |
+| *What* | *Type* | *Default* | *Adjustable*\* |
+| MaxSizeMB        |int| 2048 | yes |
+|	CleanupSec      |int| 86400 | yes |
+|	MaxTimeSec      |int| 3600 | yes |
+|	MaxConcurrent   |int| 2 | yes |
+|	CleanupGotten   |bool| True | yes |
+|	OAuth2          |JawsAuth.Config (nested)| - | - |
+|	ProxyURL        |string| - | yes |
+|	Admins          |[]string| - | yes |
+|	EndpointForJWKs |string| - | - |
+
+\* Can be changed during runtime by admins 
+
+See [JawsAuth](https://github.com/linkdata/jawsauth) or [jawsauth/config.go](https://github.com/linkdata/jawsauth/blob/main/config.go) specifically for details on JawsAuth.Config.
+
 ## REST API
 
 The container image will by default start `/usr/bin/rinse`, but it also provides a development version you can use by
