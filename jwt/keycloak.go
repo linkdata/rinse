@@ -1,32 +1,34 @@
-package rinser
+package jwt
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"regexp"
 )
 
 var ErrNoJWTFoundInHeader = fmt.Errorf("no JWT found in header")
 var ErrInvalidJWTForm = fmt.Errorf("auth token not in JWT format")
 
-type KeycloakPublicKey struct {
-	Kid string   `json:"kid"`
-	Kty string   `json:"kty"`
-	Alg string   `json:"alg"`
-	Use string   `json:"use"`
-	X5c []string `json:"x5c"`
+type JSONWebKeySet map[string]JSONWebKey
+
+// Json Web Key set (JWK)
+// see https://www.keycloak.org/docs-api/21.1.2/javadocs/constant-values.html
+type JSONWebKey struct {
+	KeyId        string   `json:"kid"`
+	KeyType      string   `json:"kty"`
+	Algorithm    string   `json:"alg"`
+	PublicKeyUse string   `json:"use"`
+	Modulus      string   `json:"n"`
+	Exponent     string   `json:"e"`
+	X509Cert     []string `json:"x5c"`
 }
 
-func (p KeycloakPublicKey) String() string {
-	return fmt.Sprintf("\n{\nkid: %s\nkty: %s\nalg: %s\nx5c: %s\n}\n", p.Kid, p.Kty, p.Alg, p.X5c)
+func (p JSONWebKey) String() string {
+	return fmt.Sprintf("\n{\nkid: %s\nalg: %s\nx5c: %s\n}\n", p.KeyId, p.Algorithm, p.X509Cert)
 }
 
-type KeycloakPubKeys map[string]KeycloakPublicKey
-
-func GetKeycloakSigningPubKeys(endpoint string) (keys KeycloakPubKeys, err error) {
+func GetKeycloakJWKs(endpoint string) (keys JSONWebKeySet, err error) {
 	var resp *http.Response
 	resp, err = http.Get(endpoint)
 	if err != nil {
@@ -41,34 +43,18 @@ func GetKeycloakSigningPubKeys(endpoint string) (keys KeycloakPubKeys, err error
 	}
 
 	var tmp struct {
-		Keys []KeycloakPublicKey `json:"keys"`
+		Keys []JSONWebKey `json:"keys"`
 	}
 	err = json.Unmarshal(body, &tmp)
 
 	for _, k := range tmp.Keys {
-		keys[k.Kid] = k
+		keys[k.KeyId] = k
 	}
 
 	return
 }
 
-func GetJWTFromHeader(r *http.Request) (string, error) {
-	header := r.Header
-	auth := header.Get("Authorization")
-	slog.Warn("[DEBUG]", "header", auth)
-	if auth == "" {
-		return "", ErrNoJWTFoundInHeader
-	}
-
-	re := regexp.MustCompile(`(^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)`)
-	jwt := re.FindString(auth)
-	slog.Warn("[DEBUG]", "jwt", jwt)
-	if jwt == "" {
-		return "", ErrInvalidJWTForm
-	}
-
-	return jwt, nil
-}
+func (key *JSONWebKey) GetFirstX509Cert()
 
 /*
 func (rns *Rinse) FoundJWTInSession(r *http.Request) (string, error) {

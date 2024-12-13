@@ -23,6 +23,7 @@ import (
 	"github.com/linkdata/jaws/jawsboot"
 	"github.com/linkdata/jaws/staticserve"
 	"github.com/linkdata/jawsauth"
+	"github.com/linkdata/rinse/jwt"
 	"github.com/linkdata/webserv"
 )
 
@@ -54,9 +55,9 @@ type Rinse struct {
 	jobs              []*Job
 	proxyUrl          string
 	externalIP        template.HTML
-	endpointJWTPubKey string          // endpoint for getting JWT public key used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
-	PublicJWTKeys     KeycloakPubKeys //TODO more generalised, ie.PublicJWTKeys
-	admins            []string        // admins from settings
+	endpointJWTPubKey string            // endpoint for getting JWT public key used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
+	PublicJWTKeys     jwt.JSONWebKeySet //TODO more generalised, ie.PublicJWTKeys
+	admins            []string          // admins from settings
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -116,7 +117,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									rns.OAuth2Settings.ClientSecret = "hahanosecret"
 									rns.OAuth2Settings.Scopes = []string{"user.read"}*/
 								rns.endpointJWTPubKey = "http://192.168.50.124:8081/realms/rinse/protocol/openid-connect/certs" //TODO actually get this from somewhere
-								rns.PublicJWTKeys, err = GetKeycloakSigningPubKeys(rns.endpointJWTPubKey)
+								rns.PublicJWTKeys, err = jwt.GetKeycloakJWKs(rns.endpointJWTPubKey)
 								if err != nil {
 									slog.Error("getting jwt public keys", "err", err)
 								}
@@ -236,11 +237,11 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 	   - om inte det, redirecta till login så man kna hämta en
 	*/
 
-	jwt, err := GetJWTFromHeader(r)
+	jwtStr, err := jwt.GetJWTFromHeader(r)
 	if err != nil {
 		log.Fatal(err)
 	}
-	inHeader := jwt != "" //TODO
+	inHeader := jwtStr != "" //TODO
 
 	inSession := false //TODO
 	if inHeader || inSession {
