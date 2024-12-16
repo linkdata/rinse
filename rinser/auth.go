@@ -1,6 +1,7 @@
 package rinser
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -21,7 +22,7 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	})
 }
 
-// Checks for JWT in header or session, if no valid JWT is found, redirects to login
+// Checks for JWT in header, if no JWT is found, redirects to login
 // If JWT is found in header but is invalid, error response is return to caller.
 func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
 	/*
@@ -30,32 +31,29 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 		If no token found in neither header nor session,
 	*/
 	var (
-		inHeader  bool
-		inSession bool
-		err       error
+		token    string
+		inHeader bool
+		err      error
 	)
 
-	token, err := GetJWTFromHeader(r)
+	token, err = GetJWTFromHeader(r)
 	if err == nil {
 		inHeader, err = jwt.VerifyJWT(token, rns.JWTPublicKeys)
-		if err == nil {
-			rns.JawsAuth.SessionTokenKey = token
-		} else {
-			SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-	} else {
-		inSession, _ = rns.FoundValidJWTInSession()
 	}
 
-	if inHeader || inSession {
+	if err != nil && !errors.Is(err, ErrNoJWTFoundInHeader) {
+		SendHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if inHeader {
 		fn(w, r)
 		slog.Warn("[DEBUG] fn")
 	} else {
 		// TODO DEBUG/DEV
 		//HTTPJSON(w, http.StatusTeapot, "REDIRECTING")
-		new_fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
-		new_fn.ServeHTTP(w, r)
+		fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+		fn.ServeHTTP(w, r)
 		slog.Warn("[DEBUG] new_fn")
 	}
 }
