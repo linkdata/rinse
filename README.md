@@ -17,7 +17,7 @@ with a read-only root filesystem. Inside the container we use [gVisor](https://g
 because gVisor requires the container to be started with `--cap-add=CAP_SYS_CHROOT`, we must add that argument. If you're using SELinux,
 podman will also need the `--security-opt label=type:container_engine_t` argument.
 
-If you want the service to remember it's settings between runs, you'll need to mount a volume at `/etc/rinse` inside the container.
+If you want the service to remember it's settings between runs, you'll need to mount a volume at `/etc/rinse` inside the container. More on this [here](#using-config-file).
 
 `podman run --read-only --cap-drop=ALL --cap-add=CAP_SYS_CHROOT --rm -d -p 8080:8080 -v $HOME:/etc/rinse ghcr.io/linkdata/rinse`
 
@@ -28,7 +28,7 @@ start in HTTPS mode.
 `podman run --read-only --cap-drop=ALL --cap-add=CAP_SYS_CHROOT --rm -d -p 8443:8443 -v $HOME:/etc/rinse -v $HOME/certs:/etc/certs ghcr.io/linkdata/rinse`
 
 ### *Using config file*
- `rinse` will look for a config file named `rinse.json` in its data directory (datadir) to use when configuring its settings. The default path for datadir is `/etc/rinse` for regular users and `/var/rinse/` for root users, so the default config file path is `/etc/rinse/rinse.json`.
+The service will look for a config file named `rinse.json` in its data directory (datadir) to use when configuring its settings. The default path for datadir is `/etc/rinse` for regular users and `/var/rinse/` for root users, so the default config file path inside the container is `/etc/rinse/rinse.json`. If you wish to use a config file you need to either change the run script - either by adding another volume to mount or by create the mounted directory (`/tmp/rinse`) and placing the config within before running the script.
 
 In this config file the following may be added:
 |Settings||||
