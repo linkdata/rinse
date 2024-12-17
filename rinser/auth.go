@@ -3,7 +3,6 @@ package rinser
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"regexp"
 
@@ -22,14 +21,18 @@ func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
 	})
 }
 
+func (rns *Rinse) setUsernameInSession(w http.ResponseWriter, r *http.Request, username string) {
+	sess := rns.Jaws.GetSession(r)
+	if sess == nil {
+		sess = rns.Jaws.NewSession(w, r)
+	}
+	sess.Set(rns.JawsAuth.SessionEmailKey, username)
+}
+
 // Checks for JWT in header, if no JWT is found, redirects to login
 // If JWT is found in header but is invalid, error response is return to caller.
+// If JWT is found in header and valid, sets EmailKey in session to the 'username' gotten from the JWT
 func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.HandlerFunc) {
-	/*
-		If no token is found in header, check whether there is a valid token in session
-		If token found but not valid, return error respose
-		If no token found in neither header nor session,
-	*/
 	var (
 		token    string
 		inHeader bool
@@ -39,6 +42,13 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 	token, err = GetJWTFromHeader(r)
 	if err == nil {
 		inHeader, err = jwt.VerifyJWT(token, rns.JWTPublicKeys)
+		if err == nil {
+			var username string
+			username, err = jwt.GetUsernameFromPayload(token)
+			if err == nil {
+				rns.setUsernameInSession(w, r, username)
+			}
+		}
 	}
 
 	if err != nil && !errors.Is(err, ErrNoJWTFoundInHeader) {
@@ -48,13 +58,9 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 
 	if inHeader {
 		fn(w, r)
-		slog.Warn("[DEBUG] fn")
 	} else {
-		// TODO DEBUG/DEV
-		//HTTPJSON(w, http.StatusTeapot, "REDIRECTING")
 		fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 		fn.ServeHTTP(w, r)
-		slog.Warn("[DEBUG] new_fn")
 	}
 }
 
@@ -73,7 +79,6 @@ func GetJWTFromHeader(r *http.Request) (string, error) {
 
 	re := regexp.MustCompile(`(^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)`)
 	jwtStr = re.FindString(auth)
-	slog.Warn("[DEBUG]", "jwt", jwtStr)
 	if jwtStr == "" {
 		return "", jwt.ErrInvalidJWTForm
 	}

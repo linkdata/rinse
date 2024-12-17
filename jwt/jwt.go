@@ -20,7 +20,8 @@ type JWTHeader struct {
 }
 
 type JWTPayload struct {
-	Expires int64 `json:"exp"` // UNIX timestamp
+	Username string `json:"preferred_username,omitempty"`
+	Expires  int64  `json:"exp"` // UNIX timestamp
 	// Issuer  string `json:"iss"`	//TODO check ie if the issuer is an approved one?
 }
 
@@ -47,6 +48,19 @@ func extractHeaderPayloadSignature(jwt string) (header, payload, signature strin
 	return
 }
 
+func GetUsernameFromPayload(jwt string) (string, error) {
+	_, p, _, err := extractHeaderPayloadSignature(jwt)
+	if err != nil {
+		return "", err
+	}
+	var payload JWTPayload
+	err = json.Unmarshal(decodeJWTStringToBytes(p), &payload)
+	if err != nil {
+		return "", err
+	}
+	return payload.Username, nil
+}
+
 // Verify whether a JSON Web Token is valid.
 // Takes the token in form of a string and a set of JSON Web Keys (public keys/certs) as input.
 func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
@@ -63,9 +77,9 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	var payload JWTPayload
 	json.Unmarshal(decodeJWTStringToBytes(p64), &payload)
 	expirationDate := time.Unix(payload.Expires, 0)
-	now := time.Now()
-	slog.Warn("[DEBUG]", "now", now.String(), "exp", expirationDate.String())
+	now := time.Now().Truncate(time.Second)
 	expired := expirationDate.Before(now)
+	slog.Warn("[DEBUG]", "expired", expired, "now", now.String(), "exp", expirationDate.String())
 	if expired {
 		return false, fmt.Errorf("%w: %s", ErrJWTExpired, expirationDate.String())
 	}
