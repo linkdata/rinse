@@ -58,6 +58,7 @@ func (rns *Rinse) loadSettings() (err error) {
 		err = json.Unmarshal(b, &x)
 	} else if errors.Is(err, os.ErrNotExist) {
 		err = nil
+		rns.Config.Logger.Info("No settings file found.")
 	}
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
