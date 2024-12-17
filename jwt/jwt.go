@@ -88,8 +88,8 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	kid := header.Kid
 	method := gojwt.GetSigningMethod(header.Algorithm)
 
-	// Get public key
-	cert, err := FetchX09Cert(certs, kid) //TODO undersök det här med att den är en lista..
+	// get public key
+	cert, err := FetchX09SignCert(certs, kid)
 	if err != nil {
 		return false, err
 	}

@@ -11,16 +11,16 @@ import (
 )
 
 var (
-	ErrNoJWKAvailable      = fmt.Errorf("no JWKs (certs or public keys) available")
-	ErrNoMatchingJWKFound  = fmt.Errorf("no JWK with mathing KeyId found")
-	ErrUnknownKeyType      = fmt.Errorf("JWK key of unknown type")
-	ErrFailedToParseCertFn = func(kid string, err error) error { return fmt.Errorf("error decoding certificate %q: %w", kid, err) }
+	ErrNoJWKAvailable       = fmt.Errorf("no JWKs (certs or public keys) available")
+	ErrNoMatchingJWKFound   = fmt.Errorf("no JWK with mathing KeyId found")
+	ErrUnknownKeyType       = fmt.Errorf("JWK key of unknown type")
+	ErrFailedToParseCertFn  = func(kid string, err error) error { return fmt.Errorf("error decoding certificate %q: %w", kid, err) }
+	ErrUnsupportedCertChain = fmt.Errorf("JWK certificate chain unsupported")
 )
 
 type JSONWebKey struct {
-	KeyId          string   `json:"kid"`
-	X509Thumbprint string   `json:"x5t"` //TODO can this be used for smth?
-	X509Cert       []string `json:"x5c"`
+	KeyId    string   `json:"kid"`
+	X509Cert []string `json:"x5c"`
 }
 
 type JSONWebKeySet map[string]JSONWebKey
@@ -55,7 +55,7 @@ func GetJSONKeyWebSet(endpoint string) (jwks JSONWebKeySet, err error) {
 	return
 }
 
-func FetchX09Cert(keys JSONWebKeySet, kid string) (string, error) {
+func FetchX09SignCert(keys JSONWebKeySet, kid string) (string, error) {
 	cert, ok := keys[kid]
 	if !ok {
 		return "", ErrNoMatchingJWKFound
@@ -64,8 +64,15 @@ func FetchX09Cert(keys JSONWebKeySet, kid string) (string, error) {
 	certs := cert.X509Cert
 	if len(certs) == 0 {
 		return "", ErrNoJWKAvailable
+	} else if len(certs) > 1 {
+		return "", ErrUnsupportedCertChain
 	}
-	return certs[0], nil
+
+	// The x5c certificate is always the first in this list,
+	// though it may be followed by a whole certificate chain
+	// RFC 77515 https://www.rfc-editor.org/rfc/rfc7515#section-4.1.6
+	signCert := certs[0]
+	return signCert, nil
 }
 
 func ParseX09AsPublicKey(key, kid string) (any, *time.Time, error) {
