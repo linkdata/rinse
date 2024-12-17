@@ -3,7 +3,6 @@ package jwt
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -79,7 +78,6 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 	expirationDate := time.Unix(payload.Expires, 0)
 	now := time.Now().Truncate(time.Second)
 	expired := expirationDate.Before(now)
-	slog.Warn("[DEBUG]", "expired", expired, "now", now.String(), "exp", expirationDate.String())
 	if expired {
 		return false, fmt.Errorf("%w: %s", ErrJWTExpired, expirationDate.String())
 	}
