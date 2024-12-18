@@ -21,7 +21,8 @@ This module expects the following claims in header and payload:
 | Payload |||
 |--|--|--|
 | *Claim* | *Format* | *Description* |
-| preferred_username | String | Username |
+| unique_name | String | Username (Microsoft Token V1.0) |
+| preferred_username | String | Username (Microsoft Token V2.0, Keycloak)|
 | exp | Int64 (UNIX timestamp) | Expiration date |
 
 
