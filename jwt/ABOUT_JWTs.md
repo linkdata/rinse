@@ -21,7 +21,7 @@ This module expects the following claims in header and payload:
 | Payload |||
 |--|--|--|
 | *Claim* | *Format* | *Description* |
-| iss | String | Key id |
+| preferred_username | String | Username |
 | exp | Int64 (UNIX timestamp) | Expiration date |
 
 
