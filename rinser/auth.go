@@ -79,7 +79,13 @@ func GetJWTFromHeader(r *http.Request) (string, error) {
 		return "", ErrNoJWTFoundInHeader
 	}
 
-	re := regexp.MustCompile(`(^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)`)
+	// \w+\.\w+\.\w+ matches the JWT pattern 'header.payload.signature'
+	// \w is equivalent [A-Za-z0-9-_]
+	re, err := regexp.Compile(`\w+\.\w+\.\w+`)
+	if err != nil {
+		return "", jwt.ErrInvalidJWTForm
+	}
+
 	jwtStr = re.FindString(auth)
 	if jwtStr == "" {
 		return "", jwt.ErrInvalidJWTForm
