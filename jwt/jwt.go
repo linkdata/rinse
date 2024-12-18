@@ -20,7 +20,6 @@ type JWTHeader struct {
 type JWTPayload struct {
 	Username string `json:"preferred_username,omitempty"`
 	Expires  int64  `json:"exp"` // UNIX timestamp
-	// Issuer  string `json:"iss"`	//TODO check ie if the issuer is an approved one?
 }
 
 // decodeJWTStringToBytes decodes a JWT specific base64url encoding,
