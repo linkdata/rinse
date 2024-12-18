@@ -245,7 +245,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.JawsAuth.HandlerAdmin("setup.html", rns))
 	mux.Handle("GET /about/{$}", rns.JawsAuth.Handler("about.html", rns))
-	mux.Handle("POST /submit", rns.AskForAuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
+	mux.Handle("POST /submit", rns.RedirectAuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
 
 	if !devel {
 		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))

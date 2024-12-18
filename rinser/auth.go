@@ -11,7 +11,7 @@ import (
 
 var ErrNoJWTFoundInHeader = fmt.Errorf("no JWT found in header")
 
-func (rns *Rinse) AskForAuthFn(fn http.HandlerFunc) http.Handler {
+func (rns *Rinse) RedirectAuthFn(fn http.HandlerFunc) http.Handler {
 	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
 }
 
@@ -43,6 +43,8 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 	if err == nil {
 		inHeader, err = jwt.VerifyJWT(token, rns.JWTPublicKeys)
 		if err == nil {
+			// sets username in session in order to get fine-grain control
+			// over what a user can access
 			var username string
 			username, err = jwt.GetUsernameFromPayload(token)
 			if err == nil {
@@ -59,7 +61,7 @@ func (rns *Rinse) CheckAuth(w http.ResponseWriter, r *http.Request, fn http.Hand
 	if inHeader {
 		fn(w, r)
 	} else {
-		fn := rns.JawsAuth.Wrap(http.HandlerFunc(fn))
+		fn := rns.RedirectAuthFn(fn)
 		fn.ServeHTTP(w, r)
 	}
 }
