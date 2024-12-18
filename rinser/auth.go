@@ -79,9 +79,11 @@ func GetJWTFromHeader(r *http.Request) (string, error) {
 		return "", ErrNoJWTFoundInHeader
 	}
 
-	// \w+\.\w+\.\w+ matches the JWT pattern 'header.payload.signature'
+	// The regexp matches the JWT pattern 'header.payload.signature'
+	// each of which element is a base64URL
+	// RFC4648 https://datatracker.ietf.org/doc/html/rfc4648#section-5
 	// \w is equivalent [A-Za-z0-9-_]
-	re, err := regexp.Compile(`\w+\.\w+\.\w+`)
+	re, err := regexp.Compile(`([\w\-\_]+\.[\w\-\_]+\.[\w\-\_]+)`)
 	if err != nil {
 		return "", jwt.ErrInvalidJWTForm
 	}
