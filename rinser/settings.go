@@ -10,14 +10,15 @@ import (
 )
 
 type settings struct {
-	MaxSizeMB     int
-	CleanupSec    int
-	MaxTimeSec    int
-	MaxConcurrent int
-	CleanupGotten bool
-	OAuth2        jawsauth.Config
-	ProxyURL      string
-	Admins        []string
+	MaxSizeMB       int
+	CleanupSec      int
+	MaxTimeSec      int
+	MaxConcurrent   int
+	CleanupGotten   bool
+	OAuth2          jawsauth.Config
+	ProxyURL        string
+	Admins          []string
+	EndpointForJWKs string // endpoint for getting JWKs used for JWT verification e.g. {keycloak-root-endpoint}/realms/{realm-name}/protocol/openid-connect/certs
 }
 
 func (rns *Rinse) SettingsFile() string {
@@ -57,6 +58,7 @@ func (rns *Rinse) loadSettings() (err error) {
 		err = json.Unmarshal(b, &x)
 	} else if errors.Is(err, os.ErrNotExist) {
 		err = nil
+		rns.Config.Logger.Info("No settings file found.")
 	}
 	rns.mu.Lock()
 	defer rns.mu.Unlock()
@@ -68,5 +70,6 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.OAuth2Settings = x.OAuth2
 	rns.proxyUrl = x.ProxyURL
 	rns.admins = x.Admins
+	rns.endpointForJWKs = x.EndpointForJWKs
 	return
 }

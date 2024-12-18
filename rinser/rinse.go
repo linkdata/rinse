@@ -22,6 +22,7 @@ import (
 	"github.com/linkdata/jaws/jawsboot"
 	"github.com/linkdata/jaws/staticserve"
 	"github.com/linkdata/jawsauth"
+	"github.com/linkdata/rinse/jwt"
 	"github.com/linkdata/webserv"
 )
 
@@ -35,25 +36,27 @@ var ErrDuplicateUUID = errors.New("duplicate UUID")
 const WorkerImage = "ghcr.io/linkdata/rinseworker"
 
 type Rinse struct {
-	Config         *webserv.Config
-	Jaws           *jaws.Jaws
-	JawsAuth       *jawsauth.Server
-	RunscBin       string
-	RootDir        string
-	FaviconURI     string
-	Languages      []string
-	mu             deadlock.Mutex // protects following
-	OAuth2Settings jawsauth.Config
-	closed         bool
-	maxSizeMB      int
-	cleanupSec     int
-	maxTimeSec     int
-	maxConcurrent  int
-	cleanupGotten  bool
-	jobs           []*Job
-	proxyUrl       string
-	externalIP     template.HTML
-	admins         []string // admins from settings
+	Config          *webserv.Config
+	Jaws            *jaws.Jaws
+	JawsAuth        *jawsauth.Server
+	RunscBin        string
+	RootDir         string
+	FaviconURI      string
+	Languages       []string
+	mu              deadlock.Mutex // protects following
+	OAuth2Settings  jawsauth.Config
+	closed          bool
+	maxSizeMB       int
+	cleanupSec      int
+	maxTimeSec      int
+	maxConcurrent   int
+	cleanupGotten   bool
+	jobs            []*Job
+	proxyUrl        string
+	externalIP      template.HTML
+	admins          []string // admins from settings
+	endpointForJWKs string
+	JWTPublicKeys   jwt.JSONWebKeySet
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -115,6 +118,18 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								if deadlock.Debug {
 									overrideUrl = cfg.ListenURL
 								}
+
+								if rns.endpointForJWKs != "" {
+									rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointForJWKs)
+									if err != nil {
+										slog.Error("failed getting jwt public keys", "err", err)
+									} else {
+										slog.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
+									}
+								} else {
+									slog.Warn("No endpoint for fetching JWKs")
+								}
+
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
 									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
 										var adminstr string
@@ -212,10 +227,6 @@ func (rns *Rinse) runBackgroundTasks() {
 	}
 }
 
-func (rns *Rinse) AuthFn(fn http.HandlerFunc) http.Handler {
-	return rns.JawsAuth.Wrap(http.HandlerFunc(fn))
-}
-
 func (rns *Rinse) GetEmail(hr *http.Request) (s string) {
 	if email, ok := rns.Jaws.GetSession(hr).Get(rns.JawsAuth.SessionEmailKey).(string); ok {
 		s = strings.TrimSpace(email)
@@ -246,7 +257,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET /{$}", rns.JawsAuth.Handler("index.html", rns))
 	mux.Handle("GET /setup/{$}", rns.JawsAuth.HandlerAdmin("setup.html", rns))
 	mux.Handle("GET /about/{$}", rns.JawsAuth.Handler("about.html", rns))
-	mux.Handle("POST /submit", rns.AuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
+	mux.Handle("POST /submit", rns.RedirectAuthFn(func(w http.ResponseWriter, r *http.Request) { rns.handlePost(true, w, r) }))
 
 	if !devel {
 		mux.Handle("GET /api/{$}", rns.JawsAuth.Handler("api.html", rns))
