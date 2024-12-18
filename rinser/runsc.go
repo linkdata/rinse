@@ -31,7 +31,7 @@ func mustJson(obj any) string {
 
 var configJsonTmpl = template.Must(template.New("config.tmpl").ParseFS(assetsFS, "assets/config.tmpl"))
 
-func runsc(ctx context.Context, rootfsDir, workDir string, id string, outhandler func(string, bool) error, cmds ...string) (err error) {
+func runsc(ctx context.Context, runscBin, rootfsDir, workDir string, id string, outhandler func(string, bool) error, cmds ...string) (err error) {
 	var f *os.File
 	if f, err = os.Create(path.Join(workDir, "config.json")); err == nil /* #nosec G304 */ {
 		defer f.Close()
@@ -57,8 +57,8 @@ func runsc(ctx context.Context, rootfsDir, workDir string, id string, outhandler
 							runscargs = append(runscargs, "-rootless")
 						}
 						runscargs = append(runscargs, "run", "-bundle", workDir, id)
-						slog.Info("runsc", "args", runscargs, "cmd", cmds)
-						cmd := exec.Command("runsc", runscargs...) // #nosec G204
+						slog.Info(runscBin, "args", runscargs, "cmd", cmds)
+						cmd := exec.Command(runscBin, runscargs...) // #nosec G204
 						cmd.Dir = workDir
 						var errlines []string
 						defer func() {
