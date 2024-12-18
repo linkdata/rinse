@@ -37,7 +37,7 @@ The JSON Web Key Set (JWKS) is a set of keys which contains the public keys used
 ### Authorization servers
 The authorization server is the party that issues JWTs, and provides JWKs (if public/private key signing is used). 
 
-The endpoint for fetching JWKs is expected to return a JSON that looks something like this: 
+Often this server has an endpoint that can be used for fetching its JWKs. This module expects the endpoint to return a JSON that looks something like this: 
 ```
 {
   "keys":[
@@ -55,9 +55,12 @@ The endpoint for fetching JWKs is expected to return a JSON that looks something
 ```
 The keys may have more properties (i.e. `kty`, `alg`, `use`), but `kid` and `x5c` are the only necessary ones.
 
-Keycloak and Microsoft Entra ID should both follow this formula and be supported. 
+Keycloak and Microsoft Entra both follow this formula. 
+
+[!] Keycloak has been tested, while Entra has not. 
 
 ### Further reading
 - https://jwt.io/
 - JWT, JWE, JKW explained https://medium.com/@goynikhil/what-is-jwt-jws-jwe-and-jwk-when-we-should-use-which-token-in-our-business-applications-74ae91f7c96b
 - JWK properties https://stytch.com/blog/understanding-jwks/
+- RFC7515 (JSON Web Signature standard) https://www.rfc-editor.org/rfc/rfc7515

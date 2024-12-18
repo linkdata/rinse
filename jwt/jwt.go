@@ -15,7 +15,6 @@ var ErrJWTExpired = fmt.Errorf("jwt has expired")
 type JWTHeader struct {
 	Kid       string `json:"kid"`
 	Algorithm string `json:"alg"`
-	//Type      string `json:"typ"` //unsure what this should be used for
 }
 
 type JWTPayload struct {

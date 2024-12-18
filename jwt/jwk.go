@@ -19,8 +19,8 @@ var (
 )
 
 type JSONWebKey struct {
-	KeyId    string   `json:"kid"`
-	X509Cert []string `json:"x5c"`
+	KeyId     string   `json:"kid"`
+	X509Certs []string `json:"x5c"`
 }
 
 type JSONWebKeySet map[string]JSONWebKey
@@ -61,16 +61,16 @@ func FetchX09SignCert(keys JSONWebKeySet, kid string) (string, error) {
 		return "", ErrNoMatchingJWKFound
 	}
 
-	certs := cert.X509Cert
+	// The x5c certificate is always the first in this list,
+	// though it may be followed by a whole certificate chain.
+	// Source: RFC 77515 https://www.rfc-editor.org/rfc/rfc7515#section-4.1.6
+	certs := cert.X509Certs
 	if len(certs) == 0 {
 		return "", ErrNoJWKAvailable
 	} else if len(certs) > 1 {
+		// We currently only support cases with only the signing cert.
 		return "", ErrUnsupportedCertChain
 	}
-
-	// The x5c certificate is always the first in this list,
-	// though it may be followed by a whole certificate chain
-	// RFC 77515 https://www.rfc-editor.org/rfc/rfc7515#section-4.1.6
 	signCert := certs[0]
 	return signCert, nil
 }
