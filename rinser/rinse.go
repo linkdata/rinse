@@ -54,9 +54,9 @@ type Rinse struct {
 	jobs            []*Job
 	proxyUrl        string
 	externalIP      template.HTML
+	admins          []string // admins from settings
 	endpointForJWKs string
 	JWTPublicKeys   jwt.JSONWebKeySet
-	admins          []string // admins from settings
 }
 
 var ErrWorkerRootDirNotFound = errors.New("/opt/rinseworker not found")
@@ -103,14 +103,14 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
 								}
 								var overrideUrl string
-								/*								if deadlock.Debug {
-																	overrideUrl = cfg.ListenURL
-																}
-								*/
+								if deadlock.Debug {
+									overrideUrl = cfg.ListenURL
+								}
+
 								if rns.endpointForJWKs != "" {
 									rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointForJWKs)
 									if err != nil {
-										slog.Error("getting jwt public keys", "err", err)
+										slog.Error("failed getting jwt public keys", "err", err)
 									} else {
 										slog.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
 									}
