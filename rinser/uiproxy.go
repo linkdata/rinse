@@ -38,7 +38,7 @@ func (u *uiProxy) Address() any {
 	return u.Binder
 }
 
-func (u *uiProxy) ExternalIP() jaws.HtmlGetter {
+func (u *uiProxy) ExternalIP() jaws.HTMLGetter {
 	return u.UiExternalIP()
 }
 

@@ -15,15 +15,15 @@ import (
 
 type uiExternalIP struct{ *Rinse }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (u uiExternalIP) JawsGetHtml(e *jaws.Element) (s template.HTML) {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (u uiExternalIP) JawsGetHTML(e *jaws.Element) (s template.HTML) {
 	u.mu.Lock()
 	s = u.externalIP
 	u.mu.Unlock()
 	return
 }
 
-func (rns *Rinse) UiExternalIP() (ui jaws.HtmlGetter) {
+func (rns *Rinse) UiExternalIP() (ui jaws.HTMLGetter) {
 	return uiExternalIP{rns}
 }
 

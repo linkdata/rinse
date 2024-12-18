@@ -12,7 +12,7 @@ type uiClock struct{}
 
 var uiClockStart sync.Once
 
-func (ui uiClock) JawsGetHtml(e *jaws.Element) template.HTML {
+func (ui uiClock) JawsGetHTML(e *jaws.Element) template.HTML {
 	uiClockStart.Do(func() {
 		go func(jw *jaws.Jaws) {
 			for {
@@ -30,6 +30,6 @@ func (ui uiClock) JawsGetHtml(e *jaws.Element) template.HTML {
 	return template.HTML(now.Format(tformat)) // #nosec G203
 }
 
-func (rns *Rinse) UiClock() jaws.HtmlGetter {
+func (rns *Rinse) UiClock() jaws.HTMLGetter {
 	return uiClock{}
 }

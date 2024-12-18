@@ -11,8 +11,8 @@ import (
 
 type uiJobLink struct{ *Job }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (ui uiJobLink) JawsGetHtml(rq *jaws.Element) template.HTML {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (ui uiJobLink) JawsGetHTML(rq *jaws.Element) template.HTML {
 	var s string
 	if ui.State() == JobFinished {
 		s = fmt.Sprintf(`<a target="_blank" href="/jobs/%s/rinsed">%s</a>`, ui.UUID, html.EscapeString(ui.ResultName()))
@@ -24,6 +24,6 @@ func (ui uiJobLink) JawsGetHtml(rq *jaws.Element) template.HTML {
 	return template.HTML(s) // #nosec G203
 }
 
-func (job *Job) UiLink() jaws.HtmlGetter {
+func (job *Job) UiLink() jaws.HTMLGetter {
 	return uiJobLink{job}
 }

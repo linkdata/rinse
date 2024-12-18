@@ -42,8 +42,8 @@ func jobStateText(n JobState) (statetxt string) {
 	return
 }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (ui uiJobStatus) JawsGetHTML(e *jaws.Element) template.HTML {
 	ui.mu.Lock()
 	diskuse := ui.Diskuse
 	state := ui.state
@@ -84,6 +84,6 @@ func (ui uiJobStatus) JawsGetHtml(e *jaws.Element) template.HTML {
 	return template.HTML(s) // #nosec G203
 }
 
-func (job *Job) UiStatus() (ui jaws.HtmlGetter) {
+func (job *Job) UiStatus() (ui jaws.HTMLGetter) {
 	return uiJobStatus{job}
 }

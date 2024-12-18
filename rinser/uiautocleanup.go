@@ -20,8 +20,8 @@ func (u uiAutoCleanup) Text() string {
 	return prettyDuration(time.Second * time.Duration(n))
 }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (u uiAutoCleanup) JawsGetHtml(rq *jaws.Element) template.HTML {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (u uiAutoCleanup) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
 
@@ -36,6 +36,6 @@ func (u uiAutoCleanup) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiAutoCleanup() jaws.HtmlGetter {
+func (rns *Rinse) UiAutoCleanup() jaws.HTMLGetter {
 	return uiAutoCleanup{rns}
 }

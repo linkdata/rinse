@@ -17,8 +17,8 @@ func (u uiMaxRuntime) Text() string {
 	}
 }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (u uiMaxRuntime) JawsGetHtml(rq *jaws.Element) template.HTML {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (u uiMaxRuntime) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
 
@@ -33,6 +33,6 @@ func (u uiMaxRuntime) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiMaxRuntime() jaws.HtmlGetter {
+func (rns *Rinse) UiMaxRuntime() jaws.HTMLGetter {
 	return uiMaxRuntime{rns}
 }

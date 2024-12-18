@@ -13,8 +13,8 @@ func (u uiMaxConcurrent) Text() string {
 	return strconv.Itoa(u.MaxConcurrent())
 }
 
-// JawsGetHtml implements jaws.HtmlGetter.
-func (u uiMaxConcurrent) JawsGetHtml(rq *jaws.Element) template.HTML {
+// JawsGetHTML implements jaws.HTMLGetter.
+func (u uiMaxConcurrent) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
 
@@ -31,6 +31,6 @@ func (u uiMaxConcurrent) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiMaxConcurrent() jaws.HtmlGetter {
+func (rns *Rinse) UiMaxConcurrent() jaws.HTMLGetter {
 	return uiMaxConcurrent{rns}
 }
