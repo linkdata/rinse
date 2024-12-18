@@ -57,8 +57,6 @@ The keys may have more properties (i.e. `kty`, `alg`, `use`), but `kid` and `x5c
 
 Keycloak and Microsoft Entra both follow this formula. 
 
-[!] Keycloak has been tested, while Entra has not. 
-
 ### Further reading
 - https://jwt.io/
 - JWT, JWE, JKW explained https://medium.com/@goynikhil/what-is-jwt-jws-jwe-and-jwk-when-we-should-use-which-token-in-our-business-applications-74ae91f7c96b
