@@ -11,6 +11,7 @@ import (
 
 var ErrInvalidJWTForm = fmt.Errorf("auth token not in JWT format")
 var ErrJWTExpired = fmt.Errorf("jwt has expired")
+var ErrUnidentifiedUser = fmt.Errorf("no username found with which to identify user")
 
 type JWTHeader struct {
 	Kid       string `json:"kid"`
@@ -18,8 +19,9 @@ type JWTHeader struct {
 }
 
 type JWTPayload struct {
-	Username string `json:"preferred_username,omitempty"`
-	Expires  int64  `json:"exp"` // UNIX timestamp
+	UniqueUsername    string `json:"unique_name,omitempty"`        // Microsoft Token V1.0
+	PreferredUsername string `json:"preferred_username,omitempty"` // Microsoft Token V2.0, Keycloak
+	Expires           int64  `json:"exp"`                          // UNIX timestamp
 }
 
 // decodeJWTStringToBytes decodes a JWT specific base64url encoding,
@@ -55,7 +57,17 @@ func GetUsernameFromPayload(jwt string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return payload.Username, nil
+
+	var username string
+	if payload.PreferredUsername != "" {
+		username = payload.PreferredUsername
+	} else if payload.UniqueUsername != "" {
+		username = payload.UniqueUsername
+	} else {
+		err = ErrUnidentifiedUser
+	}
+
+	return username, err
 }
 
 // Verify whether a JSON Web Token is valid.
