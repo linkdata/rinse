@@ -90,10 +90,10 @@ RUN apk --no-cache -U upgrade && apk --no-cache add \
 
 RUN update-ms-fonts && fc-cache -f
 
-RUN wget -O /tmp/KEYS https://www.apache.org/dist/tika/KEYS && \
+RUN wget --tries=3 -O /tmp/KEYS https://www.apache.org/dist/tika/KEYS && \
     gpg --import /tmp/KEYS && \
-    wget -O /tmp/tika.jar.asc https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar.asc && \
-    wget -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar && \
+    wget --tries=3 -O /tmp/tika.jar.asc https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar.asc && \
+    wget --tries=3 -O /usr/local/bin/tika.jar https://archive.apache.org/dist/tika/$TIKAVERSION/tika-app-$TIKAVERSION.jar && \
     gpg --verify /tmp/tika.jar.asc /usr/local/bin/tika.jar
 
 COPY tesseract_opencl_profile_devices.dat /
