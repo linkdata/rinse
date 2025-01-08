@@ -27,4 +27,4 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     secrets:
       new_version: ${{ steps.bump-semver.outputs.new_version }}
-      inherit
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
