@@ -2,6 +2,7 @@ name: Build, create and publish the main container image with new patch level
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   increment-patch-level:
