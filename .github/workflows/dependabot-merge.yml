@@ -1,5 +1,8 @@
-name: Dependabot auto-merge
-on: pull_request
+name: Dependabot merge
+
+on:
+  workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: write
