@@ -13,7 +13,7 @@ on:
 
 env:
     IMAGE_NAME: ${{ github.repository }}
-    IMAGE_TAGS: latest ${{ github.ref_name }} ${{ github.sha }} ${{ inputs.new_version != null && inputs.new_version }}
+    IMAGE_TAGS: latest ${{ github.sha }} ${{ inputs.new_version || github.ref_name }}
     IMAGE_REGISTRY: ghcr.io
     REGISTRY_USER: ${{ github.actor }}
     REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
