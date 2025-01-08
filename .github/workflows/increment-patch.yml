@@ -7,6 +7,8 @@ on:
 jobs:
   increment-patch-level:
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump-semver.outputs.new_version }}
     steps:
       - uses: actions/checkout@v2
 
@@ -24,7 +26,8 @@ jobs:
           tag: ${{ steps.bump-semver.outputs.new_version }}
           message: '${{ steps.bump-semver.outputs.new_version }}: PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}'
   build-image:
+    needs: increment-patch-level
     uses: ./.github/workflows/build-image.yml
-    secrets:
-      new_version: ${{ steps.bump-semver.outputs.new_version }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      new_version: ${{ needs.increment-patch-level.outputs.new_version }}
+    secrets: inherit

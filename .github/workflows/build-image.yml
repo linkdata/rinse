@@ -3,13 +3,17 @@ name: Build, create and publish the main container image
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      new_version:
+        required: true
+        type: string  
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
 env:
     IMAGE_NAME: ${{ github.repository }}
-    IMAGE_TAGS: latest ${{ github.ref_name }} ${{ github.sha }} ${{ secrets.new_version != null && secrets.new_version }}
+    IMAGE_TAGS: latest ${{ github.ref_name }} ${{ github.sha }} ${{ inputs.new_version != null && inputs.new_version }}
     IMAGE_REGISTRY: ghcr.io
     REGISTRY_USER: ${{ github.actor }}
     REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
