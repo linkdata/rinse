@@ -6,7 +6,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  dependabot:
+  dependabot-merge:
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'linkdata/rinse'
     steps:
@@ -25,5 +25,6 @@ jobs:
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - uses: ./.github/workflows/increment-patch.yml
-        secrets: inherit
+  increment-patch:
+    uses: ./.github/actions/increment-patch
+    secrets: inherit

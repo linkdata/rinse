@@ -22,6 +22,6 @@ jobs:
         with:
           tag: ${{ steps.bump-semver.outputs.new_version }}
           message: '${{ steps.bump-semver.outputs.new_version }}: PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}'
-
-      - uses: ./.github/workflows/build-image.yml
-        secrets: inherit
+  build-image:
+    uses: ./.github/workflows/build-image.yml
+    secrets: inherit
