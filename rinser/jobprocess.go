@@ -69,6 +69,7 @@ func (job *Job) processDone() {
 	job.Done = true
 	job.cancelFn = nil
 	closed := job.closed
+	close(job.StoppedCh)
 	job.mu.Unlock()
 	if l := job.Rinse.Config.Logger; l != nil {
 		job.Rinse.Config.Logger.Info("job stopped", "job", job.Name, "email", job.Email)

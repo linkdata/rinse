@@ -77,6 +77,9 @@ definitions:
       private:
         example: false
         type: boolean
+      stoppedCh:
+        description: closed when job stopped
+        type: object
       uuid:
         example: 550e8400-e29b-41d4-a716-446655440000
         format: uuid

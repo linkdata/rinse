@@ -45,6 +45,7 @@ type Job struct {
 	CleanupGotten bool           `json:"cleanupgotten" example:"true"`
 	Private       bool           `json:"private" example:"false"`
 	Email         string         `json:"email,omitempty" example:"user@example.com"`
+	StoppedCh     chan struct{}  // closed when job stopped
 	mu            deadlock.Mutex // protects following
 	Error         error          `json:"error,omitempty"`
 	PdfName       string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
@@ -52,7 +53,7 @@ type Job struct {
 	Done          bool           `json:"done,omitempty" example:"false"`
 	Diskuse       int64          `json:"diskuse,omitempty" example:"1234"`
 	Pages         int            `json:"pages,omitempty" example:"1"`
-	Downloads     int            // `json:"downloads,omitempty" example:"0"`
+	Downloads     int            `json:"downloads,omitempty" example:"0"`
 	started       time.Time
 	stopped       time.Time
 	docName       string // document file name, once known
@@ -100,6 +101,7 @@ func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int
 					Private:       private,
 					Email:         email,
 					state:         JobNew,
+					StoppedCh:     make(chan struct{}),
 					imgfiles:      make(map[string]bool),
 					previews:      make(map[uint64][]byte),
 				}
@@ -223,6 +225,17 @@ func (job *Job) Close() {
 			job.removeAll()
 		}
 	}
+}
+
+func (job *Job) getImageFiles() (fns []string) {
+	job.mu.Lock()
+	defer job.mu.Unlock()
+	for fn, ok := range job.imgfiles {
+		if ok {
+			fns = append(fns, fn)
+		}
+	}
+	return
 }
 
 func (job *Job) refreshDiskuse() {

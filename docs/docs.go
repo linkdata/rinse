@@ -509,6 +509,10 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "stoppedCh": {
+                    "description": "closed when job stopped",
+                    "type": "object"
+                },
                 "uuid": {
                     "type": "string",
                     "format": "uuid",

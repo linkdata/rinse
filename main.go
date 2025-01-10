@@ -28,19 +28,20 @@ var docsFS embed.FS
 //	@description	Document cleaning service API
 
 var (
-	flagListen  = flag.String("listen", os.Getenv("RINSE_LISTEN"), "serve HTTP requests on given [address][:port]")
-	flagCertDir = flag.String("certdir", os.Getenv("RINSE_CERTDIR"), "where to find fullchain.pem and privkey.pem")
-	flagUser    = flag.String("user", os.Getenv("RINSE_USER"), "switch to this user after startup (*nix only)")
-	flagDataDir = flag.String("datadir", os.Getenv("RINSE_DATADIR"), "where to store data files after startup")
-	flagVersion = flag.Bool("v", false, "display version")
+	flagListen   = flag.String("listen", os.Getenv("RINSE_LISTEN"), "serve HTTP requests on given [address][:port]")
+	flagCertDir  = flag.String("certdir", os.Getenv("RINSE_CERTDIR"), "where to find fullchain.pem and privkey.pem")
+	flagUser     = flag.String("user", os.Getenv("RINSE_USER"), "switch to this user after startup (*nix only)")
+	flagDataDir  = flag.String("datadir", os.Getenv("RINSE_DATADIR"), "where to store data files after startup")
+	flagVersion  = flag.Bool("v", false, "display version")
+	flagSelfTest = flag.Bool("selftest", false, "run self-test")
 )
 
-func main() {
+func run() int {
 	flag.Parse()
 
 	if *flagVersion {
 		fmt.Println(rinser.PkgVersion)
-		return
+		return 0
 	}
 
 	certDir := *flagCertDir
@@ -84,11 +85,14 @@ func main() {
 		if rns, err = rinser.New(cfg, http.DefaultServeMux, jw, RinseDevel); err == nil {
 			defer rns.Close()
 
+			if *flagSelfTest {
+				return rns.SelfTest()
+			}
+
 			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
 				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
 				http.ServeFileFS(w, r, docsFS, path.Join("docs", fpath))
 			})
-
 			if port := os.Getenv("RINSE_PORT"); port != "" {
 				s := cfg.ListenURL
 				if idx := strings.LastIndexByte(s, ':'); idx > 6 {
@@ -100,9 +104,14 @@ func main() {
 			maybeSwagger(cfg.ListenURL)
 
 			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
-				return
+				return 0
 			}
 		}
 	}
 	slog.Error(err.Error())
+	return 1
+}
+
+func main() {
+	os.Exit(run())
 }
