@@ -49,11 +49,9 @@ jobs:
       - name: Build development executable 
         run: go build -v -tags devel -o rinse-devel .
 
-
       - name: Fetch gVisor
         working-directory: gvisor
         run: GO111MODULE=on go get gvisor.dev/gvisor/runsc@go
-
       - name: Build gVisor
         working-directory: gvisor
         run: CGO_ENABLED=0 GO111MODULE=on go build -o ../runsc gvisor.dev/gvisor/runsc
@@ -70,7 +68,12 @@ jobs:
 
       - name: Run image self-test
         id: test_image
-        run: RINSE_SELFTEST=1 ./run.sh
+        run: |
+          podman run --rm --read-only --replace --name rinse \
+            --cap-drop=ALL --cap-add=CAP_SYS_CHROOT \
+            -v /tmp:/etc/rinse \
+            --env RINSE_SELFTEST=1 \
+            --entrypoint /usr/bin/rinse -it ${{ steps.build_image.outputs.image }}
 
       - name: Push image to ghcr.io
         id: push_image
