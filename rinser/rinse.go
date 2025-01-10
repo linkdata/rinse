@@ -76,8 +76,8 @@ func locateRootDir() (fp string, err error) {
 	return "", ErrWorkerRootDirNotFound
 }
 
-func locateRunscBin() (fp string, err error) {
-	if deadlock.Debug {
+func locateRunscBin(devel bool) (fp string, err error) {
+	if devel || deadlock.Debug {
 		var fi os.FileInfo
 		if fp, err = filepath.Abs("rootfs/usr/bin/runsc"); err == nil {
 			if fi, err = os.Stat(fp); err == nil && !fi.IsDir() {
@@ -97,7 +97,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 			if err = jawsboot.Setup(jw, mux.Handle, faviconuri); err == nil {
 				if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
 					var runscbin string
-					if runscbin, err = locateRunscBin(); err == nil {
+					if runscbin, err = locateRunscBin(devel); err == nil {
 						var rootDir string
 						if rootDir, err = locateRootDir(); err == nil {
 							var langs []string
