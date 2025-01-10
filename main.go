@@ -14,6 +14,7 @@ import (
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/webserv"
+	"golang.org/x/net/ipv4"
 
 	"github.com/linkdata/rinse/rinser"
 )
@@ -113,5 +114,6 @@ func run() int {
 }
 
 func main() {
+	var _ ipv4.ICMPType // ensure direct dep on golang.org/x/net
 	os.Exit(run())
 }
