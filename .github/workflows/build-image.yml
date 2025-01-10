@@ -68,7 +68,7 @@ jobs:
 
       - name: Run  self-test
         id: self_test
-        run: ./copyrootfs.sh && ./rinse -selftest
+        run: mkdir -p rootfs && cp -rp $(podman image mount ${{ steps.build_image.outputs.image }})/* rootfs/ && ./rinse -selftest
 
       - name: Push image to ghcr.io
         id: push_image
