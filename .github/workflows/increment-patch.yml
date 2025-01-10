@@ -1,4 +1,4 @@
-name: Build, create and publish the main container image with new patch level
+name: Increment patch level then run build-image
 
 on:
   workflow_dispatch:
