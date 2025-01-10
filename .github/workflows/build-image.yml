@@ -66,9 +66,9 @@ jobs:
             ./Dockerfile
           oci: true
 
-      - name: Run  self-test
+      - name: Run self-test
         id: self_test
-        run: ./copyrootfs.sh ${{ steps.build_image.outputs.image }} && ./rinse -selftest
+        run: ./copyrootfs.sh ${{ steps.build_image.outputs.image }} && ./rinse-devel -selftest
 
       - name: Push image to ghcr.io
         id: push_image
