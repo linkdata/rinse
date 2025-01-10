@@ -67,6 +67,11 @@ jobs:
           containerfiles: |
             ./Dockerfile
           oci: true
+
+      - name: Run image self-test
+        id: test_image
+        run: RINSE_SELFTEST=1 ./run.sh
+
       - name: Push image to ghcr.io
         id: push_image
         uses: redhat-actions/push-to-registry@v2

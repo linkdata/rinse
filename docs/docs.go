@@ -472,8 +472,8 @@ const docTemplate = `{
                     "example": false
                 },
                 "downloads": {
-                    "description": "` + "`" + `json:\"downloads,omitempty\" example:\"0\"` + "`" + `",
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 0
                 },
                 "email": {
                     "type": "string",

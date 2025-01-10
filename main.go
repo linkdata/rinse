@@ -32,8 +32,8 @@ var (
 	flagCertDir  = flag.String("certdir", os.Getenv("RINSE_CERTDIR"), "where to find fullchain.pem and privkey.pem")
 	flagUser     = flag.String("user", os.Getenv("RINSE_USER"), "switch to this user after startup (*nix only)")
 	flagDataDir  = flag.String("datadir", os.Getenv("RINSE_DATADIR"), "where to store data files after startup")
+	flagSelfTest = flag.Bool("selftest", os.Getenv("RINSE_SELFTEST") != "", "run self-test")
 	flagVersion  = flag.Bool("v", false, "display version")
-	flagSelfTest = flag.Bool("selftest", false, "run self-test")
 )
 
 func run() int {

@@ -49,7 +49,7 @@ definitions:
         example: false
         type: boolean
       downloads:
-        description: '`json:"downloads,omitempty" example:"0"`'
+        example: 0
         type: integer
       email:
         example: user@example.com
