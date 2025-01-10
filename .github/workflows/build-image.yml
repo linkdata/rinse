@@ -69,8 +69,7 @@ jobs:
       - name: Run image self-test
         id: test_image
         run: |
-          podman run --rm --read-only --replace --name rinse \
-            --cap-drop=ALL --cap-add=CAP_SYS_CHROOT \
+          sudo podman run --rm --read-only --replace --name rinse \
             -v /tmp:/etc/rinse \
             --env RINSE_SELFTEST=1 \
             --entrypoint /usr/bin/rinse -it ${{ steps.build_image.outputs.image }}
