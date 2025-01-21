@@ -136,7 +136,7 @@ func (job *Job) MaxUploadSize() (n int64) {
 }
 
 func (job *Job) Start() (err error) {
-	if err = job.transition(JobNew, JobStarting); err == nil {
+	if err = job.transition(context.Background(), JobNew, JobStarting); err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(job.MaxTimeSec)*time.Second)
 		job.mu.Lock()
 		job.cancelFn = cancel
@@ -193,16 +193,18 @@ func (job *Job) ResultPath() string {
 	return path.Join(job.Datadir, job.ResultName())
 }
 
-func (job *Job) transition(fromState, toState JobState) (err error) {
-	job.mu.Lock()
-	if job.state == fromState {
-		job.state = toState
-		job.progress = time.Now()
-	} else {
-		err = fmt.Errorf("expected job state %d, have %d", fromState, job.state)
+func (job *Job) transition(ctx context.Context, fromState, toState JobState) (err error) {
+	if err = ctx.Err(); err == nil {
+		job.mu.Lock()
+		if job.state == fromState {
+			job.state = toState
+			job.progress = time.Now()
+		} else {
+			err = fmt.Errorf("expected job state %d, have %d", fromState, job.state)
+		}
+		job.mu.Unlock()
+		job.refreshDiskuse()
 	}
-	job.mu.Unlock()
-	job.refreshDiskuse()
 	return
 }
 

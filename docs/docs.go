@@ -438,7 +438,7 @@ const docTemplate = `{
                 },
                 "timeoutsec": {
                     "type": "integer",
-                    "example": 600
+                    "example": 60
                 },
                 "url": {
                     "type": "string",
@@ -521,7 +521,7 @@ const docTemplate = `{
                 },
                 "timeoutsec": {
                     "type": "integer",
-                    "example": 600
+                    "example": 60
                 },
                 "uuid": {
                     "type": "string",

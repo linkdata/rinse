@@ -14,7 +14,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -64,8 +66,8 @@ func (job *Job) process(ctx context.Context) {
 						if err = job.runDocToPdf(ctx, wrkName); err == nil {
 							if err = job.runPdfToImages(ctx); err == nil {
 								if err = job.runTesseract(ctx); err == nil {
-									if err = job.jobEnding(); err == nil {
-										if err = job.transition(JobEnding, JobFinished); err == nil {
+									if err = job.jobEnding(ctx); err == nil {
+										if err = job.transition(ctx, JobEnding, JobFinished); err == nil {
 											return
 										}
 									}
@@ -128,7 +130,7 @@ func (job *Job) limitDocumentSize(resp *http.Response) (src io.Reader, maxUpload
 }
 
 func (job *Job) runDownload(ctx context.Context) (err error) {
-	if err = job.transition(JobStarting, JobDownload); err == nil {
+	if err = job.transition(ctx, JobStarting, JobDownload); err == nil {
 		if hasHTTPScheme(job.Name) {
 			var req *http.Request
 			if req, err = http.NewRequestWithContext(ctx, http.MethodGet, job.Name, nil); err == nil {
@@ -235,7 +237,7 @@ func (job *Job) renameDoc(docName, wrkName string) (err error) {
 }
 
 func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) {
-	if err = job.transition(JobDownload, JobExtractMeta); err == nil {
+	if err = job.transition(ctx, JobDownload, JobExtractMeta); err == nil {
 		var buf bytes.Buffer
 		var errlines []string
 		stdouthandler := func(s string, isout bool) (err error) {
@@ -246,7 +248,7 @@ func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) 
 			}
 			return
 		}
-		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--json", "/var/rinse/"+docName); e == nil {
+		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--config=/tika-config.xml", "--json", "/var/rinse/"+docName); e == nil {
 			var obj any
 			if err = json.Unmarshal(buf.Bytes(), &obj); err == nil {
 				fpath := filepath.Clean(path.Join(job.Datadir, job.docName+".json"))
@@ -257,27 +259,47 @@ func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) 
 			}
 		}
 		for _, s := range errlines {
-			slog.Error("metaextract", "job", job.Name, "stderr", s)
+			if !strings.HasPrefix(s, "DEBUG") && !strings.HasPrefix(s, "WARN") {
+				slog.Error("metaextract", "job", job.Name, "stderr", s)
+			}
 		}
 	}
 	return
 }
 
+var detectLanguageRx = regexp.MustCompile(`DetectedLanguage\[(\w+):(\d\.\d+)\]`)
+
 func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
-	if err = job.transition(JobExtractMeta, JobDetectLanguage); err == nil {
+	if err = job.transition(ctx, JobExtractMeta, JobDetectLanguage); err == nil {
 		if job.Lang() == "" {
-			var lang string
+			langs := map[string]struct{}{}
 			stdouthandler := func(s string, isout bool) (err error) {
-				if isout && len(s) == 2 {
-					if l, ok := LanguageTika[s]; ok {
-						lang = l
+				job.madeProgress()
+				if matches := detectLanguageRx.FindAllStringSubmatch(s, -1); matches != nil {
+					for _, match := range matches {
+						if len(match) > 1 {
+							if l, ok := LanguageTika[match[1]]; ok {
+								if confidence, err := strconv.ParseFloat(match[2], 64); err == nil {
+									if confidence > 0.99 {
+										if _, ok := langs[l]; !ok {
+											langs[l] = struct{}{}
+											slog.Info("detectLanguage", "job", job.Name, "lang", l, "confidence", confidence)
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 				return
 			}
-			if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--language", "/var/rinse/"+fn); e == nil {
+			if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "-v", "--language", "/var/rinse/"+fn); e == nil {
+				var languages []string
+				for l := range langs {
+					languages = append(languages, l)
+				}
 				job.mu.Lock()
-				job.Language = lang
+				job.Language = strings.Join(languages, "+")
 				job.mu.Unlock()
 			}
 		}
@@ -295,7 +317,7 @@ func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 }
 
 func (job *Job) runDocToPdf(ctx context.Context, fn string) (err error) {
-	if err = job.transition(JobDetectLanguage, JobDocToPdf); err == nil {
+	if err = job.transition(ctx, JobDetectLanguage, JobDocToPdf); err == nil {
 		if err = job.waitForDocToPdf(ctx, fn); err == nil {
 			if err = scrub(path.Join(job.Datadir, ".cache")); err == nil {
 				err = scrub(path.Join(job.Datadir, ".config"))
@@ -340,7 +362,7 @@ func (job *Job) makeOutputTxt() (err error) {
 }
 
 func (job *Job) runPdfToImages(ctx context.Context) (err error) {
-	if err = job.transition(JobDocToPdf, JobPdfToImages); err == nil {
+	if err = job.transition(ctx, JobDocToPdf, JobPdfToImages); err == nil {
 		if err = job.waitForPdfToImages(ctx); err == nil {
 			if err = scrub(path.Join(job.Datadir, "input.pdf")); err == nil {
 				job.refreshDiskuse()
@@ -352,7 +374,7 @@ func (job *Job) runPdfToImages(ctx context.Context) (err error) {
 }
 
 func (job *Job) runTesseract(ctx context.Context) (err error) {
-	if err = job.transition(JobPdfToImages, JobTesseract); err == nil {
+	if err = job.transition(ctx, JobPdfToImages, JobTesseract); err == nil {
 		var output []string
 		stdouthandler := func(s string, isout bool) error {
 			if !isout {
@@ -394,8 +416,8 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 	return
 }
 
-func (job *Job) jobEnding() (err error) {
-	if err = job.transition(JobTesseract, JobEnding); err == nil {
+func (job *Job) jobEnding(ctx context.Context) (err error) {
+	if err = job.transition(ctx, JobTesseract, JobEnding); err == nil {
 		if err = os.Rename(path.Join(job.Datadir, "output.pdf"), path.Join(job.Datadir, job.ResultName())); err == nil {
 			var diskuse int64
 			err = filepath.WalkDir(job.Datadir, func(fpath string, d fs.DirEntry, err error) error {

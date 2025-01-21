@@ -20,7 +20,7 @@ definitions:
         example: false
         type: boolean
       timeoutsec:
-        example: 600
+        example: 60
         type: integer
       url:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
@@ -81,7 +81,7 @@ definitions:
         example: false
         type: boolean
       timeoutsec:
-        example: 600
+        example: 60
         type: integer
       uuid:
         example: 550e8400-e29b-41d4-a716-446655440000

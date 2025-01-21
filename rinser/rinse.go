@@ -337,7 +337,9 @@ func getLanguages(runscBin, rootDir string) (langs []string, err error) {
 		defer os.RemoveAll(workDir)
 		if err = runsc(context.Background(), runscBin, rootDir, workDir, id.String(), stdouthandler, "tesseract", "--list-langs"); err == nil {
 			slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
+			slog.Info("getLanguages", "count", len(langs), "langs", langs)
 		} else {
+			slog.Error("getLanguages", "err", err)
 			for _, s := range msgs {
 				slog.Error("getLanguages", "msg", s)
 			}

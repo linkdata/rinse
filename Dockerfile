@@ -97,6 +97,7 @@ RUN wget --tries=3 -O /tmp/KEYS https://www.apache.org/dist/tika/KEYS && \
     gpg --verify /tmp/tika.jar.asc /usr/local/bin/tika.jar
 
 COPY tesseract_opencl_profile_devices.dat /
+COPY tika-config.xml /
 
 RUN addgroup -g 1000 rinse && \
     adduser -u 1000 -s /bin/true -G rinse -h /var/rinse -D rinse && \
