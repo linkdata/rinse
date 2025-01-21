@@ -36,17 +36,21 @@ func (rns *Rinse) SelfTest() int {
 							case <-job.StoppedCh:
 								if err = job.Error; err == nil {
 									if job.HasMeta() {
-										var f *os.File
-										if f, err = os.Open(job.ResultPath()); err == nil {
-											defer f.Close()
-											var written int64
-											if written, err = io.Copy(io.Discard, f); err == nil {
-												if written > 0 {
-													return 0
-												} else {
-													err = fmt.Errorf("%q is empty", job.ResultPath())
+										if job.Lang() == "eng+swe" {
+											var f *os.File
+											if f, err = os.Open(job.ResultPath()); err == nil {
+												defer f.Close()
+												var written int64
+												if written, err = io.Copy(io.Discard, f); err == nil {
+													if written > 0 {
+														return 0
+													} else {
+														err = fmt.Errorf("%q is empty", job.ResultPath())
+													}
 												}
 											}
+										} else {
+											err = fmt.Errorf("unexpected language %q", job.Lang())
 										}
 									} else {
 										err = fmt.Errorf("%q not found", job.MetaPath())

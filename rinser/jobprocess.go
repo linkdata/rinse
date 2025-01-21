@@ -298,6 +298,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 				for l := range langs {
 					languages = append(languages, l)
 				}
+				sort.Strings(languages)
 				job.mu.Lock()
 				job.Language = strings.Join(languages, "+")
 				job.mu.Unlock()
