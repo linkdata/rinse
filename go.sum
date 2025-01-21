@@ -68,8 +68,8 @@ github.com/linkdata/jaws v0.105.0 h1:SIqjSGSViImoNCN7ZdvH+6rdUDVSFmj4+ds3V2s2CwM
 github.com/linkdata/jaws v0.105.0/go.mod h1:gg4p8eQSw8u3JMmTlE5XzZ0hxDkZn+uRMC91CMGopUM=
 github.com/linkdata/jawsauth v0.7.0 h1:rO1JRzsJSrIkUUurQMp458B75gYLmTSfzQgi4dqJdXk=
 github.com/linkdata/jawsauth v0.7.0/go.mod h1:IFRGi1BgD/O19jF9njhU9JMTNe7BaV4k+lsaLmvND30=
-github.com/linkdata/webserv v0.9.7 h1:v5tX5zkIe52IESi6JebzsqBXZusjgfTy7cgZcziMwyM=
-github.com/linkdata/webserv v0.9.7/go.mod h1:t925mW7aIgkoIJcRxQV4qyCmIQB41920MlFfocx9reQ=
+github.com/linkdata/webserv v0.9.8 h1:tDHJGlNXDPm+q8slIz3MgDa93rxYRxOs5BOnNSGXbAg=
+github.com/linkdata/webserv v0.9.8/go.mod h1:t925mW7aIgkoIJcRxQV4qyCmIQB41920MlFfocx9reQ=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 h1:6E+4a0GO5zZEnZ81pIr0yLvtUWk2if982qA3F3QD6H4=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0/go.mod h1:zJYVVT2jmtg6P3p1VtQj7WsuWi/y4VnjVBn7F8KPB3I=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
