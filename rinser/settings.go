@@ -52,7 +52,7 @@ func (rns *Rinse) loadSettings() (err error) {
 		MaxSizeMB:     2048,
 		CleanupSec:    86400,
 		MaxTimeSec:    86400,
-		TimeoutSec:    600,
+		TimeoutSec:    60,
 		MaxConcurrent: 2,
 		CleanupGotten: true,
 	}

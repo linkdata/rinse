@@ -42,7 +42,7 @@ type Job struct {
 	MaxSizeMB     int            `json:"maxsizemb" example:"2048"`
 	MaxTimeSec    int            `json:"maxtimesec" example:"86400"`
 	CleanupSec    int            `json:"cleanupsec" example:"600"`
-	TimeoutSec    int            `json:"timeoutsec" example:"600"`
+	TimeoutSec    int            `json:"timeoutsec" example:"60"`
 	CleanupGotten bool           `json:"cleanupgotten" example:"true"`
 	Private       bool           `json:"private" example:"false"`
 	Email         string         `json:"email,omitempty" example:"user@example.com"`
