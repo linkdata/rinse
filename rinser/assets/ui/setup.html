@@ -58,8 +58,14 @@
 
 	<div class="input-group mb-3">
 		<div class="input-group-text">Max job runtime</div>
-		<span class="form-control">{{$.Range .UiMaxRuntime `class="form-range align-bottom" min="0" max="86400" step="300"`}}</span>
+		<span class="form-control">{{$.Range .UiMaxRuntime `class="form-range align-bottom" min="0" max="345600" step="3600"`}}</span>
 		{{$.Span .UiMaxRuntime `class="input-group-text"`}}
+	</div>
+
+	<div class="input-group mb-3">
+		<div class="input-group-text">Job inactivity timeout</div>
+		<span class="form-control">{{$.Range .UiTimeout `class="form-range align-bottom" min="0" max="3600" step="10"`}}</span>
+		{{$.Span .UiTimeout `class="input-group-text"`}}
 	</div>
 
 	<div class="input-group mb-3">

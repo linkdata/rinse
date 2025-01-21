@@ -40,12 +40,13 @@ type Job struct {
 	Created       time.Time      `json:"created" example:"2024-01-01T12:00:00+00:00" format:"dateTime"`
 	UUID          uuid.UUID      `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000" format:"uuid"`
 	MaxSizeMB     int            `json:"maxsizemb" example:"2048"`
-	MaxTimeSec    int            `json:"maxtimesec" example:"600"`
+	MaxTimeSec    int            `json:"maxtimesec" example:"86400"`
 	CleanupSec    int            `json:"cleanupsec" example:"600"`
+	TimeoutSec    int            `json:"timeoutsec" example:"600"`
 	CleanupGotten bool           `json:"cleanupgotten" example:"true"`
 	Private       bool           `json:"private" example:"false"`
 	Email         string         `json:"email,omitempty" example:"user@example.com"`
-	StoppedCh     chan struct{}  // closed when job stopped
+	StoppedCh     chan struct{}  `json:"-"` // closed when job stopped
 	mu            deadlock.Mutex // protects following
 	Error         error          `json:"error,omitempty"`
 	PdfName       string         `json:"pdfname,omitempty" example:"example-docx-rinsed.pdf"` // rinsed PDF file name
@@ -55,6 +56,7 @@ type Job struct {
 	Pages         int            `json:"pages,omitempty" example:"1"`
 	Downloads     int            `json:"downloads,omitempty" example:"0"`
 	started       time.Time
+	progress      time.Time // when we last saw progress being made
 	stopped       time.Time
 	docName       string // document file name, once known
 	state         JobState
@@ -76,7 +78,7 @@ func checkLangString(lang string) error {
 	return nil
 }
 
-func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int, cleanupgotten, private bool, email string) (job *Job, err error) {
+func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec, timeoutsec int, cleanupgotten, private bool, email string) (job *Job, err error) {
 	if err = checkLangString(lang); err == nil {
 		if lang == "auto" {
 			lang = ""
@@ -97,6 +99,7 @@ func NewJob(rns *Rinse, name, lang string, maxsizemb, maxtimesec, cleanupsec int
 					MaxSizeMB:     maxsizemb,
 					MaxTimeSec:    maxtimesec,
 					CleanupSec:    cleanupsec,
+					TimeoutSec:    timeoutsec,
 					CleanupGotten: cleanupgotten,
 					Private:       private,
 					Email:         email,
@@ -138,6 +141,7 @@ func (job *Job) Start() (err error) {
 		job.mu.Lock()
 		job.cancelFn = cancel
 		job.mu.Unlock()
+		go job.watchProgress(ctx)
 		go job.process(ctx)
 		if l := job.Rinse.Config.Logger; l != nil {
 			job.Rinse.Config.Logger.Info("job started", "job", job.Name, "email", job.Email)
@@ -193,6 +197,7 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	job.mu.Lock()
 	if job.state == fromState {
 		job.state = toState
+		job.progress = time.Now()
 	} else {
 		err = fmt.Errorf("expected job state %d, have %d", fromState, job.state)
 	}
@@ -201,7 +206,14 @@ func (job *Job) transition(fromState, toState JobState) (err error) {
 	return
 }
 
+func (job *Job) madeProgress() {
+	job.mu.Lock()
+	job.progress = time.Now()
+	job.mu.Unlock()
+}
+
 func (job *Job) runsc(ctx context.Context, stdouthandler func(string, bool) error, cmds ...string) (err error) {
+	defer job.madeProgress()
 	return runsc(ctx, job.Rinse.RunscBin, job.Rinse.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
 }
 
@@ -211,11 +223,14 @@ func (job *Job) removeAll() {
 	}
 }
 
-func (job *Job) Close() {
+func (job *Job) Close(err error) {
 	job.mu.Lock()
 	cancel := job.cancelFn
 	closed := job.closed
 	job.closed = true
+	if job.Error == nil {
+		job.Error = err
+	}
 	job.mu.Unlock()
 
 	if cancel != nil {
@@ -252,11 +267,13 @@ func (job *Job) refreshDiskuse() {
 		}
 		return nil
 	})
+	now := time.Now()
 	job.mu.Lock()
 	job.Diskuse = diskuse
 	for _, fn := range imgfiles {
 		if _, ok := job.imgfiles[fn]; !ok {
 			job.imgfiles[fn] = false
+			job.progress = now
 		}
 	}
 	job.mu.Unlock()

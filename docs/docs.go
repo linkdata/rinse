@@ -82,7 +82,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "600",
+                        "description": "86400",
                         "name": "maxtimesec",
                         "in": "query"
                     },
@@ -90,6 +90,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "600",
                         "name": "cleanupsec",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "600",
+                        "name": "timeoutsec",
                         "in": "query"
                     },
                     {
@@ -424,11 +430,15 @@ const docTemplate = `{
                 },
                 "maxtimesec": {
                     "type": "integer",
-                    "example": 3600
+                    "example": 86400
                 },
                 "private": {
                     "type": "boolean",
                     "example": false
+                },
+                "timeoutsec": {
+                    "type": "integer",
+                    "example": 600
                 },
                 "url": {
                     "type": "string",
@@ -490,7 +500,7 @@ const docTemplate = `{
                 },
                 "maxtimesec": {
                     "type": "integer",
-                    "example": 600
+                    "example": 86400
                 },
                 "name": {
                     "type": "string",
@@ -509,9 +519,9 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
-                "stoppedCh": {
-                    "description": "closed when job stopped",
-                    "type": "object"
+                "timeoutsec": {
+                    "type": "integer",
+                    "example": 600
                 },
                 "uuid": {
                     "type": "string",

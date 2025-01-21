@@ -13,6 +13,7 @@ type settings struct {
 	MaxSizeMB       int
 	CleanupSec      int
 	MaxTimeSec      int
+	TimeoutSec      int
 	MaxConcurrent   int
 	CleanupGotten   bool
 	OAuth2          jawsauth.Config
@@ -31,6 +32,7 @@ func (rns *Rinse) saveSettings() (err error) {
 		MaxSizeMB:     rns.maxSizeMB,
 		CleanupSec:    rns.cleanupSec,
 		MaxTimeSec:    rns.maxTimeSec,
+		TimeoutSec:    rns.timeoutSec,
 		MaxConcurrent: rns.maxConcurrent,
 		CleanupGotten: rns.cleanupGotten,
 		OAuth2:        rns.OAuth2Settings,
@@ -49,7 +51,8 @@ func (rns *Rinse) loadSettings() (err error) {
 	x := settings{
 		MaxSizeMB:     2048,
 		CleanupSec:    86400,
-		MaxTimeSec:    3600,
+		MaxTimeSec:    86400,
+		TimeoutSec:    600,
 		MaxConcurrent: 2,
 		CleanupGotten: true,
 	}
@@ -65,6 +68,7 @@ func (rns *Rinse) loadSettings() (err error) {
 	rns.maxSizeMB = min(2048, max(0, x.MaxSizeMB))
 	rns.cleanupSec = max(0, x.CleanupSec)
 	rns.maxTimeSec = max(0, x.MaxTimeSec)
+	rns.timeoutSec = max(0, x.TimeoutSec)
 	rns.maxConcurrent = max(1, x.MaxConcurrent)
 	rns.cleanupGotten = x.CleanupGotten
 	rns.OAuth2Settings = x.OAuth2

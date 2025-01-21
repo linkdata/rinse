@@ -22,9 +22,35 @@ import (
 
 var ErrImageSeenTwice = errors.New("image file seen twice")
 
+func (job *Job) watchProgress(ctx context.Context) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-job.StoppedCh:
+			return
+		case <-ticker.C:
+			job.mu.Lock()
+			progress := job.progress
+			timeout := time.Duration(job.TimeoutSec) * time.Second
+			job.mu.Unlock()
+
+			if !progress.IsZero() && timeout > 0 {
+				if time.Since(progress) > timeout {
+					job.Close(fmt.Errorf("no progress made for %v", timeout))
+				}
+			}
+		}
+	}
+}
+
 func (job *Job) process(ctx context.Context) {
+	now := time.Now()
 	job.mu.Lock()
-	job.started = time.Now()
+	job.started = now
+	job.progress = now
 	job.mu.Unlock()
 	defer job.processDone()
 
@@ -57,7 +83,9 @@ func (job *Job) process(ctx context.Context) {
 	}
 	job.mu.Lock()
 	job.errstate = job.state
-	job.Error = err
+	if job.Error == nil {
+		job.Error = err
+	}
 	job.state = JobFailed
 	job.mu.Unlock()
 	job.Rinse.Jaws.Dirty(uiJobStatus{job})
@@ -341,6 +369,7 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 							return ErrImageSeenTwice
 						}
 						job.imgfiles[fn] = true
+						job.progress = time.Now()
 						break
 					}
 				}

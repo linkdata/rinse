@@ -50,6 +50,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 	maxSizeMB := rns.maxSizeMB
 	maxTimeSec := rns.maxTimeSec
 	cleanupSec := rns.cleanupSec
+	timeoutSec := rns.timeoutSec
 	cleanupGotten := rns.cleanupGotten
 	rns.mu.Unlock()
 
@@ -66,7 +67,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 			}
 			defer srcFile.Close()
 
-			if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, false, email); err == nil {
+			if job, err = NewJob(rns, srcName, srcLang, maxSizeMB, maxTimeSec, cleanupSec, timeoutSec, cleanupGotten, false, email); err == nil {
 				dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 				var dstFile *os.File
 				if dstFile, err = os.Create(dstName); err == nil {
@@ -80,7 +81,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 	} else if srcUrl != "" {
 		var u *url.URL
 		if u, err = url.Parse(srcUrl); err == nil {
-			job, err = NewJob(rns, u.String(), srcLang, maxSizeMB, maxTimeSec, cleanupSec, cleanupGotten, false, email)
+			job, err = NewJob(rns, u.String(), srcLang, maxSizeMB, maxTimeSec, cleanupSec, timeoutSec, cleanupGotten, false, email)
 		}
 	}
 
@@ -94,7 +95,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 				return
 			}
 		}
-		job.Close()
+		job.Close(err)
 	}
 
 	slog.Error("handlePost", "err", err)
