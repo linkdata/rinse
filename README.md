@@ -36,7 +36,8 @@ In this config file the following may be added:
 | *What* | *Type* | *Default* | *Adjustable*\* |
 | MaxSizeMB        |int| 2048 | yes |
 |	CleanupSec      |int| 86400 | yes |
-|	MaxTimeSec      |int| 3600 | yes |
+|	MaxTimeSec      |int| 86400 | yes |
+| TimeoutSec      |int| 600 | yes |
 |	MaxConcurrent   |int| 2 | yes |
 |	CleanupGotten   |bool| True | yes |
 |	OAuth2          |JawsAuth.Config (nested)| - | - |

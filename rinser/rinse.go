@@ -47,8 +47,9 @@ type Rinse struct {
 	OAuth2Settings  jawsauth.Config
 	closed          bool
 	maxSizeMB       int
-	cleanupSec      int
 	maxTimeSec      int
+	cleanupSec      int
+	timeoutSec      int
 	maxConcurrent   int
 	cleanupGotten   bool
 	jobs            []*Job
@@ -288,6 +289,13 @@ func (rns *Rinse) MaxTimeSec() (n int) {
 	return
 }
 
+func (rns *Rinse) TimeoutSec() (n int) {
+	rns.mu.Lock()
+	n = rns.timeoutSec
+	rns.mu.Unlock()
+	return
+}
+
 func (rns *Rinse) MaxConcurrent() (n int) {
 	rns.mu.Lock()
 	n = rns.maxConcurrent
@@ -304,7 +312,7 @@ func (rns *Rinse) Close() {
 	}
 	rns.mu.Unlock()
 	for _, job := range jobs {
-		job.Close()
+		job.Close(nil)
 	}
 }
 
@@ -403,7 +411,7 @@ func (rns *Rinse) RemoveJob(job *Job) {
 	rns.mu.Lock()
 	rns.jobs = slices.DeleteFunc(rns.jobs, func(x *Job) bool { return x == job })
 	rns.mu.Unlock()
-	job.Close()
+	job.Close(nil)
 	rns.Jaws.Dirty(rns)
 }
 

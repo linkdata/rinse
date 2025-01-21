@@ -14,11 +14,14 @@ definitions:
         example: 2048
         type: integer
       maxtimesec:
-        example: 3600
+        example: 86400
         type: integer
       private:
         example: false
         type: boolean
+      timeoutsec:
+        example: 600
+        type: integer
       url:
         example: https://getsamplefiles.com/download/pdf/sample-1.pdf
         type: string
@@ -62,7 +65,7 @@ definitions:
         example: 2048
         type: integer
       maxtimesec:
-        example: 600
+        example: 86400
         type: integer
       name:
         example: example.docx
@@ -77,9 +80,9 @@ definitions:
       private:
         example: false
         type: boolean
-      stoppedCh:
-        description: closed when job stopped
-        type: object
+      timeoutsec:
+        example: 600
+        type: integer
       uuid:
         example: 550e8400-e29b-41d4-a716-446655440000
         format: uuid
@@ -135,13 +138,17 @@ paths:
         in: query
         name: maxsizemb
         type: integer
-      - description: "600"
+      - description: "86400"
         in: query
         name: maxtimesec
         type: integer
       - description: "600"
         in: query
         name: cleanupsec
+        type: integer
+      - description: "600"
+        in: query
+        name: timeoutsec
         type: integer
       - description: "true"
         in: query

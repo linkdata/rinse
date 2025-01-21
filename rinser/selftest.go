@@ -13,12 +13,12 @@ import (
 
 func (rns *Rinse) SelfTest() int {
 	const srcName = "selftest.html"
-	const srcLang = "eng"
+	const srcLang = "auto"
 	srcFile, err := assetsFS.Open(path.Join("assets", srcName))
 	if err == nil {
 		defer srcFile.Close()
 		var job *Job
-		job, err = NewJob(rns, srcName, srcLang, 1, 60*20, 1, true, true, "selftest@localhost")
+		job, err = NewJob(rns, srcName, srcLang, 1, 60*20, 1, 60, true, true, "selftest@localhost")
 		if err == nil {
 			dstName := filepath.Clean(path.Join(job.Datadir, srcName))
 			var dstFile *os.File
@@ -27,7 +27,7 @@ func (rns *Rinse) SelfTest() int {
 				if _, err = io.Copy(dstFile, srcFile); err == nil {
 					if err = dstFile.Sync(); err == nil {
 						if err = job.Start(); err == nil {
-							defer job.Close()
+							defer job.Close(nil)
 							to := time.NewTimer(time.Minute * 10)
 							defer to.Stop()
 							select {
