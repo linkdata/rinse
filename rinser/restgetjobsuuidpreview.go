@@ -19,16 +19,17 @@ import (
 //	@Accept			*/*
 //	@Produce		html
 //	@Produce		jpeg
-//	@Param			uuid	path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
-//	@Param			pages	query		int		false	"1"
-//	@Param			width	query		int		false	"172"
-//	@Success		200		{html}		html	""
-//	@Success		200		{jpeg}		jpeg	""
-//	@Success		202		{object}	Job		"Preview not yet ready."
-//	@Failure		400		{object}	HTTPError
-//	@Failure		404		{object}	HTTPError
-//	@Failure		410		{object}	HTTPError	"Job failed."
-//	@Failure		500		{object}	HTTPError
+//	@Param			Authorization	header		string	false	"JWT token"
+//	@Param			uuid			path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
+//	@Param			pages			query		int		false	"1"
+//	@Param			width			query		int		false	"172"
+//	@Success		200				{html}		html	""
+//	@Success		200				{jpeg}		jpeg	""
+//	@Success		202				{object}	Job		"Preview not yet ready."
+//	@Failure		400				{object}	HTTPError
+//	@Failure		404				{object}	HTTPError
+//	@Failure		410				{object}	HTTPError	"Job failed."
+//	@Failure		500				{object}	HTTPError
 //	@Router			/jobs/{uuid}/preview [get]
 func (rns *Rinse) RESTGETJobsUUIDPreview(w http.ResponseWriter, r *http.Request) {
 	const iframeStart = `<!DOCTYPE html><html><body><img alt="%s" src="data:image/jpeg;base64,`
