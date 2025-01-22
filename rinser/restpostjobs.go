@@ -20,6 +20,7 @@ import (
 //	@Accept			json
 //	@Accept			multipart/form-data
 //	@Produce		json
+//	@Param			Authorization	header		string		false	"JWT token"
 //	@Param			addjoburl		body		AddJobURL	false	"Add job by URL"
 //	@Param			file			formData	file		false	"this is a test file"
 //	@Param			lang			query		string		false	"eng"

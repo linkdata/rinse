@@ -9,7 +9,8 @@ import "net/http"
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		json
-//	@Success		200	{array}	Job
+//	@Param			Authorization	header	string	false	"JWT token"
+//	@Success		200				{array}	Job
 //	@Router			/jobs [get]
 func (rns *Rinse) RESTGETJobs(hw http.ResponseWriter, hr *http.Request) {
 	list := rns.JobList(rns.GetEmail(hr))

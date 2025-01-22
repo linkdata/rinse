@@ -28,6 +28,14 @@ const docTemplate = `{
                     "jobs"
                 ],
                 "summary": "List jobs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -54,6 +62,12 @@ const docTemplate = `{
                 ],
                 "summary": "Add a job",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
                     {
                         "description": "Add job by URL",
                         "name": "addjoburl",
@@ -161,6 +175,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
@@ -195,6 +215,12 @@ const docTemplate = `{
                 ],
                 "summary": "Delete a job",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
@@ -233,6 +259,12 @@ const docTemplate = `{
                 ],
                 "summary": "Get the jobs document metadata.",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
@@ -290,6 +322,12 @@ const docTemplate = `{
                 ],
                 "summary": "Show a job preview image",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
@@ -365,6 +403,12 @@ const docTemplate = `{
                 ],
                 "summary": "Get the jobs rinsed document.",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",

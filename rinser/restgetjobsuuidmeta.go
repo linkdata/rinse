@@ -16,12 +16,13 @@ import (
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		json
-//	@Param			uuid	path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
-//	@Success		200		{file}		file	""
-//	@Success		202		{object}	Job		"Metadata not yet ready."
-//	@Failure		404		{object}	HTTPError
-//	@Failure		410		{object}	HTTPError "Job failed."
-//	@Failure		500		{object}	HTTPError
+//	@Param			Authorization	header		string	false	"JWT token"
+//	@Param			uuid			path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
+//	@Success		200				{file}		file	""
+//	@Success		202				{object}	Job		"Metadata not yet ready."
+//	@Failure		404				{object}	HTTPError
+//	@Failure		410				{object}	HTTPError	"Job failed."
+//	@Failure		500				{object}	HTTPError
 //	@Router			/jobs/{uuid}/meta [get]
 func (rns *Rinse) RESTGETJobsUUIDMeta(hw http.ResponseWriter, hr *http.Request) {
 	if job := rns.FindJob(hr.PathValue("uuid")); job != nil {
