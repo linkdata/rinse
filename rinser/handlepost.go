@@ -3,7 +3,6 @@ package rinser
 import (
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -98,7 +97,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 		job.Close(err)
 	}
 
-	slog.Error("handlePost", "err", err)
+	rns.Error("handlePost", "err", err)
 	if interactive {
 		rns.Jaws.Handler("error.html", errorHTML{Rinse: rns, Error: err}).ServeHTTP(w, r)
 		return

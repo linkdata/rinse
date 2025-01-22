@@ -13,7 +13,7 @@ func scrub(dstpath string) error {
 		if err == nil {
 			if !info.IsDir() {
 				var f *os.File
-				if f, err = os.OpenFile(fpath, os.O_RDWR, 0666); err == nil /* #nosec G302 G304 */ {
+				if f, err = os.OpenFile(fpath, os.O_WRONLY, 0); err == nil /* #nosec G302 G304 */ {
 					fourk := make([]byte, 4096)
 					remain := info.Size()
 					for err == nil && remain > 0 {

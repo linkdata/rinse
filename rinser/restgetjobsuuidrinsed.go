@@ -3,7 +3,6 @@ package rinser
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -46,7 +45,7 @@ func (rns *Rinse) RESTGETJobsUUIDRinsed(hw http.ResponseWriter, hr *http.Request
 					}
 				}
 			}
-			slog.Error("RESTGETJobsUUIDRinsed", "job", job.Name, "err", err)
+			rns.Error("RESTGETJobsUUIDRinsed", "job", job.Name, "err", err)
 			SendHTTPError(hw, http.StatusInternalServerError, err)
 		default:
 			HTTPJSON(hw, http.StatusAccepted, job)

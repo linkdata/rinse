@@ -2,7 +2,6 @@ package rinser
 
 import (
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -44,7 +43,7 @@ func (rns *Rinse) RESTGETJobsUUIDMeta(hw http.ResponseWriter, hr *http.Request) 
 					}
 				}
 			}
-			slog.Error("RESTGETJobsUUIDMeta", "job", job.Name, "err", err)
+			rns.Error("RESTGETJobsUUIDMeta", "job", job.Name, "err", err)
 			SendHTTPError(hw, http.StatusInternalServerError, err)
 		} else {
 			HTTPJSON(hw, http.StatusAccepted, job)

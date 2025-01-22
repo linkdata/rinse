@@ -3,7 +3,6 @@ package rinser
 import (
 	"errors"
 	"io"
-	"log/slog"
 	"mime"
 	"net/http"
 	"os"
@@ -112,7 +111,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 						}
 					}
 				}
-				slog.Error("RESTPOSTJobs", "job", job.Name, "err", err)
+				rns.Error("RESTPOSTJobs", "job", job.Name, "err", err)
 				SendHTTPError(hw, http.StatusInternalServerError, err)
 				return
 			}
@@ -136,7 +135,7 @@ func (rns *Rinse) RESTPOSTJobs(hw http.ResponseWriter, hr *http.Request) {
 							return
 						}
 					}
-					slog.Error("RESTPOSTJobs", "job", job.Name, "err", err)
+					rns.Error("RESTPOSTJobs", "job", job.Name, "err", err)
 					SendHTTPError(hw, http.StatusInternalServerError, err)
 					return
 				}

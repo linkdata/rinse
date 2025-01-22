@@ -113,7 +113,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									Languages:  langs,
 								}
 								if e := rns.loadSettings(); e != nil {
-									slog.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
+									rns.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
 								}
 								var overrideUrl string
 								if deadlock.Debug {
@@ -123,12 +123,12 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 								if rns.endpointForJWKs != "" {
 									rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointForJWKs)
 									if err != nil {
-										slog.Error("failed getting jwt public keys", "err", err)
+										rns.Error("failed getting jwt public keys", "err", err)
 									} else {
-										slog.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
+										rns.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
 									}
 								} else {
-									slog.Warn("No endpoint for fetching JWKs")
+									rns.Warn("No endpoint for fetching JWKs")
 								}
 
 								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
@@ -138,7 +138,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 										if rns.JawsAuth.IsAdmin(email) {
 											adminstr = "admin "
 										}
-										slog.Info(adminstr+"login", "email", email)
+										rns.Info(adminstr+"login", "email", email)
 									}
 									rns.JawsAuth.LogoutEvent = func(sess *jaws.Session, hr *http.Request) {
 										var adminstr string
@@ -146,7 +146,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 										if rns.JawsAuth.IsAdmin(email) {
 											adminstr = "admin "
 										}
-										slog.Info(adminstr+"logout", "email", email)
+										rns.Info(adminstr+"logout", "email", email)
 									}
 									rns.setAdmins(rns.admins)
 									rns.addRoutes(mux, devel)
@@ -154,7 +154,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									go rns.UpdateExternalIP()
 									return
 								}
-								slog.Error("oauth", "err", err, "file", rns.SettingsFile())
+								rns.Error("oauth", "err", err, "file", rns.SettingsFile())
 							}
 						}
 					}
@@ -163,6 +163,24 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 		}
 	}
 	return
+}
+
+func (rns *Rinse) Error(msg string, keyValuePairs ...any) {
+	if l := rns.Config.Logger; l != nil {
+		l.Error(msg, keyValuePairs...)
+	}
+}
+
+func (rns *Rinse) Warn(msg string, keyValuePairs ...any) {
+	if l := rns.Config.Logger; l != nil {
+		l.Warn(msg, keyValuePairs...)
+	}
+}
+
+func (rns *Rinse) Info(msg string, keyValuePairs ...any) {
+	if l := rns.Config.Logger; l != nil {
+		l.Info(msg, keyValuePairs...)
+	}
 }
 
 func (rns *Rinse) getClient() *http.Client {
@@ -206,7 +224,7 @@ func (rns *Rinse) runTasks() (todo []*Job) {
 	}
 	if nextJob != nil && running < rns.maxConcurrent {
 		if err := nextJob.Start(); err != nil {
-			slog.Error("startjob", "job", nextJob.Name, "err", err)
+			rns.Error("startjob", "job", nextJob.Name, "err", err)
 		}
 	}
 	return
@@ -335,7 +353,7 @@ func getLanguages(runscBin, rootDir string) (langs []string, err error) {
 	workDir := path.Join(os.TempDir(), "rinse-"+id.String())
 	if err = os.Mkdir(workDir, 0777); err == nil /* #nosec G301 */ {
 		defer os.RemoveAll(workDir)
-		if err = runsc(context.Background(), runscBin, rootDir, workDir, id.String(), stdouthandler, "tesseract", "--list-langs"); err == nil {
+		if err = runsc(context.Background(), runscBin, rootDir, workDir, path.Join(workDir, "lang.log"), id.String(), stdouthandler, "tesseract", "--list-langs"); err == nil {
 			slices.SortFunc(langs, func(a, b string) int { return strings.Compare(LanguageCode[a], LanguageCode[b]) })
 			slog.Info("getLanguages", "count", len(langs), "langs", langs)
 		} else {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -123,6 +122,15 @@ func (job *Job) HasMeta() (yes bool) {
 	return
 }
 
+func (job *Job) HasLog() (yes bool) {
+	if job.State() > JobNew {
+		if _, e := os.Stat(job.LogPath()); e == nil {
+			yes = true
+		}
+	}
+	return
+}
+
 func (job *Job) Previewable() (yes bool) {
 	job.mu.Lock()
 	yes = len(job.imgfiles) > 0
@@ -143,9 +151,7 @@ func (job *Job) Start() (err error) {
 		job.mu.Unlock()
 		go job.watchProgress(ctx)
 		go job.process(ctx)
-		if l := job.Rinse.Config.Logger; l != nil {
-			job.Rinse.Config.Logger.Info("job started", "job", job.Name, "email", job.Email)
-		}
+		job.Rinse.Info("job started", "job", job.Name, "email", job.Email, "workdir", job.Workdir)
 	}
 	return
 }
@@ -186,7 +192,11 @@ func (job *Job) ResultName() (s string) {
 }
 
 func (job *Job) MetaPath() string {
-	return path.Join(job.Datadir, job.DocumentName()+".json")
+	return path.Join(job.Workdir, job.DocumentName()+".json")
+}
+
+func (job *Job) LogPath() string {
+	return path.Join(job.Workdir, job.DocumentName()+".log")
 }
 
 func (job *Job) ResultPath() string {
@@ -214,14 +224,23 @@ func (job *Job) madeProgress() {
 	job.mu.Unlock()
 }
 
+func (job *Job) madeProgressHandler(string, bool) error {
+	job.madeProgress()
+	return nil
+}
+
 func (job *Job) runsc(ctx context.Context, stdouthandler func(string, bool) error, cmds ...string) (err error) {
-	defer job.madeProgress()
-	return runsc(ctx, job.Rinse.RunscBin, job.Rinse.RootDir, job.Workdir, job.UUID.String(), stdouthandler, cmds...)
+	if err = runsc(ctx, job.Rinse.RunscBin, job.Rinse.RootDir, job.Workdir, job.LogPath(), job.UUID.String(), stdouthandler, cmds...); err != nil {
+		if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
+			job.Rinse.Error("runsc", "err", err, "log", job.LogPath())
+		}
+	}
+	return
 }
 
 func (job *Job) removeAll() {
 	if err := scrub(job.Workdir); err != nil {
-		slog.Error("job.removeAll", "job", job.Name, "err", err)
+		job.Rinse.Error("job.removeAll", "job", job.Name, "err", err)
 	}
 }
 
