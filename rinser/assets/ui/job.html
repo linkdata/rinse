@@ -4,6 +4,9 @@
 			<div class="row">
 				<div class="col">
 					{{$.Span .UiLink (printf `data-toggle="tooltip" title="%s"` .Workdir) .}}
+					<a id="{{$.Register .UiJobLog .}}" class="ms-1 hiddenlink" href="/jobs/{{.UUID}}/log" target="_blank" data-toggle="tooltip" title="Log" hidden>
+						<svg width="16" height="16"><use href="#search"/></svg>
+					</a>
 					<a id="{{$.Register .UiJobMeta .}}" class="ms-1 hiddenlink" href="/jobs/{{.UUID}}/meta" target="_blank" data-toggle="tooltip" title="Metadata" hidden>
 						<svg width="16" height="16"><use href="#search"/></svg>
 					</a>

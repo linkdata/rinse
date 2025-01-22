@@ -289,6 +289,7 @@ func (rns *Rinse) addRoutes(mux *http.ServeMux, devel bool) {
 	mux.Handle("GET "+basePath+"/jobs/{uuid}/preview", rns.AuthFn(rns.RESTGETJobsUUIDPreview))
 	mux.Handle("GET "+basePath+"/jobs/{uuid}/rinsed", rns.AuthFn(rns.RESTGETJobsUUIDRinsed))
 	mux.Handle("GET "+basePath+"/jobs/{uuid}/meta", rns.AuthFn(rns.RESTGETJobsUUIDMeta))
+	mux.Handle("GET "+basePath+"/jobs/{uuid}/log", rns.AuthFn(rns.RESTGETJobsUUIDLog))
 	mux.Handle("POST "+basePath+"/jobs", rns.AuthFn(rns.RESTPOSTJobs))
 	mux.Handle("DELETE "+basePath+"/jobs/{uuid}", rns.AuthFn(rns.RESTDELETEJobsUUID))
 }

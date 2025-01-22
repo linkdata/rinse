@@ -219,6 +219,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/jobs/{uuid}/log": {
+            "get": {
+                "description": "Get the jobs log.",
+                "consumes": [
+                    "*/*"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "Get the jobs log.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "202": {
+                        "description": "Log not yet ready.",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.Job"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.HTTPError"
+                        }
+                    },
+                    "410": {
+                        "description": "Job failed.",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/rinser.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/jobs/{uuid}/meta": {
             "get": {
                 "description": "Get the jobs document metadata.",

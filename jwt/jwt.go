@@ -84,7 +84,9 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 
 	// check that JWT not expired
 	var payload JWTPayload
-	json.Unmarshal(decodeJWTStringToBytes(p64), &payload)
+	if err := json.Unmarshal(decodeJWTStringToBytes(p64), &payload); err != nil {
+		return false, err
+	}
 	expirationDate := time.Unix(payload.Expires, 0)
 	now := time.Now().Truncate(time.Second)
 	expired := expirationDate.Before(now)
@@ -94,7 +96,9 @@ func VerifyJWT(jwt string, certs JSONWebKeySet) (bool, error) {
 
 	// check header for signing algorithm
 	var header JWTHeader
-	json.Unmarshal(decodeJWTStringToBytes(h64), &header)
+	if err := json.Unmarshal(decodeJWTStringToBytes(h64), &header); err != nil {
+		return false, err
+	}
 	kid := header.Kid
 	method := gojwt.GetSigningMethod(header.Algorithm)
 

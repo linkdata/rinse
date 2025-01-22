@@ -33,7 +33,7 @@ var configJsonTmpl = template.Must(template.New("config.tmpl").ParseFS(assetsFS,
 
 func runsc(ctx context.Context, runscBin, rootfsDir, workDir, logPath string, id string, outhandler func(string, bool) error, cmds ...string) (err error) {
 	var logfile *os.File
-	if logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640); err == nil /* #nosec G304 */ {
+	if logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil /* #nosec G304 */ {
 		defer logfile.Close()
 		var f *os.File
 		if f, err = os.Create(path.Join(workDir, "config.json")); err == nil /* #nosec G304 */ {

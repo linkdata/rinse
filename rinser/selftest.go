@@ -32,7 +32,7 @@ func (rns *Rinse) SelfTest() int {
 								if logfile, err := os.Open(job.LogPath()); err == nil {
 									defer logfile.Close()
 									fmt.Fprintf(os.Stdout, "\n\nlog file %q:\n", job.LogPath())
-									io.Copy(os.Stdout, logfile)
+									_, _ = io.Copy(os.Stdout, logfile)
 									fmt.Fprintln(os.Stdout)
 								}
 								job.Close(nil)
