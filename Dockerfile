@@ -86,7 +86,10 @@ RUN apk --no-cache -U upgrade && apk --no-cache add \
     tesseract-ocr-data-tha \
     tesseract-ocr-data-tur \
     tesseract-ocr-data-ukr \
-    tesseract-ocr-data-vie
+    tesseract-ocr-data-vie \
+    sox \
+    exiftool \
+    ffmpeg
 
 RUN update-ms-fonts && fc-cache -f
 
