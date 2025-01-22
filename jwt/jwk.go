@@ -27,7 +27,7 @@ type JSONWebKeySet map[string]JSONWebKey
 
 func GetJSONKeyWebSet(endpoint string) (jwks JSONWebKeySet, err error) {
 	var resp *http.Response
-	resp, err = http.Get(endpoint)
+	resp, err = http.Get(endpoint) /* #nosec G107 */
 	if err != nil {
 		return
 	}

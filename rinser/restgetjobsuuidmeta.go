@@ -2,10 +2,8 @@ package rinser
 
 import (
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
-	"path"
 	"strconv"
 )
 
@@ -29,22 +27,21 @@ func (rns *Rinse) RESTGETJobsUUIDMeta(hw http.ResponseWriter, hr *http.Request) 
 			SendHTTPError(hw, http.StatusGone, job.Error)
 			return
 		}
-		if job.State() > JobExtractMeta {
-			metapath := path.Join(job.Datadir, job.docName+".json")
-			fi, err := os.Stat(metapath)
+		if job.HasMeta() {
+			fi, err := os.Stat(job.MetaPath())
 			if err == nil {
 				hdr := hw.Header()
 				hdr["Content-Length"] = []string{strconv.FormatInt(fi.Size(), 10)}
 				hdr["Content-Type"] = []string{"application/json"}
 				var f *os.File
-				if f, err = os.Open(metapath); err == nil /* #nosec G304 */ {
+				if f, err = os.Open(job.MetaPath()); err == nil /* #nosec G304 */ {
 					defer f.Close()
 					if _, err = io.Copy(hw, f); err == nil {
 						return
 					}
 				}
 			}
-			slog.Error("RESTGETJobsUUIDMeta", "job", job.Name, "err", err)
+			rns.Error("RESTGETJobsUUIDMeta", "job", job.Name, "err", err)
 			SendHTTPError(hw, http.StatusInternalServerError, err)
 		} else {
 			HTTPJSON(hw, http.StatusAccepted, job)

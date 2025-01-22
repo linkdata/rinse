@@ -72,6 +72,11 @@ func run() int {
 		Logger:               slog.Default(),
 	}
 
+	if *flagSelfTest {
+		cfg.Address = "127.0.0.1:8181"
+		cfg.DataDir = "/tmp/rinse-selftest"
+	}
+
 	jw := jaws.New()
 	defer jw.Close()
 	jw.Debug = deadlock.Debug

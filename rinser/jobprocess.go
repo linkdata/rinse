@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log/slog"
 	"mime"
 	"net/http"
 	"os"
@@ -81,7 +80,7 @@ func (job *Job) process(ctx context.Context) {
 	}
 
 	if !errors.Is(err, context.Canceled) {
-		slog.Error("job failed", "job", job.Name, "state", jobStateText(job.State()), "err", err)
+		job.Rinse.Error("job failed", "job", job.Name, "state", jobStateText(job.State()), "err", err)
 	}
 	job.mu.Lock()
 	job.errstate = job.state
@@ -101,9 +100,7 @@ func (job *Job) processDone() {
 	closed := job.closed
 	close(job.StoppedCh)
 	job.mu.Unlock()
-	if l := job.Rinse.Config.Logger; l != nil {
-		job.Rinse.Config.Logger.Info("job stopped", "job", job.Name, "email", job.Email)
-	}
+	job.Rinse.Info("job stopped", "job", job.Name, "email", job.Email, "workdir", job.Workdir)
 	if closed {
 		job.removeAll()
 	}
@@ -196,7 +193,7 @@ func (job *Job) runDocumentName() (docName, wrkName string, err error) {
 		if err == nil {
 			if d.Type().IsRegular() {
 				if docName != "" {
-					slog.Error("more than one document", "docName", docName, "other", d.Name())
+					job.Rinse.Error("more than one document", "docName", docName, "other", d.Name())
 					return ErrMultipleDocuments
 				}
 				if d.Name() == ".wget-hsts" {
@@ -239,28 +236,20 @@ func (job *Job) renameDoc(docName, wrkName string) (err error) {
 func (job *Job) runExtractMeta(ctx context.Context, docName string) (err error) {
 	if err = job.transition(ctx, JobDownload, JobExtractMeta); err == nil {
 		var buf bytes.Buffer
-		var errlines []string
 		stdouthandler := func(s string, isout bool) (err error) {
 			if isout {
+				job.madeProgress()
 				buf.WriteString(s)
-			} else {
-				errlines = append(errlines, s)
 			}
 			return
 		}
 		if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "--config=/tika-config.xml", "--json", "/var/rinse/"+docName); e == nil {
 			var obj any
 			if err = json.Unmarshal(buf.Bytes(), &obj); err == nil {
-				fpath := filepath.Clean(path.Join(job.Datadir, job.docName+".json"))
 				var b []byte
 				if b, err = json.MarshalIndent(obj, "", "  "); err == nil {
-					err = os.WriteFile(fpath, b, 0644) // #nosec G306
+					err = os.WriteFile(job.MetaPath(), b, 0644) // #nosec G306
 				}
-			}
-		}
-		for _, s := range errlines {
-			if !strings.HasPrefix(s, "DEBUG") && !strings.HasPrefix(s, "WARN") {
-				slog.Error("metaextract", "job", job.Name, "stderr", s)
 			}
 		}
 	}
@@ -272,7 +261,7 @@ var detectLanguageRx = regexp.MustCompile(`DetectedLanguage\[(\w+):(\d\.\d+)\]`)
 func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 	if err = job.transition(ctx, JobExtractMeta, JobDetectLanguage); err == nil {
 		if job.Lang() == "" {
-			langs := map[string]struct{}{}
+			langs := map[string]float64{}
 			stdouthandler := func(s string, isout bool) (err error) {
 				job.madeProgress()
 				if matches := detectLanguageRx.FindAllStringSubmatch(s, -1); matches != nil {
@@ -280,11 +269,8 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 						if len(match) > 1 {
 							if l, ok := LanguageTika[match[1]]; ok {
 								if confidence, err := strconv.ParseFloat(match[2], 64); err == nil {
-									if confidence > 0.99 {
-										if _, ok := langs[l]; !ok {
-											langs[l] = struct{}{}
-											slog.Info("detectLanguage", "job", job.Name, "lang", l, "confidence", confidence)
-										}
+									if confidence > langs[l] {
+										langs[l] = confidence
 									}
 								}
 							}
@@ -295,8 +281,10 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 			}
 			if e := job.runsc(ctx, stdouthandler, "java", "-jar", "/usr/local/bin/tika.jar", "-v", "--language", "/var/rinse/"+fn); e == nil {
 				var languages []string
-				for l := range langs {
-					languages = append(languages, l)
+				for lang, conf := range langs {
+					if conf > 0.99 {
+						languages = append(languages, lang)
+					}
 				}
 				sort.Strings(languages)
 				job.mu.Lock()
@@ -310,7 +298,7 @@ func (job *Job) runDetectLanguage(ctx context.Context, fn string) (err error) {
 
 func (job *Job) waitForDocToPdf(ctx context.Context, fn string) (err error) {
 	if !strings.HasSuffix(fn, ".pdf") {
-		if err = job.runsc(ctx, nil, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
+		if err = job.runsc(ctx, job.madeProgressHandler, "libreoffice", "--headless", "--safe-mode", "--convert-to", "pdf", "--outdir", "/var/rinse", "/var/rinse/"+fn); err == nil {
 			err = scrub(path.Join(job.Datadir, fn))
 		}
 	}
@@ -376,13 +364,11 @@ func (job *Job) runPdfToImages(ctx context.Context) (err error) {
 
 func (job *Job) runTesseract(ctx context.Context) (err error) {
 	if err = job.transition(ctx, JobPdfToImages, JobTesseract); err == nil {
-		var output []string
 		stdouthandler := func(s string, isout bool) error {
 			if !isout {
 				defer job.Rinse.Jaws.Dirty(uiJobStatus{job})
 				job.mu.Lock()
 				defer job.mu.Unlock()
-				output = append(output, s)
 				for fn, seen := range job.imgfiles {
 					if strings.Contains(s, fn) {
 						if seen {
@@ -406,13 +392,7 @@ func (job *Job) runTesseract(ctx context.Context) (err error) {
 			args = append(args, "-l", s)
 		}
 		args = append(args, "/var/rinse/output.txt", "/var/rinse/output", "pdf")
-		if err = job.runsc(ctx, stdouthandler, args...); err != nil {
-			if !(errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)) {
-				for _, s := range output {
-					slog.Error("tesseract", "msg", s)
-				}
-			}
-		}
+		err = job.runsc(ctx, stdouthandler, args...)
 	}
 	return
 }
