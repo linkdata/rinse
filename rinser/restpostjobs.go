@@ -19,7 +19,6 @@ import (
 //	@Accept			json
 //	@Accept			multipart/form-data
 //	@Produce		json
-//	@Param			Authorization	header		string		false	"JWT token"
 //	@Param			addjoburl		body		AddJobURL	false	"Add job by URL"
 //	@Param			file			formData	file		false	"this is a test file"
 //	@Param			lang			query		string		false	"eng"
@@ -29,6 +28,7 @@ import (
 //	@Param			timeoutsec		query		int			false	"600"
 //	@Param			cleanupgotten	query		bool		false	"true"
 //	@Param			private			query		bool		false	"false"
+//	@Param			Authorization	header		string		false	"JWT token"
 //	@Success		200				{object}	Job
 //	@Failure		400				{object}	HTTPError
 //	@Failure		404				{object}	HTTPError

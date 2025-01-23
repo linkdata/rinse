@@ -261,6 +261,10 @@ paths:
         name: uuid
         required: true
         type: string
+      - description: JWT token
+        in: header
+        name: Authorization
+        type: string
       produces:
       - text/plain
       responses:

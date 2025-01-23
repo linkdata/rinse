@@ -9,8 +9,8 @@ import "net/http"
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		json
-//	@Param			Authorization	header		string	false	"JWT token"
 //	@Param			uuid			path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
+//	@Param			Authorization	header		string	false	"JWT token"
 //	@Success		200				{object}	Job
 //	@Failure		404				{object}	HTTPError
 //	@Router			/jobs/{uuid} [delete]

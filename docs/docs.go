@@ -265,6 +265,12 @@ const docTemplate = `{
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {

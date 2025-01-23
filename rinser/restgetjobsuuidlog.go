@@ -14,12 +14,13 @@ import (
 //	@Tags			jobs
 //	@Accept			*/*
 //	@Produce		text/plain
-//	@Param			uuid	path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
-//	@Success		200		{file}		file	""
-//	@Success		202		{object}	Job		"Log not yet ready."
-//	@Failure		404		{object}	HTTPError
-//	@Failure		410		{object}	HTTPError "Job failed."
-//	@Failure		500		{object}	HTTPError
+//	@Param			uuid			path		string	true	"49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0"
+//	@Param			Authorization	header		string	false	"JWT token"
+//	@Success		200				{file}		file	""
+//	@Success		202				{object}	Job		"Log not yet ready."
+//	@Failure		404				{object}	HTTPError
+//	@Failure		410				{object}	HTTPError	"Job failed."
+//	@Failure		500				{object}	HTTPError
 //	@Router			/jobs/{uuid}/log [get]
 func (rns *Rinse) RESTGETJobsUUIDLog(hw http.ResponseWriter, hr *http.Request) {
 	if job := rns.FindJob(hr.PathValue("uuid")); job != nil {
