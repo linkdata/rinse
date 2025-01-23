@@ -44,6 +44,10 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Generate
         run: go generate ./...
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
       - name: Build normal executable
         run: go build -v .
       - name: Build development executable 
