@@ -54,13 +54,14 @@ jobs:
 
       - name: Build normal executable
         run: go build -v .
+        
       - name: Build development executable 
         run: go build -v -tags devel -o rinse-devel .
 
       - name: Fetch gVisor
         working-directory: gvisor
         run: GO111MODULE=on go get gvisor.dev/gvisor/runsc@go
-        
+
       - name: Build gVisor
         working-directory: gvisor
         run: CGO_ENABLED=0 GO111MODULE=on go build -o ../runsc gvisor.dev/gvisor/runsc
