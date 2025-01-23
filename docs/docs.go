@@ -63,12 +63,6 @@ const docTemplate = `{
                 "summary": "Add a job",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
                         "description": "Add job by URL",
                         "name": "addjoburl",
                         "in": "body",
@@ -123,6 +117,12 @@ const docTemplate = `{
                         "description": "false",
                         "name": "private",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -175,16 +175,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -217,16 +217,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -323,16 +323,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -386,12 +386,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
@@ -408,6 +402,12 @@ const docTemplate = `{
                         "description": "172",
                         "name": "width",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -467,16 +467,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "JWT token",
-                        "name": "Authorization",
-                        "in": "header"
-                    },
-                    {
-                        "type": "string",
                         "description": "49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0",
                         "name": "uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "JWT token",
+                        "name": "Authorization",
+                        "in": "header"
                     }
                 ],
                 "responses": {

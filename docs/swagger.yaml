@@ -126,10 +126,6 @@ paths:
       description: Add job with either a file using multipart/form-data or a URL using
         json.
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: Add job by URL
         in: body
         name: addjoburl
@@ -167,6 +163,10 @@ paths:
         in: query
         name: private
         type: boolean
+      - description: JWT token
+        in: header
+        name: Authorization
+        type: string
       produces:
       - application/json
       responses:
@@ -199,14 +199,14 @@ paths:
       - '*/*'
       description: Delete by job UUID
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
         in: path
         name: uuid
         required: true
+        type: string
+      - description: JWT token
+        in: header
+        name: Authorization
         type: string
       produces:
       - application/json
@@ -227,14 +227,14 @@ paths:
       - application/json
       description: Get job metadata by UUID.
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
         in: path
         name: uuid
         required: true
+        type: string
+      - description: JWT token
+        in: header
+        name: Authorization
         type: string
       produces:
       - application/json
@@ -297,14 +297,14 @@ paths:
       - '*/*'
       description: Get the jobs document metadata.
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
         in: path
         name: uuid
         required: true
+        type: string
+      - description: JWT token
+        in: header
+        name: Authorization
         type: string
       produces:
       - application/json
@@ -338,10 +338,6 @@ paths:
       - '*/*'
       description: show job preview image by UUID
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
         in: path
         name: uuid
@@ -355,6 +351,10 @@ paths:
         in: query
         name: width
         type: integer
+      - description: JWT token
+        in: header
+        name: Authorization
+        type: string
       produces:
       - text/html
       - image/jpeg
@@ -392,14 +392,14 @@ paths:
       - '*/*'
       description: Get the jobs rinsed document.
       parameters:
-      - description: JWT token
-        in: header
-        name: Authorization
-        type: string
       - description: 49d1e304-d2b8-46bf-b6a6-f1e9b797e1b0
         in: path
         name: uuid
         required: true
+        type: string
+      - description: JWT token
+        in: header
+        name: Authorization
         type: string
       produces:
       - application/pdf
