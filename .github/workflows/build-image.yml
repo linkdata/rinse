@@ -78,7 +78,7 @@ jobs:
 
       - name: Run self-test
         id: self_test
-        run: ./copyrootfs.sh ${{ steps.build_image.outputs.image }} && podman unshare ./rinse-devel -selftest -listen localhost:8081 -datadir /tmp/rinse
+        run: ./copyrootfs.sh ${{ steps.build_image.outputs.image }} && podman unshare ./rinse-devel -selftest
 
       - name: Push image to ghcr.io
         id: push_image

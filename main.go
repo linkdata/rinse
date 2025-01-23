@@ -73,7 +73,7 @@ func run() int {
 	}
 
 	if *flagSelfTest {
-		cfg.Address = "127.0.0.1:8181"
+		cfg.Address = "127.0.0.1:"
 		cfg.DataDir = "/tmp/rinse-selftest"
 	}
 
