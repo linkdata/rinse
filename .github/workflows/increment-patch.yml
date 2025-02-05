@@ -12,9 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -25,7 +22,7 @@ jobs:
       - name: Retrieve version
         id: version
         run: |
-          echo "TAG_NAME=$(go run github.com/cparta/makeversion/v2/cmd/mkver@latest)" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=$(go run github.com/cparta/makeversion/v2/cmd/mkver@latest -fetch)" >> $GITHUB_OUTPUT
         
       - uses: actions-ecosystem/action-bump-semver@v1
         id: bump-semver
