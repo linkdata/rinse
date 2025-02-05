@@ -1,6 +1,6 @@
 FROM alpine:3.21.2 AS rinseworker
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
-ARG TIKAVERSION=3.0.0
+ARG TIKAVERSION=3.1.0
 
 RUN apk --no-cache -U upgrade && apk --no-cache add \
     gpg \
