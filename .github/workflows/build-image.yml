@@ -65,6 +65,11 @@ jobs:
       - name: Build gVisor
         working-directory: gvisor
         run: CGO_ENABLED=0 GO111MODULE=on go build -o ../runsc gvisor.dev/gvisor/runsc
+      
+      - name: Get TIKA version
+        id: tika_version
+        run: |
+          echo "TIKAVERSION=$(curl -s https://dlcdn.apache.org/tika/ | grep -oE '3\.[0-9]+\.[0-9]+' | head -n 1)" >> $GITHUB_OUTPUT
 
       - name: Build container image
         id: build_image
@@ -74,6 +79,8 @@ jobs:
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
             ./Dockerfile
+          build-args: |
+            TIKAVERSION=${{ steps.tika_version.outputs.TIKAVERSION }}
           oci: true
 
       - name: Run self-test
