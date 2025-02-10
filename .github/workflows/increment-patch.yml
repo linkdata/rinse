@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   workflow_call:
 
+permissions:
+  contents: write
+
 jobs:
   increment-patch-level:
     runs-on: ubuntu-latest
@@ -12,25 +15,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Set up Go
         uses: actions/setup-go@v5
 
       - name: Install gitsemver
-        run: go install github.com/linkdata/gitsemver@v1.1.0
+        run: go install github.com/linkdata/gitsemver@v1.2.0
 
       - name: Retrieve version and increment patch level
         id: version
         run: |
           echo "TAG_NAME=$(gitsemver -incpatch)" >> $GITHUB_OUTPUT
-          
-      - uses: actions-ecosystem/action-get-latest-tag@v1
-        id: get-latest-tag
 
-      - uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: ${{ steps.version.outputs.TAG_NAME }}
-          message: '${{ steps.version.outputs.TAG_NAME }}: PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}'
   build-image:
     needs: increment-patch-level
     uses: ./.github/workflows/build-image.yml
