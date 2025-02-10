@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-go@v5
 
       - name: Install gitsemver
-        run: go install github.com/linkdata/gitsemver@v1.0.3
+        run: go install github.com/linkdata/gitsemver@v1.1.0
 
       - name: Retrieve version and increment patch level
         id: version
