@@ -6,7 +6,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
-	github.com/linkdata/deadlock v0.5.2
+	github.com/linkdata/deadlock v0.5.3
 	github.com/linkdata/jaws v0.106.0
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
