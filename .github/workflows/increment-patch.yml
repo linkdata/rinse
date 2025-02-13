@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-go@v5
 
       - name: Install gitsemver
-        run: go install github.com/linkdata/gitsemver@v1.3.0
+        run: go install github.com/linkdata/gitsemver@v1.4.0
 
       - name: Dump environment and check current version
         run: |
@@ -36,7 +36,7 @@ jobs:
         id: version
         run: |
           echo -n "TAG_NAME=" >> $GITHUB_OUTPUT
-          gitsemver -incpatch | tee -a $GITHUB_OUTPUT
+          gitsemver -debug -incpatch | tee -a $GITHUB_OUTPUT
 
       - name: Verify new version
         run: gitsemver
