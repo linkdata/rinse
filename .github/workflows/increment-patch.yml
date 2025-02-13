@@ -35,7 +35,8 @@ jobs:
       - name: Increment patch level
         id: version
         run: |
-          echo "TAG_NAME=$(gitsemver -incpatch)" >> $GITHUB_OUTPUT
+          TAG_NAME=$(gitsemver -incpatch)
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
 
       - name: Verify new version
         run: gitsemver
