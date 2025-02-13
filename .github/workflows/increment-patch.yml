@@ -28,8 +28,9 @@ jobs:
         run: go install github.com/linkdata/gitsemver@v1.3.0
 
       - name: Dump environment and check current version
-        run: env
-        run: gitsemver
+        run: |
+          env
+          gitsemver
 
       - name: Increment patch level
         id: version
