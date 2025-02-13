@@ -30,16 +30,13 @@ jobs:
       - name: Dump environment and check current version
         run: |
           env
-          gitsemver
+          gitsemver -debug
 
       - name: Increment patch level
         id: version
         run: |
           echo -n "TAG_NAME=" >> $GITHUB_OUTPUT
-          gitsemver -debug -incpatch | tee -a $GITHUB_OUTPUT
-
-      - name: Verify new version
-        run: gitsemver
+          gitsemver -incpatch | tee -a $GITHUB_OUTPUT
 
   build-image:
     needs: increment-patch-level
