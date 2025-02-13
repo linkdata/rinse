@@ -6,7 +6,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
-	github.com/linkdata/deadlock v0.5.2
+	github.com/linkdata/deadlock v0.5.3
 	github.com/linkdata/jaws v0.106.0
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
@@ -14,7 +14,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
 	golang.org/x/image v0.24.0
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.35.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
@@ -32,7 +32,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
