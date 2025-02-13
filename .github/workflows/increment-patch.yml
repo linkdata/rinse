@@ -25,12 +25,19 @@ jobs:
         uses: actions/setup-go@v5
 
       - name: Install gitsemver
-        run: go install github.com/linkdata/gitsemver@v1.3.0 && gitsemver
+        run: go install github.com/linkdata/gitsemver@v1.3.0
 
-      - name: Retrieve version and increment patch level
+      - name: Dump environment and check current version
+        run: env
+        run: gitsemver
+
+      - name: Increment patch level
         id: version
         run: |
           echo "TAG_NAME=$(gitsemver -incpatch)" >> $GITHUB_OUTPUT
+
+      - name: Verify new version
+        run: gitsemver
 
   build-image:
     needs: increment-patch-level
