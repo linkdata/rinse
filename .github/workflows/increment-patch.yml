@@ -1,8 +1,11 @@
-name: Increment patch level then run build-image
+name: Increment main branch patch level then run build-image
 
 on:
   workflow_dispatch:
   workflow_call:
+
+env:
+  GITHUB_REF_NAME: refs/heads/main
 
 permissions:
   contents: write
