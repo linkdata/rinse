@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   workflow_call:
 
-env:
-  GITHUB_REF_NAME: refs/heads/main
-
 permissions:
   contents: write
   packages: write
@@ -23,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          ref: main
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -33,6 +31,8 @@ jobs:
       - name: Dump environment and check current version
         run: |
           env
+          git status
+          git branch --show-current
           gitsemver -debug
 
       - name: Increment patch level
