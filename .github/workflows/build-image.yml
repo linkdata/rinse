@@ -22,11 +22,7 @@ env:
 jobs:
   build-and-push-images:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go:
-          - "1.23"
+
     permissions:
       contents: read
       packages: write
@@ -42,10 +38,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 'stable'
+          check-latest: true
 
       - name: Generate
         run: go generate ./...
+      
+      - name: Generated version info
+        run: cat rinser/version.gen.go
 
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
@@ -53,10 +53,10 @@ jobs:
           args: ./...
 
       - name: Build normal executable
-        run: go build -v .
+        run: go build .
         
       - name: Build development executable 
-        run: go build -v -tags devel -o rinse-devel .
+        run: go build -tags devel -o rinse-devel .
 
       - name: Fetch gVisor
         working-directory: gvisor
