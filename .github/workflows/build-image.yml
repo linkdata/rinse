@@ -44,8 +44,10 @@ jobs:
       - name: Generate
         run: go generate ./...
       
-      - name: Generated version info
-        run: cat rinser/version.gen.go
+      - name: Debug environment
+        run: |
+          env
+          cat rinser/version.gen.go
 
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master

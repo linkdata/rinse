@@ -29,7 +29,7 @@ import (
 //go:embed assets
 var assetsFS embed.FS
 
-//go:generate go run github.com/linkdata/gitsemver@v1.6.0 -gopackage -name rinser -out rinser/version.gen.go
+//go:generate go run github.com/linkdata/gitsemver@v1.7.0 -gopackage -name rinser -out rinser/version.gen.go
 
 var ErrDuplicateUUID = errors.New("duplicate UUID")
 
