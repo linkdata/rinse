@@ -263,17 +263,6 @@ func (job *Job) Close(err error) {
 	}
 }
 
-func (job *Job) getImageFiles() (fns []string) {
-	job.mu.Lock()
-	defer job.mu.Unlock()
-	for fn, ok := range job.imgfiles {
-		if ok {
-			fns = append(fns, fn)
-		}
-	}
-	return
-}
-
 func (job *Job) refreshDiskuse() {
 	var imgfiles []string
 	var diskuse int64
