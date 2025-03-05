@@ -14,7 +14,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
 	golang.org/x/image v0.24.0
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.36.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
