@@ -1,4 +1,4 @@
-FROM alpine:3.21.3 AS rinseworker
+FROM alpine:3.22.0 AS rinseworker
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 ARG TIKAVERSION=3.1.0
 
@@ -111,7 +111,7 @@ WORKDIR /
 
 #############################
 
-FROM alpine:3.21.3 AS rinse
+FROM alpine:3.22.0 AS rinse
 LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 
 RUN apk --no-cache -U upgrade
