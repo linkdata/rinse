@@ -77,7 +77,10 @@ func run() int {
 		cfg.DataDir = "/tmp/rinse-selftest"
 	}
 
-	jw := jaws.New()
+	jw, err := jaws.New()
+	if err != nil {
+		panic(err)
+	}
 	defer jw.Close()
 	jw.Debug = deadlock.Debug
 	jw.Logger = slog.Default()
