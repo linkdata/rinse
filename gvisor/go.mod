@@ -12,6 +12,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/subcommands v1.0.2-0.20190508160503-636abe8753b8 // indirect
 	github.com/kr/pty v1.1.5 // indirect
+	github.com/moby/sys/capability v0.4.0 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170308212314-bb9b5e7adda9 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0-rc.1 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
@@ -23,5 +24,5 @@ require (
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
-	gvisor.dev/gvisor v0.0.0-20250207211332-a025ffd3b3e0 // indirect
+	gvisor.dev/gvisor v0.0.0-20250407223349-121e6625b589 // indirect
 )
