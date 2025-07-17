@@ -13,7 +13,7 @@ require (
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
 	github.com/swaggo/http-swagger v1.3.4
-	github.com/swaggo/swag v1.16.4
+	github.com/swaggo/swag v1.16.5
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
 	golang.org/x/image v0.29.0
 	golang.org/x/net v0.42.0
@@ -33,7 +33,9 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
+	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
+	golang.org/x/sync v0.9.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
