@@ -91,11 +91,11 @@ func locateRunscBin(devel bool) (fp string, err error) {
 
 func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rns *Rinse, err error) {
 	var tmpl *template.Template
-	var faviconuri string
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
 		jw.AddTemplateLookuper(tmpl)
-		if faviconuri, err = staticserve.HandleFS(assetsFS, "assets", "static/images/favicon.png", mux.Handle); err == nil {
-			if err = jawsboot.Setup(jw, mux.Handle, faviconuri); err == nil {
+		var uris []string
+		if uris, err = staticserve.HandleFS(assetsFS, mux.Handle, "assets", "static/images/favicon.png"); err == nil {
+			if err = jawsboot.Setup(jw, mux.Handle, uris[0]); err == nil {
 				if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
 					var runscbin string
 					if runscbin, err = locateRunscBin(devel); err == nil {
@@ -108,7 +108,7 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 									Jaws:       jw,
 									RunscBin:   runscbin,
 									RootDir:    rootDir,
-									FaviconURI: faviconuri,
+									FaviconURI: uris[0],
 									jobs:       make([]*Job, 0),
 									Languages:  langs,
 								}
