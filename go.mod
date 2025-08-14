@@ -1,6 +1,6 @@
 module github.com/linkdata/rinse
 
-go 1.23.2
+go 1.24
 
 toolchain go1.24.1
 
@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
 	github.com/linkdata/deadlock v0.5.3
-	github.com/linkdata/jaws v0.111.7
+	github.com/linkdata/jaws v0.112.0
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
 	github.com/swaggo/http-swagger v1.3.4
@@ -30,6 +30,7 @@ require (
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/linkdata/jq v0.0.0-20250814075555-24a467ba68e3 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
