@@ -8,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
-	github.com/linkdata/deadlock v0.5.3
+	github.com/linkdata/deadlock v0.5.4
 	github.com/linkdata/jaws v0.112.0
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
@@ -32,7 +32,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/linkdata/jq v0.0.0-20250814075555-24a467ba68e3 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
+	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
