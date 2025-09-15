@@ -1,6 +1,6 @@
 module github.com/linkdata/rinse
 
-go 1.24
+go 1.24.0
 
 toolchain go1.24.1
 
@@ -9,14 +9,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.2.0
 	github.com/linkdata/deadlock v0.5.5
-	github.com/linkdata/jaws v0.115.2
+	github.com/linkdata/jaws v0.117.1
 	github.com/linkdata/jawsauth v0.7.0
 	github.com/linkdata/webserv v0.9.9
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
-	golang.org/x/image v0.30.0
-	golang.org/x/net v0.43.0
+	golang.org/x/image v0.31.0
+	golang.org/x/net v0.44.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
@@ -37,7 +37,7 @@ require (
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
