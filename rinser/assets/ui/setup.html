@@ -6,7 +6,7 @@
 </head>
 {{template "body_start.html" $}}
 
-<p>The settings file is at <code>{{.SettingsFile}}</code></p>
+<p>The settings file is at <code>{{.SettingsFile}}</code>. <span class="fst-italic">{{.ContainerNotice}}</span></p>
 
 
 {{if $.Auth.IsAdmin}}

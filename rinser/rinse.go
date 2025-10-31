@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -160,6 +161,17 @@ func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rn
 					}
 				}
 			}
+		}
+	}
+	return
+}
+
+func (rns *Rinse) ContainerNotice() (s string) {
+	if kind, ok := os.LookupEnv("container"); ok {
+		if kind == "" {
+			s = "(May be running inside a container.)"
+		} else {
+			s = fmt.Sprintf("(Inside %q container.)", kind)
 		}
 	}
 	return
