@@ -10,13 +10,13 @@ require (
 	github.com/linkdata/bytecount v1.3.0
 	github.com/linkdata/deadlock v0.5.5
 	github.com/linkdata/jaws v0.118.3
-	github.com/linkdata/jawsauth v0.9.2
+	github.com/linkdata/jawsauth v0.9.3
 	github.com/linkdata/webserv v0.9.9
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
-	golang.org/x/image v0.31.0
-	golang.org/x/net v0.45.0
+	golang.org/x/image v0.32.0
+	golang.org/x/net v0.46.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
@@ -37,7 +37,7 @@ require (
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
