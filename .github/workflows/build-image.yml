@@ -49,10 +49,11 @@ jobs:
           env
           cat rinser/version.gen.go
 
+      # gosec taint analysis is broken
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
-          args: ./...
+          args: -exclude=G703,G704,G705,G706 ./...
 
       - name: Build normal executable
         run: go build .

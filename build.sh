@@ -2,7 +2,7 @@
 set -e
 go generate ./... || true
 go run github.com/swaggo/swag/cmd/swag@latest fmt
-gosec ./...
+gosec -exclude=G703,G704,G705,G706 ./...
 CGO_ENABLED=0 go build $@ .
 CGO_ENABLED=0 go build -tags devel -o rinse-devel $@ .
 cd gvisor
