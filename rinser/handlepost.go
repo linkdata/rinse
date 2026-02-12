@@ -8,6 +8,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/linkdata/jaws/ui"
 )
 
 const FormFileKey = "file"
@@ -99,7 +101,7 @@ func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Re
 
 	rns.Error("handlePost", "err", err)
 	if interactive {
-		rns.Jaws.Handler("error.html", errorHTML{Rinse: rns, Error: err}).ServeHTTP(w, r)
+		ui.Handler(rns.Jaws, "error.html", errorHTML{Rinse: rns, Error: err}).ServeHTTP(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusBadRequest)
