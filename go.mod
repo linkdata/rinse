@@ -19,9 +19,8 @@ require (
 	golang.org/x/net v0.50.0
 )
 
-replace github.com/linkdata/jawsauth => ../jawsauth
-
-replace github.com/linkdata/jaws => ../jaws
+// replace github.com/linkdata/jawsauth => ../jawsauth
+// replace github.com/linkdata/jaws => ../jaws
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
