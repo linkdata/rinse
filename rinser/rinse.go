@@ -93,70 +93,71 @@ func locateRunscBin(devel bool) (fp string, err error) {
 func New(cfg *webserv.Config, mux *http.ServeMux, jw *jaws.Jaws, devel bool) (rns *Rinse, err error) {
 	var tmpl *template.Template
 	if tmpl, err = template.New("").ParseFS(assetsFS, "assets/ui/*.html"); err == nil {
-		jw.AddTemplateLookuper(tmpl)
-		if err = jw.Setup(mux.Handle, "/static",
-			jawsboot.Setup,
-			staticserve.MustNewFS(assetsFS, "assets/static", "images/favicon.png"),
-		); err == nil {
-			if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
-				var runscbin string
-				if runscbin, err = locateRunscBin(devel); err == nil {
-					var rootDir string
-					if rootDir, err = locateRootDir(); err == nil {
-						var langs []string
-						if langs, err = getLanguages(runscbin, rootDir); err == nil {
-							rns = &Rinse{
-								Config:     cfg,
-								Jaws:       jw,
-								RunscBin:   runscbin,
-								RootDir:    rootDir,
-								FaviconURI: jw.FaviconURL(),
-								jobs:       make([]*Job, 0),
-								Languages:  langs,
-							}
-							if e := rns.loadSettings(); e != nil {
-								rns.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
-							}
-							var overrideUrl string
-							if deadlock.Debug {
-								overrideUrl = cfg.ListenURL
-							}
+		if err = jw.AddTemplateLookuper(tmpl); err == nil {
+			if err = jw.Setup(mux.Handle, "/static",
+				jawsboot.Setup,
+				staticserve.MustNewFS(assetsFS, "assets/static", "images/favicon.png"),
+			); err == nil {
+				if err = os.MkdirAll(cfg.DataDir, 0750); err == nil { // #nosec G301
+					var runscbin string
+					if runscbin, err = locateRunscBin(devel); err == nil {
+						var rootDir string
+						if rootDir, err = locateRootDir(); err == nil {
+							var langs []string
+							if langs, err = getLanguages(runscbin, rootDir); err == nil {
+								rns = &Rinse{
+									Config:     cfg,
+									Jaws:       jw,
+									RunscBin:   runscbin,
+									RootDir:    rootDir,
+									FaviconURI: jw.FaviconURL(),
+									jobs:       make([]*Job, 0),
+									Languages:  langs,
+								}
+								if e := rns.loadSettings(); e != nil {
+									rns.Error("loadSettings", "file", rns.SettingsFile(), "err", e)
+								}
+								var overrideUrl string
+								if deadlock.Debug {
+									overrideUrl = cfg.ListenURL
+								}
 
-							if rns.endpointForJWKs != "" {
-								rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointForJWKs)
-								if err != nil {
-									rns.Error("failed getting jwt public keys", "err", err)
+								if rns.endpointForJWKs != "" {
+									rns.JWTPublicKeys, err = jwt.GetJSONKeyWebSet(rns.endpointForJWKs)
+									if err != nil {
+										rns.Error("failed getting jwt public keys", "err", err)
+									} else {
+										rns.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
+									}
 								} else {
-									rns.Info("fetched keys from", "endpoint", rns.endpointForJWKs)
+									rns.Warn("No endpoint for fetching JWKs")
 								}
-							} else {
-								rns.Warn("No endpoint for fetching JWKs")
-							}
 
-							if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
-								rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
-									var adminstr string
-									email, _ := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
-									if rns.JawsAuth.IsAdmin(email) {
-										adminstr = "admin "
+								if rns.JawsAuth, err = jawsauth.NewDebug(jw, &rns.OAuth2Settings, mux.Handle, overrideUrl); err == nil {
+									rns.JawsAuth.LoginEvent = func(sess *jaws.Session, hr *http.Request) {
+										var adminstr string
+										email, _ := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
+										if rns.JawsAuth.IsAdmin(email) {
+											adminstr = "admin "
+										}
+										rns.Info(adminstr+"login", "email", email)
 									}
-									rns.Info(adminstr+"login", "email", email)
-								}
-								rns.JawsAuth.LogoutEvent = func(sess *jaws.Session, hr *http.Request) {
-									var adminstr string
-									email, _ := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
-									if rns.JawsAuth.IsAdmin(email) {
-										adminstr = "admin "
+									rns.JawsAuth.LogoutEvent = func(sess *jaws.Session, hr *http.Request) {
+										var adminstr string
+										email, _ := sess.Get(rns.JawsAuth.SessionEmailKey).(string)
+										if rns.JawsAuth.IsAdmin(email) {
+											adminstr = "admin "
+										}
+										rns.Info(adminstr+"logout", "email", email)
 									}
-									rns.Info(adminstr+"logout", "email", email)
+									rns.setAdmins(rns.admins)
+									rns.addRoutes(mux, devel)
+									go rns.runBackgroundTasks()
+									go rns.UpdateExternalIP()
+									return
 								}
-								rns.setAdmins(rns.admins)
-								rns.addRoutes(mux, devel)
-								go rns.runBackgroundTasks()
-								go rns.UpdateExternalIP()
-								return
+								rns.Error("oauth", "err", err, "file", rns.SettingsFile())
 							}
-							rns.Error("oauth", "err", err, "file", rns.SettingsFile())
 						}
 					}
 				}
