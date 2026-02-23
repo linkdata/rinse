@@ -11,7 +11,7 @@ require (
 	github.com/linkdata/deadlock v0.5.5
 	github.com/linkdata/jaws v0.201.2
 	github.com/linkdata/jawsauth v0.9.5
-	github.com/linkdata/webserv v0.9.9
+	github.com/linkdata/webserv v0.10.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
