@@ -1,8 +1,6 @@
 module github.com/linkdata/rinse
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.0
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -16,7 +14,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
 	golang.org/x/image v0.36.0
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.51.0
 )
 
 // replace github.com/linkdata/jawsauth => ../jawsauth
