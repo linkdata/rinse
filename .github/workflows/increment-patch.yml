@@ -2,7 +2,16 @@ name: Increment patch level then run build-image
 
 on:
   workflow_dispatch:
+    inputs:
+      checkout_ref:
+        description: Git ref to checkout before running gitsemver
+        required: false
+        type: string
   workflow_call:
+    inputs:
+      checkout_ref:
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -20,6 +29,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ inputs.checkout_ref || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -46,4 +58,5 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     with:
       new_version: ${{ needs.increment-patch-level.outputs.new_version }}
+      checkout_ref: ${{ needs.increment-patch-level.outputs.new_version }}
     secrets: inherit

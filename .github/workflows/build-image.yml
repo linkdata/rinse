@@ -6,7 +6,10 @@ on:
     inputs:
       new_version:
         required: true
-        type: string  
+        type: string
+      checkout_ref:
+        required: false
+        type: string
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -34,6 +37,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{ inputs.checkout_ref || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5

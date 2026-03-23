@@ -1,8 +1,13 @@
 name: Dependabot merge
 
 on:
-  workflow_dispatch:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - closed
 
 permissions:
   contents: write
@@ -14,7 +19,11 @@ permissions:
 jobs:
   dependabot-merge:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'linkdata/rinse'
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.repository == 'linkdata/rinse'
     steps:
       - name: Dependabot metadata
         id: metadata
@@ -32,6 +41,14 @@ jobs:
           PR_URL: ${{github.event.pull_request.html_url}}
           GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
   increment-patch:
-    needs: dependabot-merge
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.repository == 'linkdata/rinse'
     uses: ./.github/workflows/increment-patch.yml
+    with:
+      checkout_ref: main
     secrets: inherit
