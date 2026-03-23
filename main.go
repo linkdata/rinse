@@ -85,7 +85,16 @@ func run() int {
 
 	l, err := cfg.Listen()
 	if err == nil {
+		if port := os.Getenv("RINSE_PORT"); port != "" {
+			s := cfg.ListenURL
+			if idx := strings.LastIndexByte(s, ':'); idx > 6 {
+				s = s[:idx]
+			}
+			cfg.ListenURL = s + ":" + strings.TrimPrefix(port, ":")
+		}
+
 		jw.Debug = deadlock.Debug
+		jw.ListenURL = cfg.ListenURL
 		jw.Logger = slog.Default()
 		go jw.Serve()
 
@@ -105,21 +114,11 @@ func run() int {
 				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
 				http.ServeFileFS(w, r, docsFS, path.Join("docs", fpath))
 			})
-			if port := os.Getenv("RINSE_PORT"); port != "" {
-				s := cfg.ListenURL
-				if idx := strings.LastIndexByte(s, ':'); idx > 6 {
-					s = s[:idx]
-				}
-				cfg.ListenURL = s + ":" + strings.TrimPrefix(port, ":")
-			}
 
-			jw.ListenURL = cfg.ListenURL
-			if err = jw.GenerateHeadHTML(); err == nil {
-				handler := jw.SecureHeadersMiddleware(mux)
-				handler = maybeSwagger(handler, cfg.ListenURL)
-				if err = cfg.Serve(context.Background(), l, handler); err == nil {
-					return 0
-				}
+			handler := jw.SecureHeadersMiddleware(mux)
+			handler = maybeSwagger(handler, cfg.ListenURL)
+			if err = cfg.Serve(context.Background(), l, handler); err == nil {
+				return 0
 			}
 		}
 	}
