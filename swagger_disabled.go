@@ -2,7 +2,8 @@
 
 package main
 
+import "net/http"
+
 const RinseDevel = false
 
-func maybeSwagger(listenUrl string) {
-}
+func maybeSwagger(mux *http.ServeMux, listenUrl string) {}

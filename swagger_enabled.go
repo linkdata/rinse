@@ -13,10 +13,10 @@ import (
 
 const RinseDevel = true
 
-func maybeSwagger(listenUrl string) {
+func maybeSwagger(mux *http.ServeMux, listenUrl string) {
 	docs.SwaggerInfo.Version = strings.TrimPrefix(rinser.PkgVersion, "v")
 	docs.SwaggerInfo.Host = listenUrl
-	http.DefaultServeMux.Handle("GET /api/", httpSwagger.Handler(
+	mux.Handle("GET /api/", httpSwagger.Handler(
 		httpSwagger.URL(listenUrl+"/docs/swagger.json"),
 	))
 }
