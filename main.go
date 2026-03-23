@@ -114,11 +114,12 @@ func run() int {
 			}
 
 			jw.ListenURL = cfg.ListenURL
-			handler := jw.SecureHeadersMiddleware(mux)
-			handler = maybeSwagger(handler, cfg.ListenURL)
-
-			if err = cfg.Serve(context.Background(), l, handler); err == nil {
-				return 0
+			if err = jw.GenerateHeadHTML(); err == nil {
+				handler := jw.SecureHeadersMiddleware(mux)
+				handler = maybeSwagger(handler, cfg.ListenURL)
+				if err = cfg.Serve(context.Background(), l, handler); err == nil {
+					return 0
+				}
 			}
 		}
 	}
