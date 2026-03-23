@@ -82,23 +82,27 @@ func run() int {
 		panic(err)
 	}
 	defer jw.Close()
-	jw.Debug = deadlock.Debug
-	jw.Logger = slog.Default()
-	http.DefaultServeMux.Handle("/jaws/", jw)
-	go jw.Serve()
 
 	l, err := cfg.Listen()
 	if err == nil {
+		jw.Debug = deadlock.Debug
+		jw.Logger = slog.Default()
+		jw.ListenURL = cfg.ListenURL
+		go jw.Serve()
+
+		mux := http.NewServeMux()
+		mux.Handle("/jaws/", jw)
+
 		defer l.Close()
 		var rns *rinser.Rinse
-		if rns, err = rinser.New(cfg, http.DefaultServeMux, jw, RinseDevel); err == nil {
+		if rns, err = rinser.New(cfg, mux, jw, RinseDevel); err == nil {
 			defer rns.Close()
 
 			if *flagSelfTest {
 				return rns.SelfTest()
 			}
 
-			http.DefaultServeMux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("GET /docs/{fpath...}", func(w http.ResponseWriter, r *http.Request) {
 				fpath := strings.TrimSuffix(r.PathValue("fpath"), "/")
 				http.ServeFileFS(w, r, docsFS, path.Join("docs", fpath))
 			})
@@ -112,7 +116,7 @@ func run() int {
 
 			maybeSwagger(cfg.ListenURL)
 
-			if err = cfg.Serve(context.Background(), l, http.DefaultServeMux); err == nil {
+			if err = cfg.Serve(context.Background(), l, jw.SecureHeadersMiddleware(mux)); err == nil {
 				return 0
 			}
 		}
