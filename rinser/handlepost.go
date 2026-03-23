@@ -38,11 +38,11 @@ func mustNotBeContentEncoded(r *http.Request) error {
 }
 
 func (rns *Rinse) handlePost(interactive bool, w http.ResponseWriter, r *http.Request) {
-	srcLang := r.FormValue(FormLangKey)
-	srcUrl := r.FormValue(FormURLKey)
+	srcLang := r.FormValue(FormLangKey) // #nosec G120
+	srcUrl := r.FormValue(FormURLKey)   // #nosec G120
 	srcFormFile, info, err := r.FormFile(FormFileKey)
 	returnUrl := "/"
-	if r.FormValue("testing") == "1" {
+	if r.FormValue("testing") == "1" { // #nosec G120
 		interactive = true
 		returnUrl = "/api/"
 	}
