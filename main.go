@@ -87,7 +87,6 @@ func run() int {
 	if err == nil {
 		jw.Debug = deadlock.Debug
 		jw.Logger = slog.Default()
-		jw.ListenURL = cfg.ListenURL
 		go jw.Serve()
 
 		mux := http.NewServeMux()
@@ -115,6 +114,7 @@ func run() int {
 			}
 
 			maybeSwagger(cfg.ListenURL)
+			jw.ListenURL = cfg.ListenURL
 
 			if err = cfg.Serve(context.Background(), l, jw.SecureHeadersMiddleware(mux)); err == nil {
 				return 0
