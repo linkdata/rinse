@@ -6,4 +6,4 @@ import "net/http"
 
 const RinseDevel = false
 
-func maybeSwagger(mux *http.ServeMux, listenUrl string) {}
+func maybeSwagger(next http.Handler, listenUrl string) http.Handler { return next }

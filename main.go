@@ -113,10 +113,11 @@ func run() int {
 				cfg.ListenURL = s + ":" + strings.TrimPrefix(port, ":")
 			}
 
-			maybeSwagger(mux, cfg.ListenURL)
 			jw.ListenURL = cfg.ListenURL
+			handler := jw.SecureHeadersMiddleware(mux)
+			handler = maybeSwagger(handler, cfg.ListenURL)
 
-			if err = cfg.Serve(context.Background(), l, jw.SecureHeadersMiddleware(mux)); err == nil {
+			if err = cfg.Serve(context.Background(), l, handler); err == nil {
 				return 0
 			}
 		}
