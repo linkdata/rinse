@@ -7,7 +7,6 @@ on:
       - reopened
       - synchronize
       - ready_for_review
-      - closed
 
 permissions:
   contents: write
@@ -16,13 +15,19 @@ permissions:
   attestations: write
   id-token: write
 
+concurrency:
+  group: dependabot-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   dependabot-merge:
     runs-on: ubuntu-latest
+    outputs:
+      merged_by_this_run: ${{ steps.merge_pr.outputs.merged_by_this_run }}
     if: >
       github.event_name == 'pull_request' &&
-      github.event.action != 'closed' &&
       github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'main' &&
       github.repository == 'linkdata/rinse'
     steps:
       - name: Dependabot metadata
@@ -30,24 +35,54 @@ jobs:
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Approve a PR
+
+      - name: Approve PR
         run: gh pr review --approve "$PR_URL"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --merge "$PR_URL"
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR when ready
+        id: merge_pr
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          attempts=180
+          sleep_seconds=10
+          echo "merged_by_this_run=false" >> "$GITHUB_OUTPUT"
+
+          for attempt in $(seq 1 "$attempts"); do
+            pr_state=$(gh pr view "$PR_URL" --json state --jq '.state')
+            pr_merged=$(gh pr view "$PR_URL" --json merged --jq '.merged')
+
+            if [ "$pr_merged" = "true" ]; then
+              echo "PR is already merged by another run"
+              exit 0
+            fi
+
+            if [ "$pr_state" = "CLOSED" ]; then
+              echo "PR was closed without merge"
+              exit 0
+            fi
+
+            if gh pr merge --merge "$PR_URL"; then
+              echo "PR merged on attempt $attempt"
+              echo "merged_by_this_run=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            merge_state=$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus')
+            echo "Merge not ready yet (mergeStateStatus=$merge_state), attempt $attempt/$attempts"
+            sleep "$sleep_seconds"
+          done
+
+          echo "Timed out waiting for PR to become mergeable"
+          exit 1
+
   increment-patch:
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.action == 'closed' &&
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.base.ref == 'main' &&
-      github.repository == 'linkdata/rinse'
+    needs: dependabot-merge
+    if: needs.dependabot-merge.outputs.merged_by_this_run == 'true'
     uses: ./.github/workflows/increment-patch.yml
     with:
       checkout_ref: main
