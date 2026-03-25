@@ -94,7 +94,6 @@ func run() int {
 		}
 
 		jw.Debug = deadlock.Debug
-		jw.ListenURL = cfg.ListenURL
 		jw.Logger = slog.Default()
 		go jw.Serve()
 
