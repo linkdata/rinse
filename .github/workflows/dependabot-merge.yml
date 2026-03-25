@@ -54,9 +54,8 @@ jobs:
 
           for attempt in $(seq 1 "$attempts"); do
             pr_state=$(gh pr view "$PR_URL" --json state --jq '.state')
-            pr_merged=$(gh pr view "$PR_URL" --json merged --jq '.merged')
 
-            if [ "$pr_merged" = "true" ]; then
+            if [ "$pr_state" = "MERGED" ]; then
               echo "PR is already merged by another run"
               exit 0
             fi
