@@ -31,7 +31,17 @@ jobs:
           persist-credentials: true
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ inputs.checkout_ref || github.ref }}
+          ref: ${{ inputs.checkout_ref || 'main' }}
+
+      - name: Verify checkout is main HEAD
+        run: |
+          git fetch --no-tags origin main
+          head_sha=$(git rev-parse HEAD)
+          main_sha=$(git rev-parse origin/main)
+          if [ "$head_sha" != "$main_sha" ]; then
+            echo "::error::increment-patch must run on main HEAD. HEAD=$head_sha origin/main=$main_sha"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -50,8 +60,8 @@ jobs:
       - name: Increment patch level
         id: version
         run: |
-          echo -n "TAG_NAME=" >> $GITHUB_OUTPUT
-          gitsemver -incpatch | tee -a $GITHUB_OUTPUT
+          tag_name="$(gitsemver -incpatch)"
+          echo "TAG_NAME=$tag_name" >> "$GITHUB_OUTPUT"
 
   build-image:
     needs: increment-patch-level
