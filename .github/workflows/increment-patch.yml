@@ -35,7 +35,7 @@ jobs:
 
       - name: Verify checkout is main HEAD
         run: |
-          git fetch --no-tags origin main
+          git fetch origin main
           head_sha=$(git rev-parse HEAD)
           main_sha=$(git rev-parse origin/main)
           if [ "$head_sha" != "$main_sha" ]; then
