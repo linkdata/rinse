@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiAutoCleanup struct{ *Rinse }
@@ -20,7 +21,7 @@ func (u uiAutoCleanup) Text() string {
 	return prettyDuration(time.Second * time.Duration(n))
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiAutoCleanup) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
@@ -36,6 +37,6 @@ func (u uiAutoCleanup) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiAutoCleanup() jaws.HTMLGetter {
+func (rns *Rinse) UiAutoCleanup() bind.HTMLGetter {
 	return uiAutoCleanup{rns}
 }

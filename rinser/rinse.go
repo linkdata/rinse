@@ -21,9 +21,10 @@ import (
 	"github.com/linkdata/deadlock"
 	"github.com/linkdata/jaws"
 	"github.com/linkdata/jaws/jawsboot"
-	"github.com/linkdata/jaws/staticserve"
+	"github.com/linkdata/jaws/lib/ui"
 	"github.com/linkdata/jawsauth"
 	"github.com/linkdata/rinse/jwt"
+	"github.com/linkdata/staticserve"
 	"github.com/linkdata/webserv"
 )
 
@@ -454,7 +455,7 @@ func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
 	sortedJobs := rns.JobList(rns.GetEmail(e.Initial()))
 	slices.SortFunc(sortedJobs, func(a, b *Job) int { return b.Created.Compare(a.Created) })
 	for _, job := range sortedJobs {
-		contents = append(contents, jaws.NewTemplate("job.html", job))
+		contents = append(contents, ui.NewTemplate("job.html", job))
 	}
 	return
 }

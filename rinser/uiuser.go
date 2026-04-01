@@ -6,6 +6,7 @@ import (
 	"html/template"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiUser struct{ *Rinse }
@@ -19,6 +20,6 @@ func (ui uiUser) JawsGetHTML(e *jaws.Element) template.HTML {
 	return template.HTML(fmt.Sprintf(`<span class="%s">%s</span>`, textClass, html.EscapeString(email))) //#nosec G203
 }
 
-func (rns *Rinse) UiUser() jaws.HTMLGetter {
+func (rns *Rinse) UiUser() bind.HTMLGetter {
 	return uiUser{rns}
 }

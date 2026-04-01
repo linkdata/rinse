@@ -5,6 +5,7 @@ import (
 
 	"github.com/linkdata/bytecount"
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiMaxSize struct{ *Rinse }
@@ -20,7 +21,7 @@ func (u uiMaxSize) Text() string {
 	}
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiMaxSize) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
@@ -39,6 +40,6 @@ func (u uiMaxSize) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiMaxSize() jaws.HTMLGetter {
+func (rns *Rinse) UiMaxSize() bind.HTMLGetter {
 	return uiMaxSize{rns}
 }

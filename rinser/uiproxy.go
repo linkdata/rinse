@@ -5,11 +5,12 @@ import (
 	"sync"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiProxy struct {
 	*Rinse
-	jaws.Binder[string]
+	bind.Binder[string]
 }
 
 type uiProxyButton struct{ *uiProxy }
@@ -38,7 +39,7 @@ func (u *uiProxy) Address() any {
 	return u.Binder
 }
 
-func (u *uiProxy) ExternalIP() jaws.HTMLGetter {
+func (u *uiProxy) ExternalIP() bind.HTMLGetter {
 	return u.UiExternalIP()
 }
 
@@ -49,5 +50,5 @@ func (u *uiProxy) Button() jaws.ClickHandler {
 func (rns *Rinse) UiProxy() *uiProxy {
 	address := rns.ProxyURL()
 	var mu sync.Mutex
-	return &uiProxy{Rinse: rns, Binder: jaws.Bind(&mu, &address)}
+	return &uiProxy{Rinse: rns, Binder: bind.New(&mu, &address)}
 }

@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiExternalIP struct{ *Rinse }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiExternalIP) JawsGetHTML(e *jaws.Element) (s template.HTML) {
 	u.mu.Lock()
 	s = u.externalIP
@@ -23,7 +24,7 @@ func (u uiExternalIP) JawsGetHTML(e *jaws.Element) (s template.HTML) {
 	return
 }
 
-func (rns *Rinse) UiExternalIP() (ui jaws.HTMLGetter) {
+func (rns *Rinse) UiExternalIP() (ui bind.HTMLGetter) {
 	return uiExternalIP{rns}
 }
 

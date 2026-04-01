@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiMaxConcurrent struct{ *Rinse }
@@ -13,7 +14,7 @@ func (u uiMaxConcurrent) Text() string {
 	return strconv.Itoa(u.MaxConcurrent())
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiMaxConcurrent) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
@@ -31,6 +32,6 @@ func (u uiMaxConcurrent) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiMaxConcurrent() jaws.HTMLGetter {
+func (rns *Rinse) UiMaxConcurrent() bind.HTMLGetter {
 	return uiMaxConcurrent{rns}
 }

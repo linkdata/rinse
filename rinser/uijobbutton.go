@@ -20,7 +20,7 @@ func (ui uiJobButton) JawsClick(e *jaws.Element, name string) (err error) {
 	return jaws.ErrEventUnhandled
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (ui uiJobButton) JawsGetHTML(rq *jaws.Element) template.HTML {
 	switch ui.State() {
 	case JobNew:

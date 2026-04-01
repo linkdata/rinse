@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiJobLink struct{ *Job }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (ui uiJobLink) JawsGetHTML(rq *jaws.Element) template.HTML {
 	var s string
 	if ui.State() == JobFinished {
@@ -24,6 +25,6 @@ func (ui uiJobLink) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(s) // #nosec G203
 }
 
-func (job *Job) UiLink() jaws.HTMLGetter {
+func (job *Job) UiLink() bind.HTMLGetter {
 	return uiJobLink{job}
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiMaxRuntime struct{ *Rinse }
@@ -17,7 +18,7 @@ func (u uiMaxRuntime) Text() string {
 	}
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiMaxRuntime) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
@@ -33,6 +34,6 @@ func (u uiMaxRuntime) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiMaxRuntime() jaws.HTMLGetter {
+func (rns *Rinse) UiMaxRuntime() bind.HTMLGetter {
 	return uiMaxRuntime{rns}
 }

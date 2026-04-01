@@ -1,9 +1,9 @@
 package rinser
 
 import (
-	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 func (rns *Rinse) UiCleanupGotten() any {
-	return jaws.Bind(&rns.mu, &rns.cleanupGotten)
+	return bind.New(&rns.mu, &rns.cleanupGotten)
 }

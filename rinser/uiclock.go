@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiClock struct{}
@@ -30,6 +31,6 @@ func (ui uiClock) JawsGetHTML(e *jaws.Element) template.HTML {
 	return template.HTML(now.Format(tformat)) // #nosec G203
 }
 
-func (rns *Rinse) UiClock() jaws.HTMLGetter {
+func (rns *Rinse) UiClock() bind.HTMLGetter {
 	return uiClock{}
 }

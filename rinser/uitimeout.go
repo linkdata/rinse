@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiTimeout struct{ *Rinse }
@@ -17,7 +18,7 @@ func (u uiTimeout) Text() string {
 	}
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (u uiTimeout) JawsGetHTML(rq *jaws.Element) template.HTML {
 	return template.HTML(u.Text()) // #nosec G203
 }
@@ -33,6 +34,6 @@ func (u uiTimeout) JawsSet(e *jaws.Element, v float64) (err error) {
 	return u.saveSettings()
 }
 
-func (rns *Rinse) UiTimeout() jaws.HTMLGetter {
+func (rns *Rinse) UiTimeout() bind.HTMLGetter {
 	return uiTimeout{rns}
 }

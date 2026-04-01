@@ -8,6 +8,7 @@ import (
 
 	"github.com/linkdata/bytecount"
 	"github.com/linkdata/jaws"
+	"github.com/linkdata/jaws/lib/bind"
 )
 
 type uiJobStatus struct{ *Job }
@@ -42,7 +43,7 @@ func jobStateText(n JobState) (statetxt string) {
 	return
 }
 
-// JawsGetHTML implements jaws.HTMLGetter.
+// JawsGetHTML implements bind.HTMLGetter.
 func (ui uiJobStatus) JawsGetHTML(e *jaws.Element) template.HTML {
 	ui.mu.Lock()
 	diskuse := ui.Diskuse
@@ -84,6 +85,6 @@ func (ui uiJobStatus) JawsGetHTML(e *jaws.Element) template.HTML {
 	return template.HTML(s) // #nosec G203
 }
 
-func (job *Job) UiStatus() (ui jaws.HTMLGetter) {
+func (job *Job) UiStatus() (ui bind.HTMLGetter) {
 	return uiJobStatus{job}
 }
