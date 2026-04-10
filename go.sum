@@ -70,8 +70,8 @@ github.com/linkdata/bytecount v1.4.0 h1:wD3hiST9KClay2pYvKX4FuI0EjE/fuzfZKc24dEV
 github.com/linkdata/bytecount v1.4.0/go.mod h1:wQp4+nHhWkTJX2sCXYUGGDCsxjiSKx9kPO0Ag0euxPk=
 github.com/linkdata/deadlock v0.5.5 h1:d6O+rzEqasSfamGDA8u7bjtaq7hOX8Ha4Zn36Wxrkvo=
 github.com/linkdata/deadlock v0.5.5/go.mod h1:tXb28stzAD3trzEEK0UJWC+rZKuobCoPktPYzebb1u0=
-github.com/linkdata/jaws v0.303.0 h1:E5r44MdYyEzrPZXqex+za06PGkhQmWzQZybfoolUisM=
-github.com/linkdata/jaws v0.303.0/go.mod h1:oxEEhUCXwNYISSg2rZ8Ian2Nku3YuDl7LNo1tF8zwRM=
+github.com/linkdata/jaws v0.303.2 h1:gru+2K9dP6Qg5iRNzBAC/yju++BxmlM0cQI68IENQnM=
+github.com/linkdata/jaws v0.303.2/go.mod h1:oxEEhUCXwNYISSg2rZ8Ian2Nku3YuDl7LNo1tF8zwRM=
 github.com/linkdata/jawsauth v1.0.13 h1:KVhR7ii90BvriR4S5N9/O987g4sAcFo5ZzPOwRdVblI=
 github.com/linkdata/jawsauth v1.0.13/go.mod h1:QQUEqCT1owFWBPzsMKLOrowmUKuSHfZHScZXRgJHxfw=
 github.com/linkdata/jq v0.1.1 h1:PY5t/m3VsK/8QOc+yDMNlYCk3b3NjW26daXZvhypHQA=
