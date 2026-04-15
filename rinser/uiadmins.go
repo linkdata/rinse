@@ -11,8 +11,7 @@ type uiAdmins struct {
 	v string
 }
 
-// JawsClick implements jaws.ClickHandler.
-func (u *uiAdmins) JawsClick(e *jaws.Element, name string) (err error) {
+func (u *uiAdmins) JawsClick(e *jaws.Element, data jaws.Click) (err error) {
 	var adminlist []string
 	for _, s1 := range strings.Split(u.v, ",") {
 		for _, s2 := range strings.Split(s1, " ") {

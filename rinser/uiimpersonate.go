@@ -11,7 +11,7 @@ type uiImpersonate struct {
 	v string
 }
 
-func (u *uiImpersonate) JawsClick(e *jaws.Element, name string) (err error) {
+func (u *uiImpersonate) JawsClick(e *jaws.Element, _ jaws.Click) (err error) {
 	e.Session().Set(u.JawsAuth.SessionEmailKey, strings.TrimSpace(u.v))
 	return
 }

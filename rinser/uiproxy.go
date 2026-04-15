@@ -15,7 +15,7 @@ type uiProxy struct {
 
 type uiProxyButton struct{ *uiProxy }
 
-func (ui uiProxyButton) JawsClick(e *jaws.Element, name string) (err error) {
+func (ui uiProxyButton) JawsClick(e *jaws.Element, _ jaws.Click) (err error) {
 	urlStr := ui.Binder.JawsGet(e)
 	if urlStr != "" {
 		var u *url.URL

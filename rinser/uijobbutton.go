@@ -9,8 +9,8 @@ import (
 type uiJobButton struct{ *Job }
 
 // JawsClick implements jaws.ClickHandler.
-func (ui uiJobButton) JawsClick(e *jaws.Element, name string) (err error) {
-	if name == "jobact" {
+func (ui uiJobButton) JawsClick(e *jaws.Element, data jaws.Click) (err error) {
+	if data.Name == "jobact" {
 		if ui.State() == JobNew {
 			return ui.Start()
 		}

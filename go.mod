@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.4.0
 	github.com/linkdata/deadlock v0.5.5
-	github.com/linkdata/jaws v0.304.1
+	github.com/linkdata/jaws v0.400.0
 	github.com/linkdata/jawsauth v1.0.13
 	github.com/linkdata/staticserve v1.0.0
 	github.com/linkdata/webserv v1.0.2
