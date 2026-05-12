@@ -8,7 +8,7 @@ require (
 	github.com/linkdata/bytecount v1.4.0
 	github.com/linkdata/deadlock v0.5.5
 	github.com/linkdata/jaws v0.404.0
-	github.com/linkdata/jawsauth v1.0.13
+	github.com/linkdata/jawsauth v1.1.0
 	github.com/linkdata/staticserve v1.0.0
 	github.com/linkdata/webserv v1.0.2
 	github.com/swaggo/http-swagger v1.3.4
@@ -24,7 +24,7 @@ require (
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/coder/websocket v1.8.14 // indirect
-	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.18.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
@@ -34,7 +34,7 @@ require (
 	github.com/linkdata/jq v0.1.1 // indirect
 	github.com/linkdata/secureheaders v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/petermattis/goid v0.0.0-20260113132338-7c7de50cc741 // indirect
+	github.com/petermattis/goid v0.0.0-20260330135022-df67b199bc81 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
