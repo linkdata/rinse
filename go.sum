@@ -68,8 +68,8 @@ github.com/linkdata/bytecount v1.4.0 h1:wD3hiST9KClay2pYvKX4FuI0EjE/fuzfZKc24dEV
 github.com/linkdata/bytecount v1.4.0/go.mod h1:wQp4+nHhWkTJX2sCXYUGGDCsxjiSKx9kPO0Ag0euxPk=
 github.com/linkdata/deadlock v0.5.5 h1:d6O+rzEqasSfamGDA8u7bjtaq7hOX8Ha4Zn36Wxrkvo=
 github.com/linkdata/deadlock v0.5.5/go.mod h1:tXb28stzAD3trzEEK0UJWC+rZKuobCoPktPYzebb1u0=
-github.com/linkdata/jaws v0.404.5 h1:sFrZLhVitwa3/WgNg03BfIYXKtFRMLCAkFQvI+qouxM=
-github.com/linkdata/jaws v0.404.5/go.mod h1:oxEEhUCXwNYISSg2rZ8Ian2Nku3YuDl7LNo1tF8zwRM=
+github.com/linkdata/jaws v0.405.1 h1:1vO3SGjvzpKvmTxqyfU/chxhCh7njWc2aGLcXUMMnzI=
+github.com/linkdata/jaws v0.405.1/go.mod h1:oxEEhUCXwNYISSg2rZ8Ian2Nku3YuDl7LNo1tF8zwRM=
 github.com/linkdata/jawsauth v1.1.0 h1:/vUAqLj34Wz5OF0diiVlRqCRz0KbSZ7OXZ4I/4NDlfE=
 github.com/linkdata/jawsauth v1.1.0/go.mod h1:9HmFIn9wFhVR+Utb+9OC+pKNh/kc7B6Ry362fFBI8hY=
 github.com/linkdata/jq v0.1.1 h1:PY5t/m3VsK/8QOc+yDMNlYCk3b3NjW26daXZvhypHQA=
