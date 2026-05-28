@@ -455,7 +455,7 @@ func (rns *Rinse) JawsContains(e *jaws.Element) (contents []jaws.UI) {
 	sortedJobs := rns.JobList(rns.GetEmail(e.Initial()))
 	slices.SortFunc(sortedJobs, func(a, b *Job) int { return b.Created.Compare(a.Created) })
 	for _, job := range sortedJobs {
-		contents = append(contents, ui.NewTemplate("job.html", job))
+		contents = append(contents, ui.NewTemplate("", "job.html", job))
 	}
 	return
 }
