@@ -10,7 +10,7 @@ require (
 	github.com/linkdata/jaws v0.410.1
 	github.com/linkdata/jawsauth v1.1.3
 	github.com/linkdata/staticserve v1.1.8
-	github.com/linkdata/webserv v1.1.2
+	github.com/linkdata/webserv v1.2.0
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	gitlab.com/jamietanna/content-negotiation-go v0.2.0
