@@ -93,8 +93,8 @@ github.com/linkdata/secureheaders v1.1.1 h1:QTyNCv7b7YvUnQhiePvTObM4vsCcwPxLaLf/
 github.com/linkdata/secureheaders v1.1.1/go.mod h1:50TiKmPaWki8gIZXmBxrLUinyJst12YuN3EbsXZMO+4=
 github.com/linkdata/staticserve v1.1.8 h1:qpm0dAaAsik1YrETSiMoS7ciBL9qPVNUFcfdio/ol84=
 github.com/linkdata/staticserve v1.1.8/go.mod h1:uOUrHkbNEkVXWvuw7gk0ydm39r9Y1ReZA9o4aWF+hgc=
-github.com/linkdata/webserv v1.1.2 h1:rJahRjIPOEJy/rHC69dN1qEr87D8gfAPTY4KFFec8HQ=
-github.com/linkdata/webserv v1.1.2/go.mod h1:ln3atG25iRyzLGuo7x3CwlLcWdWrzt6VnayZEl7GS2Y=
+github.com/linkdata/webserv v1.2.0 h1:9tBHL7Tdd8OgSdm+yI1WPIhrlP+btRR6arSXfRSggP8=
+github.com/linkdata/webserv v1.2.0/go.mod h1:ln3atG25iRyzLGuo7x3CwlLcWdWrzt6VnayZEl7GS2Y=
 github.com/lufia/plan9stats v0.0.0-20260330125221-c963978e514e h1:Q6MvJtQK/iRcRtzAscm/zF23XxJlbECiGPyRicsX+Ak=
 github.com/lufia/plan9stats v0.0.0-20260330125221-c963978e514e/go.mod h1:autxFIvghDt3jPTLoqZ9OZ7s9qTGNAWmYCjVFWPX/zg=
 github.com/magiconair/properties v1.8.10 h1:s31yESBquKXCV9a/ScB3ESkOjUYYv+X0rg8SYxI99mE=
