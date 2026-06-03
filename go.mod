@@ -8,7 +8,7 @@ require (
 	github.com/linkdata/bytecount v1.4.1
 	github.com/linkdata/deadlock v0.5.5
 	github.com/linkdata/jaws v0.504.0
-	github.com/linkdata/jawsauth v1.1.3
+	github.com/linkdata/jawsauth v1.2.0
 	github.com/linkdata/staticserve v1.1.8
 	github.com/linkdata/webserv v1.3.0
 	github.com/swaggo/http-swagger v1.3.4
