@@ -7,8 +7,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.4.1
 	github.com/linkdata/deadlock v0.5.5
-	github.com/linkdata/jaws v0.505.0
-	github.com/linkdata/jawsauth v1.2.0
+	github.com/linkdata/jaws v0.600.1
+	github.com/linkdata/jawsauth v1.3.0
 	github.com/linkdata/staticserve v1.1.8
 	github.com/linkdata/webserv v1.4.1
 	github.com/swaggo/http-swagger v1.3.4
@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
-	github.com/coreos/go-oidc/v3 v3.18.0 // indirect
+	github.com/coder/websocket v1.8.15 // indirect
+	github.com/coreos/go-oidc/v3 v3.19.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.5 // indirect
