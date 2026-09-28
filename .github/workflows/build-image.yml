@@ -55,9 +55,9 @@ jobs:
 
       # gosec taint analysis is broken
       - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.24.7
-        with:
-          args: -exclude=G120,G703,G704,G705,G706 ./...
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+          gosec -exclude=G120,G703,G704,G705,G706 ./...
 
       - name: Build normal executable
         run: go build .
