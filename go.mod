@@ -1,13 +1,13 @@
 module github.com/linkdata/rinse
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.4.1
 	github.com/linkdata/deadlock v0.5.5
-	github.com/linkdata/jaws v0.804.0
+	github.com/linkdata/jaws v0.805.0
 	github.com/linkdata/jawsauth v1.3.1
 	github.com/linkdata/staticserve v1.1.8
 	github.com/linkdata/webserv v1.5.0
