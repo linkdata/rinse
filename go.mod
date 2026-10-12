@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linkdata/bytecount v1.4.1
 	github.com/linkdata/deadlock v0.5.5
-	github.com/linkdata/jaws v0.808.0
+	github.com/linkdata/jaws v0.900.0
 	github.com/linkdata/jawsauth v1.4.0
 	github.com/linkdata/staticserve v1.1.8
 	github.com/linkdata/webserv v1.5.0
@@ -37,6 +37,7 @@ require (
 	github.com/go-openapi/swag/typeutils v0.29.0 // indirect
 	github.com/go-openapi/swag/yamlutils v0.29.0 // indirect
 	github.com/linkdata/jq v0.6.0 // indirect
+	github.com/linkdata/rate v1.17.1 // indirect
 	github.com/linkdata/secureheaders v1.5.0 // indirect
 	github.com/petermattis/goid v0.0.0-20260820044319-269ab09b5261 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
