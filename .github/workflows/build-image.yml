@@ -33,16 +33,16 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
           ref: ${{ inputs.checkout_ref || github.ref }}
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: 'stable'
+          go-version: '1.27.x'
           check-latest: true
 
       - name: Generate
@@ -56,7 +56,7 @@ jobs:
       # gosec taint analysis is broken
       - name: Run Gosec Security Scanner
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
           gosec -exclude=G120,G703,G704,G705,G706 ./...
 
       - name: Build normal executable

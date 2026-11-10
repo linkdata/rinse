@@ -19,7 +19,7 @@ import (
 	"github.com/linkdata/rinse/rinser"
 )
 
-//go:generate go run github.com/swaggo/swag/cmd/swag@latest init
+//go:generate go run github.com/swaggo/swag/cmd/swag@v1.16.6 init
 
 //go:embed docs
 var docsFS embed.FS
