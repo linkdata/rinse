@@ -50,7 +50,7 @@ jobs:
           check-latest: true
 
       - name: Install gitsemver
-        run: go install github.com/linkdata/gitsemver@latest
+        run: go install github.com/linkdata/gitsemver@v1.21.2
 
       - name: Debug environment
         run: |
