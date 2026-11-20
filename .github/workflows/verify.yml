@@ -37,10 +37,7 @@ jobs:
       - name: Scan
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
-          gosec -exclude=G120,G703,G704,G705,G706 ./...
+          gosec -exclude=G120,G703,G704,G705,G706 -exclude-dir=gvisor ./...
 
       - name: Build gVisor
-        working-directory: gvisor
-        run: |
-          go get gvisor.dev/gvisor/runsc@go
-          CGO_ENABLED=0 go build gvisor.dev/gvisor/runsc
+        run: ./gvisor/build.sh

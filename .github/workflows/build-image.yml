@@ -57,7 +57,7 @@ jobs:
       - name: Run Gosec Security Scanner
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
-          gosec -exclude=G120,G703,G704,G705,G706 ./...
+          gosec -exclude=G120,G703,G704,G705,G706 -exclude-dir=gvisor ./...
 
       - name: Build normal executable
         run: go build .
@@ -65,13 +65,8 @@ jobs:
       - name: Build development executable 
         run: go build -tags devel -o rinse-devel .
 
-      - name: Fetch gVisor
-        working-directory: gvisor
-        run: GO111MODULE=on go get gvisor.dev/gvisor/runsc@go
-
       - name: Build gVisor
-        working-directory: gvisor
-        run: CGO_ENABLED=0 GO111MODULE=on go build -o ../runsc gvisor.dev/gvisor/runsc
+        run: ./gvisor/build.sh
       
       - name: Get TIKA version
         id: tika_version
