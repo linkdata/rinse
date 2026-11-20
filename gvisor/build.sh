@@ -10,6 +10,8 @@ trap 'chmod -R u+w "$TMP"; rm -rf "$TMP"' EXIT
 trap 'exit 1' HUP INT TERM
 # The go branch ships systrap's precompiled seccomp programs for amd64 only, so
 # build from a copy of the module with them regenerated for the host architecture.
+# ponytail: module copy and ./precompile only work around gvisor/gvisor#17831;
+# delete both and build from the module cache once it is fixed.
 SRC="$TMP/gvisor"
 cp -r "$(go list -m -f '{{.Dir}}' gvisor.dev/gvisor)" "$SRC"
 chmod -R u+w "$SRC"
