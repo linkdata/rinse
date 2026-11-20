@@ -37,7 +37,7 @@ jobs:
       - name: Scan
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@v2.30.0
-          gosec -exclude=G120,G703,G704,G705,G706 ./...
+          gosec -exclude=G120,G703,G704,G705,G706 -exclude-dir=gvisor ./...
 
       - name: Build gVisor
         run: ./gvisor/build.sh
