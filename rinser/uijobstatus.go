@@ -81,7 +81,7 @@ func (ui uiJobStatus) JawsGetHTML(e *jaws.Element) template.HTML {
 	}
 
 	statetxt = html.EscapeString(statetxt)
-	s := fmt.Sprintf(`<span class="%s">%s (%s)</span>`, stateclass, statetxt, bytecount.N(diskuse))
+	s := fmt.Sprintf(`<span class="%s">%s (%v)</span>`, stateclass, statetxt, bytecount.N(diskuse))
 	return template.HTML(s) // #nosec G203
 }
 
