@@ -117,6 +117,7 @@ LABEL org.opencontainers.image.source="https://github.com/linkdata/rinse"
 RUN apk --no-cache -U upgrade
 
 COPY --chmod=555 runsc /usr/bin/runsc
+COPY --chmod=555 gvisor-bin /usr/bin/gvisor-bin
 COPY --chmod=555 rinse /usr/bin/rinse
 COPY --chmod=555 rinse-devel /usr/bin/rinse-devel
 

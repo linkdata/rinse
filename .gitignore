@@ -27,6 +27,7 @@ go.work.sum
 /rinse
 /rinse-devel
 /runsc
+/gvisor-bin
 /rootfs
 /gvisor/go.sum
 rinser/version.gen.go
